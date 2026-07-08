@@ -1,0 +1,12 @@
+[build]
+  command = "cd frontend && npm run build"
+  publish = "frontend/build"
+
+[build.environment]
+  NODE_VERSION = "18"
+  REACT_APP_API_URL = "https://your-railway-app.railway.app/api"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
