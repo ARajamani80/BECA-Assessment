@@ -1,52 +1,42 @@
-// Supabase Configuration
-// Get these from: https://app.supabase.com → Settings → API
+var SUPABASE_URL = window.SUPABASE_URL || 'https://your-project.supabase.co';
+var SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'your-anon-key-here';
+var supabase = null;
 
-const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL ||
-                     localStorage.getItem('SUPABASE_URL') ||
-                     'https://your-project.supabase.co';
+function initSupabase() {
+  if (window.supabase && !supabase) {
+    var SC = window.supabase;
+    supabase = SC.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('✓ Supabase initialized');
+  }
+}
 
-const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY ||
-                          localStorage.getItem('SUPABASE_ANON_KEY') ||
-                          'your-anon-key-here';
-
-// Initialize Supabase
-const { createClient } = window.supabase;
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// Helper: Check if user is logged in
 async function getCurrentUser() {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
+  var sb = supabase;
+  if (!sb) return null;
+  var result = await sb.auth.getUser();
+  return result.data?.user;
 }
 
-// Helper: Sign out
 async function signOut() {
-  const { error } = await supabase.auth.signOut();
-  if (error) console.error('Sign out error:', error);
-  return !error;
+  if (!supabase) return false;
+  var result = await supabase.auth.signOut();
+  return !result.error;
 }
 
-// Helper: Get user role
 async function getUserRole(userId) {
   try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
-      .single();
-
-    if (error) throw error;
-    return data?.role || 'student';
+    if (!supabase) return 'student';
+    var result = await supabase.from('profiles').select('role').eq('id', userId).single();
+    return result.data?.role || 'student';
   } catch (error) {
-    console.error('Error getting user role:', error);
     return 'student';
   }
 }
 
-// Export for use in app.js
 window.supabaseClient = {
-  supabase,
-  getCurrentUser,
-  signOut,
-  getUserRole
+  getSupabase: function() { return supabase; },
+  getCurrentUser: getCurrentUser,
+  signOut: signOut,
+  getUserRole: getUserRole,
+  init: initSupabase
 };
