@@ -1,12 +1,23 @@
 [build]
-  command = "cd frontend && npm run build"
-  publish = "frontend/build"
+  command = "echo 'Static site - no build needed'"
+  publish = "."
 
 [build.environment]
   NODE_VERSION = "18"
-  REACT_APP_API_URL = "https://your-railway-app.railway.app/api"
 
+# Redirect all routes to index.html for SPA routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Cache settings
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "max-age=3600"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "max-age=0, no-cache, no-store, must-revalidate"

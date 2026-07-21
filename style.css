@@ -1,0 +1,433 @@
+/* ============================================================
+   BECA Assessment App - Styling
+   ============================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary: #007bff;
+  --primary-dark: #0056b3;
+  --secondary: #6c757d;
+  --success: #28a745;
+  --danger: #dc3545;
+  --light: #f8f9fa;
+  --dark: #343a40;
+  --border: #dee2e6;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--light);
+  color: var(--dark);
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* ============================================================
+   AUTHENTICATION
+   ============================================================ */
+
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  padding: 20px;
+}
+
+.auth-box {
+  background: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-box h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  text-align: center;
+  color: var(--primary);
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--secondary);
+  margin-bottom: 30px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--dark);
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.or-divider {
+  text-align: center;
+  margin: 30px 0;
+  color: var(--secondary);
+  font-size: 14px;
+}
+
+.message {
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.message-success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.message-error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.message-info {
+  background: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn-large {
+  padding: 15px 30px;
+  font-size: 16px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.btn-full {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+/* ============================================================
+   NAVBAR
+   ============================================================ */
+
+.navbar {
+  background: white;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar h1 {
+  color: var(--primary);
+  font-size: 24px;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 14px;
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+
+.dashboard-container {
+  min-height: 100vh;
+}
+
+.dashboard-content {
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.role-badge {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 30px;
+}
+
+.dashboard-content h2 {
+  margin-bottom: 30px;
+  color: var(--dark);
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+
+.assessment-card,
+.result-card,
+.submission-card,
+.question-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.assessment-card:hover,
+.result-card:hover,
+.submission-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+}
+
+.assessment-card h3,
+.result-card h3,
+.submission-card h3,
+.question-card h3 {
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+
+.assessment-card p,
+.result-card p,
+.submission-card p {
+  color: var(--secondary);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.score {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: var(--success) !important;
+}
+
+/* ============================================================
+   ASSESSMENT PAGE
+   ============================================================ */
+
+.assessment-container {
+  min-height: 100vh;
+}
+
+.assessment-content {
+  padding: 40px 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.question-card {
+  margin-bottom: 30px;
+}
+
+.question-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.question-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* ============================================================
+   RESULTS PAGE
+   ============================================================ */
+
+.results-container,
+.trainer-container {
+  min-height: 100vh;
+}
+
+.results-content,
+.trainer-content {
+  padding: 40px 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.results-content h2,
+.trainer-content h2 {
+  margin-bottom: 30px;
+  color: var(--dark);
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .auth-box {
+    padding: 30px 20px;
+  }
+
+  .navbar {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .navbar h1 {
+    font-size: 20px;
+  }
+
+  .user-menu {
+    width: 100%;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .dashboard-content,
+  .assessment-content,
+  .results-content,
+  .trainer-content {
+    padding: 20px 10px;
+  }
+
+  .btn-large {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 10px;
+  }
+
+  .auth-box {
+    padding: 20px;
+  }
+
+  .auth-box h1 {
+    font-size: 24px;
+  }
+
+  .assessment-card,
+  .result-card,
+  .submission-card,
+  .question-card {
+    padding: 15px;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+
+.text-center {
+  text-align: center;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+.hide {
+  display: none !important;
+}
+
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
