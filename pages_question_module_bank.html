@@ -1,0 +1,632 @@
+<!-- ============================================================
+     QUESTION & MODULE BANK PAGES - HTML Components
+     Add these to index.html in the appropriate page sections
+     ============================================================ -->
+
+<!-- ============================================================
+     PAGE: QUESTION BANK
+     ============================================================ -->
+<div id="questionBankPage" style="display: none;">
+  <div class="header">
+    <h1 class="header-title">Question Bank</h1>
+    <div class="user-section">
+      <span class="user-email" id="userEmailHeader"></span>
+      <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+      <div class="stat-card" style="--stat-color: #3b82f6;">
+        <div class="stat-value" id="totalQuestionsCount">0</div>
+        <div class="stat-label">Total Questions</div>
+      </div>
+      <div class="stat-card" style="--stat-color: #10b981;">
+        <div class="stat-value" id="totalPointsCount">0</div>
+        <div class="stat-label">Total Points</div>
+      </div>
+      <div class="stat-card" style="--stat-color: #f59e0b;">
+        <div class="stat-value" id="questionsWithDatasets">0</div>
+        <div class="stat-label">With Datasets</div>
+      </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 class="card-title">Search & Filter</h2>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <div class="form-group">
+          <label>Search Questions</label>
+          <input type="text" id="questionSearch" placeholder="Search by title, description, or question...">
+        </div>
+
+        <div class="form-group">
+          <label>Question Type</label>
+          <select id="questionTypeFilter">
+            <option value="">All Types</option>
+            <option value="MCQ">Multiple Choice (MCQ)</option>
+            <option value="PL">Pick List (PL)</option>
+            <option value="TRUEFALSE">True/False</option>
+            <option value="FREETEXT">Free Text</option>
+            <option value="ORDERED_LIST">Ordered List</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Category</label>
+          <select id="questionCategoryFilter">
+            <option value="">All Categories</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Difficulty</label>
+          <select id="questionDifficultyFilter">
+            <option value="">All Levels</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button class="btn btn-primary" onclick="applyQuestionFilters()">
+          <i class="fas fa-search"></i> Search
+        </button>
+        <button class="btn btn-secondary" onclick="resetQuestionFilters()">
+          <i class="fas fa-redo"></i> Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- Questions List Section -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 class="card-title">Questions</h2>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-primary" onclick="showAddQuestionModal()">
+            <i class="fas fa-plus"></i> Add Question
+          </button>
+          <button class="btn btn-secondary" onclick="showImportExcelModal()">
+            <i class="fas fa-file-import"></i> Import Excel
+          </button>
+          <button class="btn btn-secondary" onclick="exportQuestions()">
+            <i class="fas fa-file-export"></i> Export
+          </button>
+        </div>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Points</th>
+              <th>Category</th>
+              <th>Difficulty</th>
+              <th>Image</th>
+              <th>Dataset</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="questionsTableBody">
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 40px;">Loading questions...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+        <button class="btn btn-sm btn-secondary" onclick="previousQuestionsPage()" id="prevQuestionsBtn">Previous</button>
+        <span id="questionsPageInfo" style="padding: 6px 12px;">Page 1</span>
+        <button class="btn btn-sm btn-secondary" onclick="nextQuestionsPage()" id="nextQuestionsBtn">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE: MODULE BANK
+     ============================================================ -->
+<div id="moduleBankPage" style="display: none;">
+  <div class="header">
+    <h1 class="header-title">Module Bank</h1>
+    <div class="user-section">
+      <span class="user-email" id="userEmailHeaderModules"></span>
+      <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Statistics -->
+    <div class="stats-grid">
+      <div class="stat-card" style="--stat-color: #3b82f6;">
+        <div class="stat-value" id="totalModulesCount">0</div>
+        <div class="stat-label">Total Modules</div>
+      </div>
+      <div class="stat-card" style="--stat-color: #10b981;">
+        <div class="stat-value" id="totalModuleQuestions">0</div>
+        <div class="stat-label">Total Questions in Modules</div>
+      </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="card">
+      <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+          <label>Search Modules</label>
+          <input type="text" id="moduleSearch" placeholder="Search by name or description...">
+        </div>
+        <div style="display: flex; align-items: flex-end; gap: 10px;">
+          <button class="btn btn-primary" onclick="applyModuleFilters()">
+            <i class="fas fa-search"></i> Search
+          </button>
+          <button class="btn btn-secondary" onclick="resetModuleFilters()">
+            <i class="fas fa-redo"></i> Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modules List -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 class="card-title">Modules</h2>
+        <button class="btn btn-primary" onclick="showAddModuleModal()">
+          <i class="fas fa-plus"></i> Add Module
+        </button>
+      </div>
+
+      <div id="modulesContainer">
+        <div style="text-align: center; padding: 40px;">Loading modules...</div>
+      </div>
+
+      <!-- Pagination -->
+      <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+        <button class="btn btn-sm btn-secondary" onclick="previousModulesPage()" id="prevModulesBtn">Previous</button>
+        <span id="modulesPageInfo" style="padding: 6px 12px;">Page 1</span>
+        <button class="btn btn-sm btn-secondary" onclick="nextModulesPage()" id="nextModulesBtn">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODALS - Question Bank
+     ============================================================ -->
+
+<!-- Add/Edit Question Modal -->
+<div id="questionModal" class="modal">
+  <div class="modal-content" style="max-width: 800px;">
+    <div class="modal-header">
+      <h2 id="questionModalTitle">Add Question</h2>
+      <button class="modal-close" onclick="closeQuestionModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div id="questionMessage" class="message"></div>
+
+      <div class="form-group">
+        <label>Question Title *</label>
+        <input type="text" id="questionTitle" required>
+      </div>
+
+      <div class="form-group">
+        <label>Question Type *</label>
+        <select id="questionType" onchange="updateQuestionTypeUI()" required>
+          <option value="">Select Type</option>
+          <option value="MCQ">Multiple Choice (MCQ)</option>
+          <option value="PL">Pick List (PL)</option>
+          <option value="TRUEFALSE">True/False</option>
+          <option value="FREETEXT">Free Text</option>
+          <option value="ORDERED_LIST">Ordered List</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Question Text *</label>
+        <textarea id="questionText" rows="4" required placeholder="Enter the question text..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="questionDescription" rows="2" placeholder="Optional description or additional context..."></textarea>
+      </div>
+
+      <!-- Options (for MCQ/PL/ORDERED_LIST) -->
+      <div id="optionsSection" style="display: none;">
+        <div class="form-group">
+          <label>Options (comma-separated)</label>
+          <textarea id="questionOptions" rows="3" placeholder="Option 1, Option 2, Option 3..."></textarea>
+          <small>Enter each option separated by comma</small>
+        </div>
+      </div>
+
+      <!-- Correct Answer -->
+      <div class="form-group">
+        <label id="correctAnswerLabel">Correct Answer *</label>
+        <input type="text" id="questionCorrectAnswer" required>
+        <small id="correctAnswerHelp" style="display: block; color: var(--text-secondary); margin-top: 4px;">
+          Enter the correct answer or option number
+        </small>
+      </div>
+
+      <!-- Points -->
+      <div class="form-group">
+        <label>Points</label>
+        <input type="number" id="questionPoints" value="10" min="1" max="100">
+      </div>
+
+      <!-- Category and Difficulty -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div class="form-group">
+          <label>Category</label>
+          <input type="text" id="questionCategory" placeholder="e.g., Leadership, Technical">
+        </div>
+
+        <div class="form-group">
+          <label>Difficulty Level</label>
+          <select id="questionDifficulty">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div class="form-group">
+        <label>Tags (comma-separated)</label>
+        <input type="text" id="questionTags" placeholder="tag1, tag2, tag3">
+      </div>
+
+      <!-- Image Upload -->
+      <div class="form-group">
+        <label>Question Image</label>
+        <div style="border: 2px dashed var(--border); padding: 20px; border-radius: 8px; text-align: center;">
+          <input type="file" id="questionImageInput" accept="image/*" style="display: none;" onchange="previewQuestionImage()">
+          <img id="questionImagePreview" style="max-width: 200px; max-height: 150px; margin-bottom: 10px; display: none;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('questionImageInput').click()">
+            <i class="fas fa-cloud-upload-alt"></i> Upload Image
+          </button>
+          <button type="button" class="btn btn-danger btn-sm" id="removeImageBtn" style="display: none;" onclick="removeQuestionImagePreview()">
+            <i class="fas fa-trash"></i> Remove Image
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeQuestionModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveQuestionBtn" onclick="saveQuestion()">Save Question</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Excel Modal -->
+<div id="importExcelModal" class="modal">
+  <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-header">
+      <h2>Import Questions from Excel</h2>
+      <button class="modal-close" onclick="closeImportExcelModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div id="importMessage" class="message"></div>
+
+      <div class="form-group">
+        <label>Select Excel/CSV File *</label>
+        <div style="border: 2px dashed var(--border); padding: 30px; border-radius: 8px; text-align: center;">
+          <input type="file" id="excelFileInput" accept=".xlsx,.csv,.tsv,.xls" style="display: none;" onchange="handleExcelFileSelect()">
+          <i class="fas fa-file-excel" style="font-size: 40px; color: var(--primary); margin-bottom: 10px; display: block;"></i>
+          <p style="color: var(--text-secondary); margin-bottom: 10px;">Drag and drop your file here or click to browse</p>
+          <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('excelFileInput').click()">
+            <i class="fas fa-folder-open"></i> Browse Files
+          </button>
+          <p id="selectedFileName" style="color: var(--text-secondary); font-size: 12px; margin-top: 10px;"></p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Required Excel Format:</label>
+        <table class="table" style="font-size: 12px;">
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Title</td>
+              <td>Question title (required)</td>
+            </tr>
+            <tr>
+              <td>Type</td>
+              <td>MCQ, PL, TRUEFALSE, FREETEXT, ORDERED_LIST (required)</td>
+            </tr>
+            <tr>
+              <td>Question Text</td>
+              <td>The actual question (required)</td>
+            </tr>
+            <tr>
+              <td>Correct Answer</td>
+              <td>The correct answer</td>
+            </tr>
+            <tr>
+              <td>Options</td>
+              <td>Comma-separated options for MCQ/PL</td>
+            </tr>
+            <tr>
+              <td>Points</td>
+              <td>Points for this question (default: 10)</td>
+            </tr>
+            <tr>
+              <td>Category</td>
+              <td>Question category</td>
+            </tr>
+            <tr>
+              <td>Difficulty</td>
+              <td>easy, medium, hard</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="importProgress" style="display: none;">
+        <div style="margin-top: 20px;">
+          <div style="background: var(--light); padding: 10px; border-radius: 8px;">
+            <p><strong>Import Results:</strong></p>
+            <p>Successful: <strong id="importSuccessCount">0</strong></p>
+            <p>Errors: <strong id="importErrorCount">0</strong></p>
+          </div>
+          <div id="importErrors" style="margin-top: 10px; max-height: 200px; overflow-y: auto;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeImportExcelModal()">Close</button>
+      <button class="btn btn-primary" id="importExcelBtn" onclick="importExcelFile()">Import Questions</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODALS - Module Bank
+     ============================================================ -->
+
+<!-- Add/Edit Module Modal -->
+<div id="moduleModal" class="modal">
+  <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-header">
+      <h2 id="moduleModalTitle">Add Module</h2>
+      <button class="modal-close" onclick="closeModuleModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div id="moduleMessage" class="message"></div>
+
+      <div class="form-group">
+        <label>Module Name *</label>
+        <input type="text" id="moduleName" required>
+      </div>
+
+      <div class="form-group">
+        <label>Module Description</label>
+        <textarea id="moduleDescription" rows="3" placeholder="Describe what this module covers..."></textarea>
+      </div>
+
+      <!-- Questions Selection Section -->
+      <div class="form-group">
+        <label>Select Questions *</label>
+        <div style="border: 1px solid var(--border); border-radius: 8px; padding: 15px; background: var(--light);">
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="questionSearchInModule" placeholder="Search questions..." style="flex: 1;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="refreshQuestionsForModule()">
+              <i class="fas fa-sync"></i> Refresh
+            </button>
+          </div>
+
+          <div id="moduleQuestionsCheckboxes" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 10px; background: white;">
+            <p style="text-align: center; color: var(--text-secondary); padding: 20px;">Loading questions...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selected Questions Preview and Reordering -->
+      <div class="form-group">
+        <label>Selected Questions Order</label>
+        <div id="moduleQuestionsPreview" style="border: 1px solid var(--border); border-radius: 8px; padding: 15px; background: var(--light); min-height: 200px;">
+          <div style="text-align: center; color: var(--text-secondary); padding: 20px;">No questions selected yet</div>
+        </div>
+      </div>
+
+      <!-- Module Stats -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+        <div style="background: var(--light); padding: 15px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 700; color: var(--primary);" id="moduleQuestionCount">0</div>
+          <div style="font-size: 12px; color: var(--text-secondary);">Questions</div>
+        </div>
+        <div style="background: var(--light); padding: 15px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 20px; font-weight: 700; color: var(--success);" id="moduleTotalPoints">0</div>
+          <div style="font-size: 12px; color: var(--text-secondary);">Total Points</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModuleModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveModuleBtn" onclick="saveModule()">Save Module</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL STYLES (add to main style section in index.html)
+     ============================================================ -->
+
+<style>
+  /* Modal Overlays */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal.active { display: flex !important; }
+
+  .modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-content {
+    background-color: white;
+    padding: 0;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover {
+    background: var(--light);
+    color: var(--text-primary);
+  }
+
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .modal-footer {
+    padding: 20px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    flex-shrink: 0;
+  }
+
+  /* Module Item */
+  .module-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s;
+  }
+
+  .module-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .module-info h3 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    color: var(--text-primary);
+  }
+
+  .module-info p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .module-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Draggable questions */
+  .question-order-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: move;
+  }
+
+  .question-order-item:hover {
+    background: var(--light);
+  }
+
+  .question-order-item.dragging {
+    opacity: 0.5;
+    background: #f0f4ff;
+  }
+
+  .drag-handle {
+    cursor: grab;
+    color: var(--text-secondary);
+    font-size: 16px;
+  }
+
+  .drag-handle:active {
+    cursor: grabbing;
+  }
+</style>
