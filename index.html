@@ -39,23 +39,18 @@
     var currentUser = null;
 
     // Load config from Netlify function
-    async function loadConfig() {
-      try {
-        var response = await fetch('/.netlify/functions/config');
-        var config = await response.json();
-        
-        if (window.supabase && config.supabaseUrl && config.supabaseKey) {
-          supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseKey);
-          showLoginPage();
-        } else {
-          showError('Configuration error. Check Netlify environment variables.');
-        }
-      } catch (error) {
-        console.error('Config error:', error);
-        showError('Failed to load configuration: ' + error.message);
-      }
-    }
-
+// Load config
+function loadConfig() {
+  var SUPABASE_URL = 'https://fgzqgqwlyeubudnbxsmx.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0';
+  
+  if (window.supabase && SUPABASE_URL && SUPABASE_KEY) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    showLoginPage();
+  } else {
+    showError('Configuration error. Check Supabase credentials.');
+  }
+}
     function showError(msg) {
       document.getElementById('app').innerHTML = '<div class="container"><h1>Error</h1><p style="color: red; text-align: center;">' + msg + '</p></div>';
     }
