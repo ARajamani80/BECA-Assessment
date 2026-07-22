@@ -3,6 +3,22 @@
 let currentPage = 'dashboard';
 
 /**
+ * Show login page
+ */
+function showLoginPage() {
+  document.getElementById('loginContainer').style.display = 'flex';
+  document.getElementById('dashboardContainer').style.display = 'none';
+}
+
+/**
+ * Show dashboard
+ */
+function showDashboard() {
+  document.getElementById('loginContainer').style.display = 'none';
+  document.getElementById('dashboardContainer').style.display = 'flex';
+}
+
+/**
  * Show page
  * @param {string} page - Page name
  */
@@ -48,6 +64,7 @@ async function initializeApp() {
     if (!isAuthenticated) {
       showLoginPage();
     } else {
+      showDashboard();
       await updateUserProfile();
       showPage('dashboard');
     }
@@ -67,5 +84,36 @@ function injectTakerStyles() {
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', function() {
   injectTakerStyles();
+
+  // Setup login form
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+
+      try {
+        await signIn(email, password);
+        // After successful login, reinitialize
+        setTimeout(initializeApp, 500);
+      } catch (error) {
+        alert('Login failed: ' + error.message);
+      }
+    });
+  }
+
+  // Setup menu navigation
+  document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const page = this.getAttribute('data-page');
+      if (page === 'logout') {
+        logout();
+      } else {
+        showPage(page);
+      }
+    });
+  });
+
   setTimeout(initializeApp, 500);
 });
