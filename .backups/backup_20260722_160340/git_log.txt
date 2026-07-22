@@ -1,0 +1,10 @@
+c487219 Refactor: Modular architecture with Permission Editor, Question Bank, Module Bank
+ae0b949 Refactor: Modular architecture with Permission Editor, Question Bank, Module Bank
+f8a047a Add question and module bank tables and navigation
+eb20196 Fetch user role from database profiles table
+8bbe3f7 Fix role display - fetch from profiles table
+a86a31a Add enhanced user management - roles, password reset, deactivate, audit logs
+42d09ec Add better login error handling and debugging
+2202dc0 Move user profile and logout to sidebar, update header
+b0ef72c Add token refresh and assessment takers table
+af54bca Improve API error handling
