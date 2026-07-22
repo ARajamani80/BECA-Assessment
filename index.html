@@ -2907,14 +2907,41 @@
     }
 
     // Initialize
-    function updateUserProfile() {
+    async function updateUserProfile() {
       if (currentUser) {
         const emailParts = (currentUser.email || '').split('@');
         const initial = emailParts[0] ? emailParts[0][0].toUpperCase() : 'U';
 
         document.getElementById('userAvatarSidebar').textContent = initial;
         document.getElementById('userNameSidebar').textContent = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User';
-        document.getElementById('userRoleSidebar').textContent = currentUser.user_metadata?.role || 'user';
+
+        // Fetch role from database (not from metadata)
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${currentUser.id}&select=user_role,full_name`,
+            {
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${token}`
+              }
+            }
+          );
+
+          const data = await response.json();
+          if (data && data.length > 0) {
+            const profile = data[0];
+            const role = profile.user_role || 'user';
+            document.getElementById('userRoleSidebar').textContent = role;
+            console.log('User role from DB:', role);
+          } else {
+            document.getElementById('userRoleSidebar').textContent = 'user';
+          }
+        } catch (error) {
+          console.error('Failed to fetch user role:', error);
+          document.getElementById('userRoleSidebar').textContent = currentUser.user_metadata?.role || 'user';
+        }
+
         console.log('User profile updated:', currentUser.email);
       }
     }
