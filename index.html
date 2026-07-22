@@ -654,12 +654,32 @@
     }
 
     // Initialize
-    if (!currentUser && !localStorage.getItem('token')) {
-      showLoginPage();
-    } else {
-      document.getElementById('userEmail').textContent = currentUser?.email || 'User';
-      showPage('dashboard');
-    }
+    setTimeout(async function() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showLoginPage();
+      } else {
+        // Get current user from auth
+        try {
+          const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          const user = await response.json();
+          if (user && user.email) {
+            currentUser = user;
+            document.getElementById('userEmail').textContent = user.email;
+            showPage('dashboard');
+          } else {
+            showLoginPage();
+          }
+        } catch (error) {
+          showLoginPage();
+        }
+      }
+    }, 500);
   </script>
 </body>
 </html>
