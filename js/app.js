@@ -12,8 +12,8 @@ function showPage(page) {
   menuItems.forEach(item => item.classList.remove('active'));
   event?.target?.closest('.menu-item')?.classList.add('active');
 
-  const pageContent = document.getElementById('pageContent');
-  if (pageContent) pageContent.innerHTML = '';
+  const pageElement = document.getElementById('page');
+  if (pageElement) pageElement.innerHTML = '';
 
   switch(page) {
     case 'dashboard': return renderDashboard();
