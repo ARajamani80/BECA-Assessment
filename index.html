@@ -2390,12 +2390,19 @@
       e.preventDefault();
       const email = document.getElementById('loginEmail').value;
       const password = document.getElementById('loginPassword').value;
+      const msg = document.getElementById('loginMessage');
 
       try {
+        console.log('Attempting login with:', email);
         await signIn(email, password);
-        location.reload();
+        console.log('Login successful, token stored');
+
+        // Wait a moment for token to be stored, then reload
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } catch (error) {
-        const msg = document.getElementById('loginMessage');
+        console.error('Login error:', error);
         if (msg) {
           msg.textContent = 'Error: ' + error.message;
           msg.style.background = '#fef2f2';
@@ -2412,10 +2419,10 @@
         const emailParts = (currentUser.email || '').split('@');
         const initial = emailParts[0] ? emailParts[0][0].toUpperCase() : 'U';
 
-        document.getElementById('userEmail').textContent = currentUser.email || 'User';
         document.getElementById('userAvatarSidebar').textContent = initial;
         document.getElementById('userNameSidebar').textContent = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User';
         document.getElementById('userRoleSidebar').textContent = currentUser.user_metadata?.role || 'user';
+        console.log('User profile updated:', currentUser.email);
       }
     }
 
