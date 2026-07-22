@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BECA Assessment Platform - Three-Tier Workflow</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* ======================================================================
+       CSS VARIABLES & THEME
+       ====================================================================== */
+    :root {
+      --primary: #007bff;
+      --primary-dark: #0056b3;
+      --secondary: #6c757d;
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --info: #17a2b8;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --text-primary: #212529;
+      --text-secondary: #6c757d;
+      --border-color: #dee2e6;
+      --bg-light: #f8f9fa;
+      --bg-hover: #f0f4ff;
+      --shadow: 0 2px 8px rgba(0,0,0,0.1);
+      --shadow-lg: 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: var(--text-primary);
+    }
+
+    /* ======================================================================
+       CONTAINERS & LAYOUT
+       ====================================================================== */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .sidebar {
+      width: 250px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      overflow-y: auto;
+      min-height: 100vh;
+    }
+
+    .sidebar-header {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .menu-item {
+      padding: 12px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(255,255,255,0.8);
+      border: 2px solid transparent;
+    }
+
+    .menu-item:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .menu-item.active {
+      background: white;
+      color: #667eea;
+      border-color: white;
+      font-weight: bold;
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      background: white;
+      padding: 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .page-content {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+    }
+
+    /* ======================================================================
+       CARDS & MODALS
+       ====================================================================== */
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--primary);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background-color: white;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 700px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      animation: slideIn 0.3s ease;
+    }
+
+    .modal-lg .modal-content {
+      max-width: 900px;
+    }
+
+    /* ======================================================================
+       BUTTONS
+       ====================================================================== */
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+      color: white;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #5a6268;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: #218838;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #c82333;
+    }
+
+    .btn-warning {
+      background: var(--warning);
+      color: #000;
+    }
+
+    .btn-warning:hover:not(:disabled) {
+      background: #e0a800;
+    }
+
+    .btn-info {
+      background: var(--info);
+      color: white;
+    }
+
+    .btn-info:hover:not(:disabled) {
+      background: #138496;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    /* ======================================================================
+       FORMS
+       ====================================================================== */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="number"]:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    /* ======================================================================
+       TABLES
+       ====================================================================== */
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .table thead {
+      background: var(--bg-light);
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .table th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .table tbody tr:hover {
+      background: var(--bg-light);
+    }
+
+    /* ======================================================================
+       BADGES & TAGS
+       ====================================================================== */
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--primary);
+      color: white;
+    }
+
+    .badge-success {
+      background: var(--success);
+    }
+
+    .badge-danger {
+      background: var(--danger);
+    }
+
+    .badge-warning {
+      background: var(--warning);
+      color: #000;
+    }
+
+    .badge-info {
+      background: var(--info);
+    }
+
+    .badge-secondary {
+      background: var(--secondary);
+    }
+
+    /* ======================================================================
+       MESSAGES
+       ====================================================================== */
+    .message {
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.3s ease;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border-left: 4px solid #28a745;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid #dc3545;
+    }
+
+    .message.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border-left: 4px solid #17a2b8;
+    }
+
+    .message.warning {
+      background: #fff3cd;
+      color: #856404;
+      border-left: 4px solid #ffc107;
+    }
+
+    /* ======================================================================
+       ANIMATIONS
+       ====================================================================== */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(-20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* ======================================================================
+       RESPONSIVE
+       ====================================================================== */
+    @media (max-width: 768px) {
+      .dashboard-container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        min-height: auto;
+        padding: 12px;
+      }
+
+      .sidebar-menu {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+
+      .page-content {
+        padding: 16px;
+      }
+
+      .modal-content {
+        width: 95%;
+        padding: 20px;
+      }
+    }
+
+    /* ======================================================================
+       UTILITY CLASSES
+       ====================================================================== */
+    .text-center {
+      text-align: center;
+    }
+
+    .mt-20 {
+      margin-top: 20px;
+    }
+
+    .mb-20 {
+      margin-bottom: 20px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- ====================================================================
+       DASHBOARD CONTAINER
+       ==================================================================== -->
+  <div class="dashboard-container" id="dashboardContainer">
+    <!-- SIDEBAR NAVIGATION -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <i class="fas fa-graduation-cap"></i> BECA
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="menu-item active" onclick="showPage('dashboard')">
+          <i class="fas fa-home"></i> Dashboard
+        </div>
+        <div class="menu-item" onclick="showPage('questions')">
+          <i class="fas fa-comments"></i> Question Bank
+        </div>
+        <div class="menu-item" onclick="showPage('modules')">
+          <i class="fas fa-book"></i> Module Bank
+        </div>
+        <div class="menu-item" onclick="showPage('assessments')">
+          <i class="fas fa-list-check"></i> Assessments
+        </div>
+        <div class="menu-item" onclick="showPage('users')">
+          <i class="fas fa-users"></i> User Management
+        </div>
+        <div class="menu-item" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <!-- HEADER -->
+      <div class="header">
+        <div>
+          <h1 id="pageTitle" style="margin: 0; font-size: 24px;">Dashboard</h1>
+        </div>
+        <div class="user-profile">
+          <span id="userEmail" style="color: var(--text-secondary);">Loading...</span>
+          <i class="fas fa-user-circle" style="font-size: 32px; color: var(--primary);"></i>
+        </div>
+      </div>
+
+      <!-- PAGE CONTENT -->
+      <div class="page-content">
+        <div id="messageContainer" style="position: fixed; top: 20px; right: 20px; max-width: 400px; z-index: 999;"></div>
+        <div id="page"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODALS - Question Bank
+       ==================================================================== -->
+  <div class="modal" id="questionModal">
+    <div class="modal-content">
+      <div id="questionModalContent"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="excelImportModal">
+    <div class="modal-content">
+      <div id="excelImportModalContent"></div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODALS - Module Bank
+       ==================================================================== -->
+  <div class="modal" id="moduleModal">
+    <div class="modal-content">
+      <div id="moduleModalContent"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="viewModuleModal">
+    <div class="modal-content">
+      <div id="viewModuleModalContent"></div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODALS - Assessments
+       ==================================================================== -->
+  <div class="modal modal-lg" id="assessmentModal">
+    <div class="modal-content">
+      <div id="assessmentModalContent"></div>
+    </div>
+  </div>
+
+  <div class="modal modal-lg" id="viewAssessmentModal">
+    <div class="modal-content">
+      <div id="viewAssessmentModalContent"></div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODALS - User Management
+       ==================================================================== -->
+  <div class="modal modal-lg" id="permissionEditorModal">
+    <div class="modal-content">
+      <div id="permissionEditorContent"></div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       SCRIPTS
+       ==================================================================== -->
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/questions.js"></script>
+  <script src="js/modules.js"></script>
+  <script src="js/assessments.js"></script>
+  <script src="js/users.js"></script>
+
+  <script>
+    /**
+     * Initialize application
+     */
+    async function initApp() {
+      try {
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://fgzqgqwlyeubudnbxsmx.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0';
+
+        if (!window.supabase) {
+          setTimeout(initApp, 500);
+          return;
+        }
+
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('✓ Supabase initialized');
+
+        // Check authentication
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          currentUser = session.user;
+          document.getElementById('userEmail').textContent = currentUser.email;
+          renderDashboard();
+        } else {
+          window.location.href = 'login.html';
+        }
+      } catch (error) {
+        console.error('Initialization error:', error);
+        showMessage('Failed to initialize app: ' + error.message, 'error');
+      }
+    }
+
+    /**
+     * Show page
+     */
+    function showPage(pageName) {
+      // Update active menu item
+      document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+      event.target.closest('.menu-item')?.classList.add('active');
+
+      // Render page
+      switch (pageName) {
+        case 'dashboard':
+          renderDashboard();
+          break;
+        case 'questions':
+          renderQuestions();
+          break;
+        case 'modules':
+          renderModules();
+          break;
+        case 'assessments':
+          renderAssessments();
+          break;
+        case 'users':
+          renderUsers();
+          break;
+        default:
+          renderDashboard();
+      }
+    }
+
+    /**
+     * Render dashboard
+     */
+    function renderDashboard() {
+      document.getElementById('pageTitle').textContent = 'Dashboard';
+      document.getElementById('page').innerHTML = `
+        <div class="card">
+          <div class="card-title"><i class="fas fa-tachometer-alt"></i> Welcome to BECA Assessment Platform</div>
+
+          <div class="grid-2">
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; border-radius: 8px; color: white;">
+              <h3 style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-comments" style="font-size: 24px;"></i>
+                Question Bank
+              </h3>
+              <p style="margin: 0 0 15px 0; color: rgba(255,255,255,0.9); font-size: 13px;">
+                Create and manage standalone questions that can be organized into modules.
+              </p>
+              <button class="btn btn-light" onclick="showPage('questions')" style="color: #667eea; font-weight: bold;">
+                <i class="fas fa-arrow-right"></i> Manage Questions
+              </button>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #f093fb, #f5576c); padding: 20px; border-radius: 8px; color: white;">
+              <h3 style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-book" style="font-size: 24px;"></i>
+                Module Bank
+              </h3>
+              <p style="margin: 0 0 15px 0; color: rgba(255,255,255,0.9); font-size: 13px;">
+                Group questions from the Question Bank into logical modules for assessments.
+              </p>
+              <button class="btn btn-light" onclick="showPage('modules')" style="color: #f5576c; font-weight: bold;">
+                <i class="fas fa-arrow-right"></i> Manage Modules
+              </button>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #4facfe, #00f2fe); padding: 20px; border-radius: 8px; color: white;">
+              <h3 style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-list-check" style="font-size: 24px;"></i>
+                Assessments
+              </h3>
+              <p style="margin: 0 0 15px 0; color: rgba(255,255,255,0.9); font-size: 13px;">
+                Create assessments by selecting modules. Questions auto-load from your modules.
+              </p>
+              <button class="btn btn-light" onclick="showPage('assessments')" style="color: #00f2fe; font-weight: bold;">
+                <i class="fas fa-arrow-right"></i> Manage Assessments
+              </button>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #43e97b, #38f9d7); padding: 20px; border-radius: 8px; color: white;">
+              <h3 style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-users" style="font-size: 24px;"></i>
+                User Management
+              </h3>
+              <p style="margin: 0 0 15px 0; color: rgba(255,255,255,0.9); font-size: 13px;">
+                Manage user roles, permissions, and access control for the platform.
+              </p>
+              <button class="btn btn-light" onclick="showPage('users')" style="color: #38f9d7; font-weight: bold;">
+                <i class="fas fa-arrow-right"></i> Manage Users
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="fas fa-info-circle"></i> Three-Tier Workflow</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            <div style="padding: 15px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #1976d2;">
+              <h4 style="margin: 0 0 10px 0; color: #1976d2;">Tier 1: Question Bank</h4>
+              <p style="margin: 0; font-size: 13px; color: var(--text-secondary);">
+                Create questions independently with various types (MCQ, short answer, essay, file upload).
+              </p>
+            </div>
+            <div style="padding: 15px; background: #f3e5f5; border-radius: 8px; border-left: 4px solid #7b1fa2;">
+              <h4 style="margin: 0 0 10px 0; color: #7b1fa2;">Tier 2: Module Bank</h4>
+              <p style="margin: 0; font-size: 13px; color: var(--text-secondary);">
+                Group questions from the Question Bank into logical modules for better organization.
+              </p>
+            </div>
+            <div style="padding: 15px; background: #e8f5e9; border-radius: 8px; border-left: 4px solid #388e3c;">
+              <h4 style="margin: 0 0 10px 0; color: #388e3c;">Tier 3: Assessments</h4>
+              <p style="margin: 0; font-size: 13px; color: var(--text-secondary);">
+                Create assessments by selecting modules. Questions automatically load from modules.
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * Show/close modals
+     */
+    function showModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto';
+      }
+    }
+
+    // Close modal on background click
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeModal(modal.id);
+        }
+      });
+    });
+
+    /**
+     * Show message
+     */
+    function showMessage(text, type = 'info', duration = 3000) {
+      const container = document.getElementById('messageContainer');
+      const msg = document.createElement('div');
+      msg.className = `message ${type}`;
+      msg.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        <span>${text}</span>
+      `;
+      container.appendChild(msg);
+
+      setTimeout(() => {
+        msg.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => msg.remove(), 300);
+      }, duration);
+    }
+
+    /**
+     * Logout
+     */
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = 'login.html';
+    }
+
+    /**
+     * Initialize on load
+     */
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>

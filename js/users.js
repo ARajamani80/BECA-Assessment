@@ -45,7 +45,10 @@ async function renderUsers() {
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
           <div class="card-title" style="margin: 0;"><i class="fas fa-users"></i> User Management</div>
-          <div style="display: flex; gap: 10px;">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openPermissionEditor()">
+              <i class="fas fa-lock"></i> Permission Editor
+            </button>
             <button class="btn btn-secondary btn-sm" onclick="openRolePermissionsModal()">
               <i class="fas fa-shield-alt"></i> Role Permissions
             </button>
@@ -347,4 +350,164 @@ function viewAuditLog() {
   html += '</div>';
 
   document.getElementById('page').innerHTML = html;
+}
+
+/**
+ * Open Permission Editor modal
+ */
+function openPermissionEditor() {
+  document.getElementById('permissionEditorContent').innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2 style="margin: 0;">Permission Editor</h2>
+      <button onclick="closeModal('permissionEditorModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+    </div>
+
+    <div style="background: #f0f4ff; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+      <p style="margin: 0;"><strong><i class="fas fa-info-circle"></i> Role Permission Matrix</strong></p>
+      <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--text-secondary);">Define permissions for each role. Changes apply immediately to all users with that role.</p>
+    </div>
+
+    <div style="max-height: 500px; overflow-y: auto;">
+      <div style="overflow-x: auto;">
+        <table class="table" style="font-size: 13px; margin-bottom: 0;">
+          <thead>
+            <tr>
+              <th>Feature / Permission</th>
+              <th style="text-align: center; width: 80px;">Viewer</th>
+              <th style="text-align: center; width: 80px;">User</th>
+              <th style="text-align: center; width: 80px;">Trainer</th>
+              <th style="text-align: center; width: 80px;">Admin</th>
+              <th style="text-align: center; width: 80px;">Super Admin</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>View Assessments</strong></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #22c55e;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #22c55e;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #22c55e;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #22c55e;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #22c55e;"></i></td>
+            </tr>
+            <tr>
+              <td><strong>Take Assessments</strong></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="viewer" data-permission="take_assessments"></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="user" data-permission="take_assessments" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="trainer" data-permission="take_assessments" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="admin" data-permission="take_assessments" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="superadmin" data-permission="take_assessments" checked></td>
+            </tr>
+            <tr>
+              <td><strong>Create Questions</strong></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="trainer" data-permission="create_questions" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="admin" data-permission="create_questions" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="superadmin" data-permission="create_questions" checked></td>
+            </tr>
+            <tr>
+              <td><strong>Edit Questions</strong></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="trainer" data-permission="edit_questions" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="admin" data-permission="edit_questions" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="superadmin" data-permission="edit_questions" checked></td>
+            </tr>
+            <tr>
+              <td><strong>Create Modules</strong></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="trainer" data-permission="create_modules" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="admin" data-permission="create_modules" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="superadmin" data-permission="create_modules" checked></td>
+            </tr>
+            <tr>
+              <td><strong>Create Assessments</strong></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="trainer" data-permission="create_assessments" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="admin" data-permission="create_assessments" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="superadmin" data-permission="create_assessments" checked></td>
+            </tr>
+            <tr>
+              <td><strong>View Results</strong></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="user" data-permission="view_own_results" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="trainer" data-permission="view_results" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="admin" data-permission="view_results" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="superadmin" data-permission="view_results" checked></td>
+            </tr>
+            <tr>
+              <td><strong>Manage Users</strong></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="admin" data-permission="manage_users" checked></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="superadmin" data-permission="manage_users" checked></td>
+            </tr>
+            <tr>
+              <td><strong>View Audit Log</strong></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"></td>
+              <td style="text-align: center;"><input type="checkbox" class="permission-checkbox" data-role="superadmin" data-permission="view_audit_log" checked></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: flex-end;">
+      <button class="btn btn-success" onclick="savePermissionChanges()">
+        <i class="fas fa-save"></i> Save Changes
+      </button>
+      <button class="btn btn-secondary" onclick="closeModal('permissionEditorModal')">
+        <i class="fas fa-times"></i> Close
+      </button>
+    </div>
+  `;
+
+  showModal('permissionEditorModal');
+}
+
+/**
+ * Save permission changes
+ */
+async function savePermissionChanges() {
+  try {
+    const permissions = {};
+    document.querySelectorAll('.permission-checkbox').forEach(cb => {
+      const role = cb.dataset.role;
+      const permission = cb.dataset.permission;
+
+      if (!permissions[role]) {
+        permissions[role] = [];
+      }
+
+      if (cb.checked) {
+        permissions[role].push(permission);
+      }
+    });
+
+    // Save to database (API call)
+    const { error } = await supabase
+      .from('role_permissions')
+      .upsert(
+        Object.entries(permissions).map(([role, perms]) => ({
+          role: role,
+          permissions: perms,
+          updated_at: new Date().toISOString()
+        })),
+        { onConflict: ['role'] }
+      );
+
+    if (error) throw error;
+
+    showMessage('Permissions saved successfully!', 'success');
+    closeModal('permissionEditorModal');
+    renderUsers();
+  } catch (error) {
+    showMessage('Error saving permissions: ' + error.message, 'error');
+  }
 }
