@@ -116,7 +116,8 @@
 
       <div class="nav-section">
         <div class="nav-section-title">Management</div>
-        <div class="nav-item" onclick="showPage('students')">👥 Students</div>
+        <div class="nav-item" onclick="showPage('users')">👥 Users</div>
+        <div class="nav-item" onclick="showPage('students')">📚 Students</div>
         <div class="nav-item" onclick="showPage('reports')">📈 Reports</div>
       </div>
 
@@ -212,6 +213,7 @@
         case 'assessments': return renderAssessments();
         case 'create-assessment': return renderCreateAssessment();
         case 'results': return renderResults();
+        case 'users': return renderUsers();
         case 'students': return renderStudents();
         case 'reports': return renderReports();
       }
@@ -400,6 +402,145 @@
           <p style="color: #888;">Student list coming soon...</p>
         </div>
       `;
+    }
+
+    // User Management
+    async function renderUsers() {
+      document.getElementById('pageTitle').textContent = 'User Management';
+
+      const users = await apiCall('GET', 'profiles');
+
+      let html = `
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="card-title" style="margin: 0;">All Users</div>
+            <button class="btn btn-primary" onclick="showAddUserForm()">+ Add User</button>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      if (users.length === 0) {
+        html += '<tr><td colspan="5" style="text-align: center; color: #888;">No users found</td></tr>';
+      } else {
+        users.forEach(u => {
+          const role = u.user_role || u.role || 'user';
+          const roleColor = role === 'superadmin' ? '#ff6b6b' : role === 'admin' ? '#00d4ff' : role === 'trainer' ? '#51cf66' : '#888';
+          html += `
+            <tr>
+              <td>${u.full_name || 'N/A'}</td>
+              <td>${u.email}</td>
+              <td><span style="background: ${roleColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${role}</span></td>
+              <td>✓ Active</td>
+              <td>
+                <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="editUser('${u.id}', '${role}')">Edit Role</button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+
+        <div id="addUserForm" style="display: none;">
+          <div class="card">
+            <div class="card-title">Add New User</div>
+            <form onsubmit="handleAddUser(event)">
+              <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" id="newUserName" required>
+              </div>
+              <div class="form-group">
+                <label>Email *</label>
+                <input type="email" id="newUserEmail" required>
+              </div>
+              <div class="form-group">
+                <label>Role *</label>
+                <select id="newUserRole" required>
+                  <option value="student">Student</option>
+                  <option value="trainer">Trainer</option>
+                  <option value="admin">Admin</option>
+                  <option value="superadmin">Super Admin</option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-success">Create User</button>
+                <button type="button" class="btn" style="background: #888; color: white;" onclick="hideAddUserForm()">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('page').innerHTML = html;
+    }
+
+    function showAddUserForm() {
+      document.getElementById('addUserForm').style.display = 'block';
+    }
+
+    function hideAddUserForm() {
+      document.getElementById('addUserForm').style.display = 'none';
+    }
+
+    async function handleAddUser(e) {
+      e.preventDefault();
+
+      try {
+        const userData = {
+          email: document.getElementById('newUserEmail').value,
+          full_name: document.getElementById('newUserName').value,
+          user_role: document.getElementById('newUserRole').value
+        };
+
+        // Note: User creation should be done via Supabase Auth
+        // For now, we'll create in profiles table
+        await apiCall('POST', 'profiles', userData);
+
+        showMessage('User added successfully!', 'success');
+        setTimeout(() => renderUsers(), 1500);
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+
+    async function editUser(id, currentRole) {
+      const roles = ['viewer', 'user', 'trainer', 'admin', 'superadmin'];
+      const newRole = prompt(`Change role from "${currentRole}" to:\n${roles.join(', ')}`, currentRole);
+
+      if (newRole && roles.includes(newRole)) {
+        try {
+          await apiCall('PATCH', 'profiles', { user_role: newRole }, `?id=eq.${id}`);
+          showMessage('User role updated!', 'success');
+          renderUsers();
+        } catch (error) {
+          showMessage('Error: ' + error.message, 'error');
+        }
+      }
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Delete this user?')) return;
+
+      try {
+        await apiCall('DELETE', 'profiles', null, `?id=eq.${id}`);
+        showMessage('User deleted', 'success');
+        renderUsers();
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
     }
 
     // Reports
