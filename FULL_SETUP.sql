@@ -1,29 +1,12 @@
--- BECA Assessment Platform - Database Schema
--- Execute this SQL in Supabase SQL Editor
--- Project: fgzqgqwlyeubudnbxsmx
+-- BECA Assessment Platform - Full Setup
+-- Creates all tables in correct dependency order
 
 -- ============================================================
--- TABLE: assessments
+-- 1. assessment_modules (depends on assessments)
 -- ============================================================
-CREATE TABLE IF NOT EXISTS assessments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  duration INTEGER DEFAULT 60,
-  passing_score INTEGER DEFAULT 60,
-  created_by UUID NOT NULL,
-  status VARCHAR(50) DEFAULT 'draft',
-  created_at TIMESTAMP DEFAULT now(),
-  updated_at TIMESTAMP DEFAULT now()
-);
+DROP TABLE IF EXISTS assessment_modules CASCADE;
 
-CREATE INDEX idx_assessments_created_by ON assessments(created_by);
-CREATE INDEX idx_assessments_status ON assessments(status);
-
--- ============================================================
--- TABLE: assessment_modules
--- ============================================================
-CREATE TABLE IF NOT EXISTS assessment_modules (
+CREATE TABLE assessment_modules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   assessment_id UUID NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
@@ -33,11 +16,14 @@ CREATE TABLE IF NOT EXISTS assessment_modules (
 );
 
 CREATE INDEX idx_modules_assessment ON assessment_modules(assessment_id);
+ALTER TABLE assessment_modules ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
--- TABLE: assessment_questions
+-- 2. assessment_questions (depends on assessment_modules)
 -- ============================================================
-CREATE TABLE IF NOT EXISTS assessment_questions (
+DROP TABLE IF EXISTS assessment_questions CASCADE;
+
+CREATE TABLE assessment_questions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   module_id UUID NOT NULL REFERENCES assessment_modules(id) ON DELETE CASCADE,
   question_text TEXT NOT NULL,
@@ -50,13 +36,16 @@ CREATE TABLE IF NOT EXISTS assessment_questions (
 
 CREATE INDEX idx_questions_module ON assessment_questions(module_id);
 CREATE INDEX idx_questions_type ON assessment_questions(question_type);
+ALTER TABLE assessment_questions ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
--- TABLE: assessment_results
+-- 3. assessment_results (depends on assessments)
 -- ============================================================
-CREATE TABLE IF NOT EXISTS assessment_results (
+DROP TABLE IF EXISTS assessment_results CASCADE;
+
+CREATE TABLE assessment_results (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  assessment_id UUID NOT NULL REFERENCES assessments(id),
+  assessment_id UUID NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
   user_id UUID NOT NULL,
   submitted_at TIMESTAMP,
   total_score NUMERIC(5,2),
@@ -70,13 +59,35 @@ CREATE TABLE IF NOT EXISTS assessment_results (
 CREATE INDEX idx_results_assessment ON assessment_results(assessment_id);
 CREATE INDEX idx_results_user ON assessment_results(user_id);
 CREATE INDEX idx_results_submitted ON assessment_results(submitted_at);
+ALTER TABLE assessment_results ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
--- TABLE: assessment_assignments
+-- 4. attempt_answers (depends on assessment_results and assessment_questions)
 -- ============================================================
-CREATE TABLE IF NOT EXISTS assessment_assignments (
+DROP TABLE IF EXISTS attempt_answers CASCADE;
+
+CREATE TABLE attempt_answers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  assessment_id UUID NOT NULL REFERENCES assessments(id),
+  result_id UUID NOT NULL REFERENCES assessment_results(id) ON DELETE CASCADE,
+  question_id UUID NOT NULL REFERENCES assessment_questions(id),
+  answer_text TEXT,
+  answer_file_path VARCHAR(500),
+  points_earned NUMERIC(5,2),
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE INDEX idx_answers_result ON attempt_answers(result_id);
+CREATE INDEX idx_answers_question ON attempt_answers(question_id);
+ALTER TABLE attempt_answers ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================
+-- 5. assessment_assignments (depends on assessments)
+-- ============================================================
+DROP TABLE IF EXISTS assessment_assignments CASCADE;
+
+CREATE TABLE assessment_assignments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  assessment_id UUID NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
   trainee_id UUID NOT NULL,
   assigned_by UUID NOT NULL,
   include_datasets BOOLEAN DEFAULT false,
@@ -89,11 +100,14 @@ CREATE TABLE IF NOT EXISTS assessment_assignments (
 CREATE INDEX idx_assignments_assessment ON assessment_assignments(assessment_id);
 CREATE INDEX idx_assignments_trainee ON assessment_assignments(trainee_id);
 CREATE INDEX idx_assignments_status ON assessment_assignments(status);
+ALTER TABLE assessment_assignments ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
--- TABLE: assessment_question_files
+-- 6. assessment_question_files (depends on assessment_questions)
 -- ============================================================
-CREATE TABLE IF NOT EXISTS assessment_question_files (
+DROP TABLE IF EXISTS assessment_question_files CASCADE;
+
+CREATE TABLE assessment_question_files (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   question_id UUID NOT NULL REFERENCES assessment_questions(id) ON DELETE CASCADE,
   file_name VARCHAR(255) NOT NULL,
@@ -104,38 +118,22 @@ CREATE TABLE IF NOT EXISTS assessment_question_files (
 );
 
 CREATE INDEX idx_files_question ON assessment_question_files(question_id);
+ALTER TABLE assessment_question_files ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
--- TABLE: attempt_answers
+-- 7. Fix assessments table (add status if missing)
 -- ============================================================
-CREATE TABLE IF NOT EXISTS attempt_answers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  result_id UUID NOT NULL REFERENCES assessment_results(id) ON DELETE CASCADE,
-  question_id UUID NOT NULL REFERENCES assessment_questions(id),
-  answer_text TEXT,
-  answer_file_path VARCHAR(500),
-  points_earned NUMERIC(5,2),
-  created_at TIMESTAMP DEFAULT now()
-);
-
-CREATE INDEX idx_answers_result ON attempt_answers(result_id);
-CREATE INDEX idx_answers_question ON attempt_answers(question_id);
+ALTER TABLE assessments 
+ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'draft';
 
 -- ============================================================
--- Enable Row Level Security
--- ============================================================
-ALTER TABLE assessments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assessment_modules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assessment_questions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assessment_results ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assessment_assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE attempt_answers ENABLE ROW LEVEL SECURITY;
-
--- ============================================================
--- RLS POLICIES
+-- 8. RLS POLICIES
 -- ============================================================
 
--- Assessments: Public read for published, admin create/edit
+-- Assessment policies
+DROP POLICY IF EXISTS "Assessments are viewable by authenticated users" ON assessments;
+DROP POLICY IF EXISTS "Admins can manage assessments" ON assessments;
+
 CREATE POLICY "Assessments are viewable by authenticated users" ON assessments
   FOR SELECT USING (auth.role() = 'authenticated');
 
@@ -145,7 +143,11 @@ CREATE POLICY "Admins can manage assessments" ON assessments
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND user_role IN ('admin', 'superadmin', 'trainer'))
   );
 
--- Results: Users see own, admins see all
+-- Results policies
+DROP POLICY IF EXISTS "Users can view own results" ON assessment_results;
+DROP POLICY IF EXISTS "Admins can insert results" ON assessment_results;
+DROP POLICY IF EXISTS "Admins can update results" ON assessment_results;
+
 CREATE POLICY "Users can view own results" ON assessment_results
   FOR SELECT USING (auth.uid() = user_id OR
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND user_role IN ('admin', 'superadmin', 'trainer')));
@@ -160,7 +162,33 @@ CREATE POLICY "Admins can update results" ON assessment_results
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND user_role IN ('admin', 'superadmin', 'trainer'))
   );
 
--- Assignments: Trainees see assigned, admins see all
+-- Answers policies
+DROP POLICY IF EXISTS "Users can view own answers" ON attempt_answers;
+DROP POLICY IF EXISTS "Users can insert own answers" ON attempt_answers;
+
+CREATE POLICY "Users can view own answers" ON attempt_answers
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM assessment_results ar 
+      WHERE ar.id = attempt_answers.result_id 
+      AND (ar.user_id = auth.uid() OR
+           EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND user_role IN ('admin', 'superadmin', 'trainer')))
+    )
+  );
+
+CREATE POLICY "Users can insert own answers" ON attempt_answers
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM assessment_results ar 
+      WHERE ar.id = attempt_answers.result_id 
+      AND ar.user_id = auth.uid()
+    )
+  );
+
+-- Assignment policies
+DROP POLICY IF EXISTS "Trainees can view assigned assessments" ON assessment_assignments;
+DROP POLICY IF EXISTS "Admins can create assignments" ON assessment_assignments;
+
 CREATE POLICY "Trainees can view assigned assessments" ON assessment_assignments
   FOR SELECT USING (
     auth.uid() = trainee_id OR
@@ -173,26 +201,11 @@ CREATE POLICY "Admins can create assignments" ON assessment_assignments
   );
 
 -- ============================================================
--- SAMPLE DATA (Optional - for testing)
+-- VERIFICATION
 -- ============================================================
+SELECT 'Database setup complete!' as status;
 
--- Uncomment to add sample assessment
-/*
-INSERT INTO assessments (title, description, duration, passing_score, created_by, status)
-VALUES (
-  'Leadership Skills Assessment',
-  'Test your leadership and management abilities',
-  90,
-  70,
-  '00000000-0000-0000-0000-000000000001',
-  'published'
-);
-*/
-
--- ============================================================
--- NOTES
--- ============================================================
--- 1. Update created_by in sample data with actual admin user UUID
--- 2. Profiles table should already exist from training app
--- 3. Set up Supabase storage bucket: "assessment-files"
--- 4. Configure CORS for file uploads if needed
+SELECT table_name FROM information_schema.tables 
+WHERE table_schema = 'public' 
+AND table_name LIKE 'assessment%'
+ORDER BY table_name;

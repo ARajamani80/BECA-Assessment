@@ -42,6 +42,8 @@
       left: 0;
       top: 0;
       box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
     }
 
     .sidebar-header {
@@ -63,6 +65,8 @@
 
     .sidebar-content {
       padding: 20px 0;
+      flex: 1;
+      overflow-y: auto;
     }
 
     .nav-section {
@@ -104,6 +108,55 @@
     }
 
     .nav-icon { width: 20px; text-align: center; }
+
+    /* Sidebar User Profile */
+    .sidebar-user {
+      padding: 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: auto;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-name {
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-role-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+      text-transform: capitalize;
+      white-space: nowrap;
+    }
 
     /* Main Content */
     .main {
@@ -194,6 +247,7 @@
       border: 1px solid var(--border);
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
       transition: all 0.3s ease;
+      position: relative;
     }
 
     .stat-card:hover {
@@ -211,8 +265,6 @@
       border-radius: 12px 12px 0 0;
       background: linear-gradient(90deg, var(--stat-color, #3b82f6), rgba(59, 130, 246, 0.3));
     }
-
-    .stat-card { position: relative; }
 
     .stat-value {
       font-size: 36px;
@@ -267,6 +319,9 @@
     .badge-trainer { background: #bbf7d0; color: #065f46; }
     .badge-viewer { background: #e5e7eb; color: #374151; }
     .badge-user { background: #f3e8ff; color: #6b21a8; }
+    .badge-success { background: #bbf7d0; color: #065f46; }
+    .badge-danger { background: #fecaca; color: #991b1b; }
+    .badge-warning { background: #fef3c7; color: #b45309; }
 
     /* Forms */
     .form-group {
@@ -338,6 +393,25 @@
 
     .btn-success:hover { background: #059669; }
 
+    .btn-warning {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .btn-warning:hover { background: #d97706; }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+
+    .btn-secondary:hover { background: #4b5563; }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
     .btn-full { width: 100%; justify-content: center; }
 
     /* Assessment Item */
@@ -372,6 +446,7 @@
     .assessment-actions {
       display: flex;
       gap: 8px;
+      flex-wrap: wrap;
     }
 
     /* Message */
@@ -397,6 +472,156 @@
 
     .message.active { display: block; }
 
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+
+    /* Assessment Builder */
+    .module-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .module-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .module-title {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .question-item {
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .question-type-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #e0e7ff;
+      color: #4f46e5;
+      text-transform: uppercase;
+    }
+
+    /* File Upload */
+    .file-upload {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      background: #f8fafc;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .file-upload:hover {
+      border-color: var(--primary);
+      background: rgba(37, 99, 235, 0.05);
+    }
+
+    .file-upload.dragover {
+      border-color: var(--primary);
+      background: rgba(37, 99, 235, 0.1);
+    }
+
+    .uploaded-files {
+      margin-top: 16px;
+    }
+
+    .file-item {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    /* Timer */
+    .timer {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary);
+      padding: 16px;
+      background: white;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .timer.warning {
+      color: var(--warning);
+      border-color: var(--warning);
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    .timer.critical {
+      color: var(--danger);
+      border-color: var(--danger);
+      background: rgba(239, 68, 68, 0.05);
+    }
+
     /* Scrollbar */
     .sidebar::-webkit-scrollbar { width: 6px; }
     .sidebar::-webkit-scrollbar-track { background: transparent; }
@@ -407,6 +632,35 @@
 
     .sidebar::-webkit-scrollbar-thumb:hover {
       background: rgba(255,255,255,0.3);
+    }
+
+    /* Grid Layout for Builder */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        width: 200px;
+      }
+
+      .main {
+        margin-left: 200px;
+      }
+
+      .header-title {
+        font-size: 20px;
+      }
+
+      .modal-content {
+        width: 95%;
+      }
     }
   </style>
 </head>
@@ -439,6 +693,10 @@
             <span class="nav-icon"><i class="fas fa-plus"></i></span>
             <span>Create New</span>
           </div>
+          <div class="nav-item" onclick="showPage('send-trainees')">
+            <span class="nav-icon"><i class="fas fa-paper-plane"></i></span>
+            <span>Send to Trainees</span>
+          </div>
           <div class="nav-item" onclick="showPage('results')">
             <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
             <span>Results</span>
@@ -469,6 +727,15 @@
           </div>
         </div>
       </div>
+
+      <!-- User Profile at Bottom -->
+      <div class="sidebar-user">
+        <div class="user-avatar" id="userAvatarSidebar">U</div>
+        <div class="user-info">
+          <div class="user-name" id="userNameSidebar">User</div>
+          <div class="user-role-badge" id="userRoleSidebar">user</div>
+        </div>
+      </div>
     </div>
 
     <!-- Main Content -->
@@ -490,12 +757,128 @@
     </div>
   </div>
 
+  <!-- Modals -->
+  <div id="moduleModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span id="moduleModalTitle">Add Module</span>
+        <button class="modal-close" onclick="closeModal('moduleModal')">×</button>
+      </div>
+      <form onsubmit="handleModuleSave(event)">
+        <div class="form-group">
+          <label>Module Name *</label>
+          <input type="text" id="moduleName" required>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="moduleDescription"></textarea>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('moduleModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Module</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="questionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span id="questionModalTitle">Add Question</span>
+        <button class="modal-close" onclick="closeModal('questionModal')">×</button>
+      </div>
+      <form onsubmit="handleQuestionSave(event)">
+        <div class="form-group">
+          <label>Question Text *</label>
+          <textarea id="questionText" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Question Type *</label>
+          <select id="questionType" onchange="updateQuestionTypeFields()" required>
+            <option value="">Select Type</option>
+            <option value="mcq">Multiple Choice (MCQ)</option>
+            <option value="essay">Essay</option>
+            <option value="truefalse">True/False</option>
+            <option value="fileupload">File Upload</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Points</label>
+          <input type="number" id="questionPoints" value="10" min="1">
+        </div>
+        <div id="mcqOptions" style="display: none;">
+          <label style="font-weight: 600; margin-bottom: 12px; display: block;">Options</label>
+          <div id="optionsList"></div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addOption()">+ Add Option</button>
+        </div>
+        <div id="fileUploadOptions" style="display: none;">
+          <label style="font-weight: 600; margin-bottom: 8px; display: block;">Allowed File Types</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <label><input type="checkbox" name="fileType" value="pdf"> PDF</label>
+            <label><input type="checkbox" name="fileType" value="dwg"> DWG</label>
+            <label><input type="checkbox" name="fileType" value="rvt"> RVT</label>
+            <label><input type="checkbox" name="fileType" value="jpg"> JPG</label>
+            <label><input type="checkbox" name="fileType" value="png"> PNG</label>
+            <label><input type="checkbox" name="fileType" value="doc"> DOC</label>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('questionModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Question</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="traineesModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>Send Assessment to Trainees</span>
+        <button class="modal-close" onclick="closeModal('traineesModal')">×</button>
+      </div>
+      <form onsubmit="handleSendToTrainees(event)">
+        <div class="form-group">
+          <label>Select Assessment *</label>
+          <select id="assessmentSelect" required onchange="loadAssessmentDetails()">
+            <option value="">Choose Assessment</option>
+          </select>
+        </div>
+        <div id="assessmentDetails" style="display: none; background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+          <p><strong>Duration:</strong> <span id="detailDuration">-</span> minutes</p>
+          <p><strong>Passing Score:</strong> <span id="detailPassingScore">-</span>%</p>
+          <p><strong>Modules:</strong> <span id="detailModules">-</span></p>
+        </div>
+        <div class="form-group">
+          <label>Select Trainees *</label>
+          <div id="traineesList" style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; max-height: 300px; overflow-y: auto;">
+            <p style="color: var(--text-secondary); text-align: center;">Loading trainees...</p>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="includedatasets"> Include Dataset Files
+          </label>
+          <p style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;">
+            Make uploaded files available for download to trainees
+          </p>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('traineesModal')">Cancel</button>
+          <button type="submit" class="btn btn-success">Send to Selected Trainees</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const SUPABASE_URL = 'https://fgzqgqwlyeubudnbxsmx.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0';
 
     let currentUser = null;
     let currentPage = 'dashboard';
+    let currentAssessmentEdit = null;
+    let modules = [];
+    let tempOptions = {};
 
     // Auth
     async function signIn(email, password) {
@@ -539,7 +922,14 @@
       if (filter) url += filter;
 
       const response = await fetch(url, options);
-      return await response.json();
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('API Error:', result);
+        throw new Error(result.message || 'API Error');
+      }
+
+      return result;
     }
 
     // Navigation
@@ -555,6 +945,7 @@
         case 'dashboard': return renderDashboard();
         case 'assessments': return renderAssessments();
         case 'create-assessment': return renderCreateAssessment();
+        case 'send-trainees': return renderSendTrainees();
         case 'results': return renderResults();
         case 'users': return renderUsers();
         case 'students': return renderStudents();
@@ -566,120 +957,150 @@
     async function renderDashboard() {
       document.getElementById('pageTitle').textContent = 'Dashboard';
 
-      const assessments = await apiCall('GET', 'assessments');
-      const results = await apiCall('GET', 'assessment_results');
+      try {
+        const assessments = await apiCall('GET', 'assessments');
+        const results = await apiCall('GET', 'assessment_results');
 
-      let passRate = 0;
-      if (results.length > 0) {
-        const passed = results.filter(r => r.passed).length;
-        passRate = Math.round((passed / results.length) * 100);
+        let passRate = 0;
+        if (results.length > 0) {
+          const passed = results.filter(r => r.passed).length;
+          passRate = Math.round((passed / results.length) * 100);
+        }
+
+        const uniqueStudents = new Set(results.map(r => r.user_id)).size;
+
+        document.getElementById('page').innerHTML = `
+          <div class="stats-grid">
+            <div class="stat-card" style="--stat-color: #3b82f6;">
+              <div class="stat-value" style="color: #2563eb;">${assessments.length}</div>
+              <div class="stat-label">Total Assessments</div>
+            </div>
+            <div class="stat-card" style="--stat-color: #10b981;">
+              <div class="stat-value" style="color: #059669;">${results.length}</div>
+              <div class="stat-label">Total Submissions</div>
+            </div>
+            <div class="stat-card" style="--stat-color: #f59e0b;">
+              <div class="stat-value" style="color: #d97706;">${passRate}%</div>
+              <div class="stat-label">Pass Rate</div>
+            </div>
+            <div class="stat-card" style="--stat-color: #7c3aed;">
+              <div class="stat-value" style="color: #6d28d9;">${uniqueStudents}</div>
+              <div class="stat-label">Unique Students</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📋 Recent Submissions</div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Assessment</th>
+                  <th>User</th>
+                  <th>Status</th>
+                  <th>Score</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="recentSubmissions"></tbody>
+            </table>
+          </div>
+        `;
+
+        const recent = results.slice(0, 10);
+        const submissionsHtml = recent.map(r => `
+          <tr>
+            <td><strong>${r.assessment_id || '-'}</strong></td>
+            <td>${r.user_id ? r.user_id.substring(0, 8) : '-'}...</td>
+            <td>${r.submitted_at ? '<span class="badge badge-success">✓ Submitted</span>' : '<span class="badge badge-warning">⏳ In Progress</span>'}</td>
+            <td>${r.total_score ? r.total_score + '%' : '-'}</td>
+            <td>${r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : new Date(r.created_at).toLocaleDateString()}</td>
+          </tr>
+        `).join('');
+        document.getElementById('recentSubmissions').innerHTML = submissionsHtml;
+      } catch (error) {
+        showMessage('Error loading dashboard: ' + error.message, 'error');
+        document.getElementById('page').innerHTML = '<div class="card"><p style="color: var(--text-secondary);">Failed to load dashboard data</p></div>';
       }
-
-      document.getElementById('page').innerHTML = `
-        <div class="stats-grid">
-          <div class="stat-card" style="--stat-color: #3b82f6;">
-            <div class="stat-value" style="color: #2563eb;">${assessments.length}</div>
-            <div class="stat-label">Total Assessments</div>
-          </div>
-          <div class="stat-card" style="--stat-color: #10b981;">
-            <div class="stat-value" style="color: #059669;">${results.length}</div>
-            <div class="stat-label">Total Submissions</div>
-          </div>
-          <div class="stat-card" style="--stat-color: #f59e0b;">
-            <div class="stat-value" style="color: #d97706;">${passRate}%</div>
-            <div class="stat-label">Pass Rate</div>
-          </div>
-          <div class="stat-card" style="--stat-color: #7c3aed;">
-            <div class="stat-value" style="color: #6d28d9;">${Object.keys(new Set(results.map(r => r.user_id))).length}</div>
-            <div class="stat-label">Unique Students</div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">📋 Recent Submissions</div>
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Assessment</th>
-                <th>Status</th>
-                <th>Score</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody id="recentSubmissions"></tbody>
-          </table>
-        </div>
-      `;
-
-      const recent = results.slice(0, 5);
-      const submissionsHtml = recent.map(r => `
-        <tr>
-          <td>${r.assessment_id}</td>
-          <td>${r.submitted_at ? '✓ Submitted' : '⏳ In Progress'}</td>
-          <td>${r.total_score ? r.total_score + '%' : '-'}</td>
-          <td>${new Date(r.submitted_at).toLocaleDateString()}</td>
-        </tr>
-      `).join('');
-      document.getElementById('recentSubmissions').innerHTML = submissionsHtml;
     }
 
     // Assessments List
     async function renderAssessments() {
       document.getElementById('pageTitle').textContent = 'Assessments';
 
-      const assessments = await apiCall('GET', 'assessments');
+      try {
+        const assessments = await apiCall('GET', 'assessments');
 
-      let html = '<div class="card"><div class="card-title"><i class="fas fa-list-check"></i> All Assessments</div>';
+        let html = '<div class="card"><div class="card-title"><i class="fas fa-list-check"></i> All Assessments</div>';
 
-      if (assessments.length === 0) {
-        html += '<p style="color: var(--text-secondary);">No assessments yet. <a href="#" onclick="showPage(\'create-assessment\')" style="color: var(--primary);">Create one</a></p>';
-      } else {
-        assessments.forEach(a => {
-          html += `
-            <div class="assessment-item">
-              <div class="assessment-info">
-                <h3>${a.title}</h3>
-                <p>${a.description || 'No description'}</p>
+        if (!Array.isArray(assessments) || assessments.length === 0) {
+          html += '<p style="color: var(--text-secondary);">No assessments yet. <a href="#" onclick="showPage(\'create-assessment\')" style="color: var(--primary);">Create one</a></p>';
+        } else {
+          assessments.forEach(a => {
+            html += `
+              <div class="assessment-item">
+                <div class="assessment-info">
+                  <h3>${a.title || a.name || 'Untitled'}</h3>
+                  <p>${a.description || 'No description'}</p>
+                  <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
+                    <i class="fas fa-clock"></i> ${a.duration || a.time_limit_minutes || '60'} min |
+                    <i class="fas fa-percent"></i> Pass: ${a.passing_score || '60'}%
+                  </p>
+                </div>
+                <div class="assessment-actions">
+                  <button class="btn btn-primary btn-sm" onclick="editAssessmentBuilder('${a.id}')"><i class="fas fa-edit"></i> Edit</button>
+                  <button class="btn btn-warning btn-sm" onclick="viewAssessmentDetails('${a.id}')"><i class="fas fa-eye"></i> View</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteAssessment('${a.id}')"><i class="fas fa-trash"></i></button>
+                </div>
               </div>
-              <div class="assessment-actions">
-                <button class="btn btn-primary" onclick="editAssessment('${a.id}')"><i class="fas fa-edit"></i> Edit</button>
-                <button class="btn btn-danger" onclick="deleteAssessment('${a.id}')"><i class="fas fa-trash"></i> Delete</button>
-              </div>
-            </div>
-          `;
-        });
+            `;
+          });
+        }
+
+        html += '</div>';
+        document.getElementById('page').innerHTML = html;
+      } catch (error) {
+        showMessage('Error loading assessments: ' + error.message, 'error');
+        document.getElementById('page').innerHTML = '<div class="card"><p style="color: red;">Error: ' + error.message + '</p></div>';
       }
-
-      html += '</div>';
-      document.getElementById('page').innerHTML = html;
     }
 
     // Create Assessment
     function renderCreateAssessment() {
       document.getElementById('pageTitle').textContent = 'Create Assessment';
+      modules = [];
 
       document.getElementById('page').innerHTML = `
-        <div class="card">
-          <div class="card-title"><i class="fas fa-plus"></i> New Assessment</div>
-          <form onsubmit="handleCreateAssessment(event)">
-            <div class="form-group">
-              <label>Title *</label>
-              <input type="text" id="title" required>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title"><i class="fas fa-plus"></i> Assessment Details</div>
+            <form id="assessmentForm" onsubmit="handleCreateAssessment(event)">
+              <div class="form-group">
+                <label>Title *</label>
+                <input type="text" id="title" required>
+              </div>
+              <div class="form-group">
+                <label>Description</label>
+                <textarea id="description" rows="3"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Duration (minutes)</label>
+                <input type="number" id="duration" value="60" min="1">
+              </div>
+              <div class="form-group">
+                <label>Passing Score (%)</label>
+                <input type="number" id="passingScore" value="60" min="0" max="100">
+              </div>
+              <button type="submit" class="btn btn-success btn-full"><i class="fas fa-save"></i> Create Assessment</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><i class="fas fa-book"></i> Modules & Questions</div>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">Create the assessment first, then add modules and questions.</p>
+            <div id="modulesPreview" style="min-height: 200px;">
+              <p style="text-align: center; color: #999;">No modules yet</p>
             </div>
-            <div class="form-group">
-              <label>Description</label>
-              <textarea id="description"></textarea>
-            </div>
-            <div class="form-group">
-              <label>Duration (minutes)</label>
-              <input type="number" id="duration" value="60">
-            </div>
-            <div class="form-group">
-              <label>Passing Score (%)</label>
-              <input type="number" id="passingScore" value="60" min="0" max="100">
-            </div>
-            <button type="submit" class="btn btn-success btn-full"><i class="fas fa-save"></i> Create Assessment</button>
-          </form>
+          </div>
         </div>
       `;
     }
@@ -693,12 +1114,376 @@
           description: document.getElementById('description').value,
           duration: parseInt(document.getElementById('duration').value),
           passing_score: parseInt(document.getElementById('passingScore').value),
-          created_by: currentUser.id
+          created_by: currentUser.id,
+          status: 'draft'
         };
 
-        await apiCall('POST', 'assessments', assessment);
+        const result = await apiCall('POST', 'assessments', assessment);
         showMessage('Assessment created successfully!', 'success');
+
+        if (result && result.id) {
+          currentAssessmentEdit = result.id;
+          setTimeout(() => editAssessmentBuilder(result.id), 1500);
+        } else {
+          setTimeout(() => showPage('assessments'), 1500);
+        }
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+
+    // Assessment Builder
+    async function editAssessmentBuilder(assessmentId) {
+      document.getElementById('pageTitle').textContent = 'Edit Assessment';
+      currentAssessmentEdit = assessmentId;
+      modules = [];
+
+      try {
+        const assessment = await apiCall('GET', `assessments?id=eq.${assessmentId}`, null);
+        const assessmentData = Array.isArray(assessment) ? assessment[0] : assessment;
+
+        if (!assessmentData) {
+          showMessage('Assessment not found', 'error');
+          return showPage('assessments');
+        }
+
+        let html = `
+          <div class="card">
+            <div class="card-title"><i class="fas fa-edit"></i> ${assessmentData.title || 'Assessment'}</div>
+
+            <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+              <p><strong>Duration:</strong> ${assessmentData.duration || 60} minutes</p>
+              <p><strong>Passing Score:</strong> ${assessmentData.passing_score || 60}%</p>
+              <p><strong>Status:</strong> <span class="badge badge-warning">${assessmentData.status || 'draft'}</span></p>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+              <button class="btn btn-primary" onclick="openModuleModal('', '')">
+                <i class="fas fa-plus"></i> Add Module
+              </button>
+              <button class="btn btn-success" onclick="publishAssessment('${assessmentId}')">
+                <i class="fas fa-check"></i> Publish Assessment
+              </button>
+            </div>
+
+            <div id="modulesContainer"></div>
+          </div>
+        `;
+
+        document.getElementById('page').innerHTML = html;
+        await loadModules(assessmentId);
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+        showPage('assessments');
+      }
+    }
+
+    async function loadModules(assessmentId) {
+      try {
+        const modulesData = await apiCall('GET', `assessment_modules?assessment_id=eq.${assessmentId}`);
+        modules = Array.isArray(modulesData) ? modulesData : [];
+
+        let html = '';
+        for (const module of modules) {
+          const questions = await apiCall('GET', `assessment_questions?module_id=eq.${module.id}`);
+
+          html += `
+            <div class="module-card">
+              <div class="module-header">
+                <div>
+                  <div class="module-title">${module.name || 'Module'}</div>
+                  <p style="color: var(--text-secondary); font-size: 12px;">${module.description || ''}</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-primary btn-sm" onclick="openQuestionModal('', '${module.id}')">
+                    <i class="fas fa-plus"></i> Add Question
+                  </button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteModule('${module.id}')">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div id="questions_${module.id}">
+                ${questions && questions.length > 0 ? questions.map(q => `
+                  <div class="question-item">
+                    <div>
+                      <span class="question-type-badge">${q.question_type || 'MCQ'}</span>
+                      <p style="margin-top: 6px; color: var(--text-primary);">${q.question_text || 'Question'}</p>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="deleteQuestion('${q.id}')">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                `).join('') : '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No questions yet</p>'}
+              </div>
+            </div>
+          `;
+        }
+
+        document.getElementById('modulesContainer').innerHTML = html;
+      } catch (error) {
+        console.error('Error loading modules:', error);
+        document.getElementById('modulesContainer').innerHTML = '<p style="color: red;">Error loading modules</p>';
+      }
+    }
+
+    // Module Management
+    function openModuleModal(moduleId, moduleName) {
+      document.getElementById('moduleName').value = moduleName || '';
+      document.getElementById('moduleDescription').value = '';
+      document.getElementById('moduleModalTitle').textContent = moduleId ? 'Edit Module' : 'Add Module';
+      document.getElementById('moduleModal').classList.add('active');
+      document.getElementById('moduleModal').dataset.moduleId = moduleId || '';
+    }
+
+    async function handleModuleSave(e) {
+      e.preventDefault();
+
+      try {
+        const moduleId = document.getElementById('moduleModal').dataset.moduleId;
+        const name = document.getElementById('moduleName').value;
+        const description = document.getElementById('moduleDescription').value;
+
+        if (moduleId) {
+          await apiCall('PATCH', 'assessment_modules', { name, description }, `?id=eq.${moduleId}`);
+        } else {
+          await apiCall('POST', 'assessment_modules', {
+            name,
+            description,
+            assessment_id: currentAssessmentEdit
+          });
+        }
+
+        closeModal('moduleModal');
+        showMessage('Module saved!', 'success');
+        loadModules(currentAssessmentEdit);
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+
+    async function deleteModule(moduleId) {
+      if (!confirm('Delete this module and all its questions?')) return;
+
+      try {
+        await apiCall('DELETE', 'assessment_modules', null, `?id=eq.${moduleId}`);
+        showMessage('Module deleted', 'success');
+        loadModules(currentAssessmentEdit);
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+
+    // Question Management
+    function openQuestionModal(questionId, moduleId) {
+      document.getElementById('questionText').value = '';
+      document.getElementById('questionType').value = '';
+      document.getElementById('questionPoints').value = '10';
+      document.getElementById('optionsList').innerHTML = '';
+      tempOptions = {};
+      updateQuestionTypeFields();
+      document.getElementById('questionModalTitle').textContent = questionId ? 'Edit Question' : 'Add Question';
+      document.getElementById('questionModal').classList.add('active');
+      document.getElementById('questionModal').dataset.questionId = questionId || '';
+      document.getElementById('questionModal').dataset.moduleId = moduleId || '';
+    }
+
+    function updateQuestionTypeFields() {
+      const type = document.getElementById('questionType').value;
+      document.getElementById('mcqOptions').style.display = type === 'mcq' ? 'block' : 'none';
+      document.getElementById('fileUploadOptions').style.display = type === 'fileupload' ? 'block' : 'none';
+
+      if (type === 'mcq' && !tempOptions[type]) {
+        tempOptions[type] = [];
+        addOption();
+      }
+    }
+
+    function addOption() {
+      const type = document.getElementById('questionType').value;
+      if (!tempOptions[type]) tempOptions[type] = [];
+
+      const index = tempOptions[type].length;
+      const optionsList = document.getElementById('optionsList');
+
+      const optionDiv = document.createElement('div');
+      optionDiv.style.cssText = 'display: flex; gap: 8px; margin-bottom: 10px; align-items: center;';
+      optionDiv.innerHTML = `
+        <input type="text" placeholder="Option text" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px;" data-option-index="${index}" class="option-input">
+        <label style="display: flex; align-items: center; gap: 6px;">
+          <input type="radio" name="correctOption" value="${index}" data-option-index="${index}" class="correct-option">
+          Correct
+        </label>
+        <button type="button" class="btn btn-danger btn-sm" onclick="removeOption(${index})">Remove</button>
+      `;
+
+      optionsList.appendChild(optionDiv);
+      tempOptions[type][index] = { text: '', correct: false };
+    }
+
+    function removeOption(index) {
+      document.querySelector(`[data-option-index="${index}"]`)?.parentElement?.remove();
+    }
+
+    async function handleQuestionSave(e) {
+      e.preventDefault();
+
+      try {
+        const questionId = document.getElementById('questionModal').dataset.questionId;
+        const moduleId = document.getElementById('questionModal').dataset.moduleId;
+        const type = document.getElementById('questionType').value;
+        const text = document.getElementById('questionText').value;
+        const points = parseInt(document.getElementById('questionPoints').value);
+
+        let questionData = {
+          question_text: text,
+          question_type: type,
+          points: points,
+          module_id: moduleId
+        };
+
+        if (type === 'mcq') {
+          const options = [];
+          document.querySelectorAll('.option-input').forEach((input, idx) => {
+            if (input.value) {
+              options.push({
+                text: input.value,
+                correct: document.querySelector(`input[value="${idx}"][name="correctOption"]:checked`) !== null
+              });
+            }
+          });
+          questionData.options = options;
+        } else if (type === 'fileupload') {
+          const fileTypes = [];
+          document.querySelectorAll('input[name="fileType"]:checked').forEach(cb => {
+            fileTypes.push(cb.value);
+          });
+          questionData.allowed_file_types = fileTypes;
+        }
+
+        if (questionId) {
+          await apiCall('PATCH', 'assessment_questions', questionData, `?id=eq.${questionId}`);
+        } else {
+          await apiCall('POST', 'assessment_questions', questionData);
+        }
+
+        closeModal('questionModal');
+        showMessage('Question saved!', 'success');
+        loadModules(currentAssessmentEdit);
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+
+    async function deleteQuestion(questionId) {
+      if (!confirm('Delete this question?')) return;
+
+      try {
+        await apiCall('DELETE', 'assessment_questions', null, `?id=eq.${questionId}`);
+        showMessage('Question deleted', 'success');
+        loadModules(currentAssessmentEdit);
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+
+    async function publishAssessment(assessmentId) {
+      if (!confirm('Publish this assessment? It will be available for trainees to take.')) return;
+
+      try {
+        await apiCall('PATCH', 'assessments', { status: 'published' }, `?id=eq.${assessmentId}`);
+        showMessage('Assessment published!', 'success');
         setTimeout(() => showPage('assessments'), 1500);
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+
+    // Send to Trainees
+    async function renderSendTrainees() {
+      document.getElementById('pageTitle').textContent = 'Send Assessment to Trainees';
+
+      try {
+        const assessments = await apiCall('GET', 'assessments');
+        const users = await apiCall('GET', 'profiles');
+
+        let assessmentOptions = '<option value="">Select Assessment</option>';
+        if (Array.isArray(assessments)) {
+          assessments.forEach(a => {
+            assessmentOptions += `<option value="${a.id}">${a.title || a.name}</option>`;
+          });
+        }
+        document.getElementById('assessmentSelect').innerHTML = assessmentOptions;
+
+        let traineesHtml = '';
+        if (Array.isArray(users)) {
+          users.forEach(u => {
+            traineesHtml += `
+              <label style="display: flex; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid var(--border);">
+                <input type="checkbox" name="trainee" value="${u.id}" class="trainee-checkbox">
+                <span>${u.full_name || u.email}</span>
+                <span class="badge badge-${u.user_role || 'user'}" style="margin-left: auto;">${u.user_role || 'user'}</span>
+              </label>
+            `;
+          });
+        }
+        document.getElementById('traineesList').innerHTML = traineesHtml || '<p style="color: var(--text-secondary);">No trainees found</p>';
+
+        document.getElementById('traineesModal').classList.add('active');
+      } catch (error) {
+        showMessage('Error loading data: ' + error.message, 'error');
+      }
+    }
+
+    async function loadAssessmentDetails() {
+      const assessmentId = document.getElementById('assessmentSelect').value;
+      if (!assessmentId) {
+        document.getElementById('assessmentDetails').style.display = 'none';
+        return;
+      }
+
+      try {
+        const assessment = await apiCall('GET', `assessments?id=eq.${assessmentId}`);
+        const assessmentData = Array.isArray(assessment) ? assessment[0] : assessment;
+        const modules = await apiCall('GET', `assessment_modules?assessment_id=eq.${assessmentId}`);
+
+        if (assessmentData) {
+          document.getElementById('detailDuration').textContent = assessmentData.duration || 60;
+          document.getElementById('detailPassingScore').textContent = assessmentData.passing_score || 60;
+          document.getElementById('detailModules').textContent = Array.isArray(modules) ? modules.length : 0;
+          document.getElementById('assessmentDetails').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error loading details:', error);
+      }
+    }
+
+    async function handleSendToTrainees(e) {
+      e.preventDefault();
+
+      try {
+        const assessmentId = document.getElementById('assessmentSelect').value;
+        const selectedTrainees = Array.from(document.querySelectorAll('.trainee-checkbox:checked')).map(cb => cb.value);
+        const includeDatasets = document.getElementById('includedatasets').checked;
+
+        if (!assessmentId || selectedTrainees.length === 0) {
+          showMessage('Please select assessment and trainees', 'error');
+          return;
+        }
+
+        for (const traineeId of selectedTrainees) {
+          await apiCall('POST', 'assessment_assignments', {
+            assessment_id: assessmentId,
+            trainee_id: traineeId,
+            assigned_by: currentUser.id,
+            include_datasets: includeDatasets,
+            status: 'assigned'
+          });
+        }
+
+        closeModal('traineesModal');
+        showMessage(`Assessment sent to ${selectedTrainees.length} trainee(s)!`, 'success');
       } catch (error) {
         showMessage('Error: ' + error.message, 'error');
       }
@@ -708,131 +1493,181 @@
     async function renderResults() {
       document.getElementById('pageTitle').textContent = 'Results';
 
-      const results = await apiCall('GET', 'assessment_results');
+      try {
+        const results = await apiCall('GET', 'assessment_results');
 
-      let html = '<div class="card"><div class="card-title"><i class="fas fa-chart-line"></i> Assessment Results</div>';
+        let html = '<div class="card"><div class="card-title"><i class="fas fa-chart-line"></i> Assessment Results</div>';
 
-      if (results.length === 0) {
-        html += '<p style="color: var(--text-secondary);">No results yet</p>';
-      } else {
-        html += '<table class="table"><thead><tr><th>User</th><th>Assessment</th><th>Score</th><th>Status</th><th>Date</th></tr></thead><tbody>';
-        results.forEach(r => {
-          html += `
-            <tr>
-              <td>${r.user_id.substring(0, 8)}...</td>
-              <td>${r.assessment_id}</td>
-              <td>${r.total_score ? r.total_score + '%' : '-'}</td>
-              <td>${r.passed ? '<span class="badge badge-success">✓ Passed</span>' : r.submitted_at ? '<span class="badge badge-danger">✗ Failed</span>' : '<span class="badge badge-warning">⏳ Pending</span>'}</td>
-              <td>${new Date(r.submitted_at || r.created_at).toLocaleDateString()}</td>
-            </tr>
-          `;
-        });
-        html += '</tbody></table>';
+        if (!Array.isArray(results) || results.length === 0) {
+          html += '<p style="color: var(--text-secondary);">No results yet</p>';
+        } else {
+          html += '<table class="table"><thead><tr><th>User</th><th>Assessment</th><th>Score</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+          results.forEach(r => {
+            html += `
+              <tr>
+                <td>${r.user_id ? r.user_id.substring(0, 8) : '-'}...</td>
+                <td>${r.assessment_id || '-'}</td>
+                <td>${r.total_score ? r.total_score + '%' : '-'}</td>
+                <td>${r.passed ? '<span class="badge badge-success">✓ Passed</span>' : r.submitted_at ? '<span class="badge badge-danger">✗ Failed</span>' : '<span class="badge badge-warning">⏳ Pending</span>'}</td>
+                <td>${r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : new Date(r.created_at).toLocaleDateString()}</td>
+              </tr>
+            `;
+          });
+          html += '</tbody></table>';
+        }
+
+        html += '</div>';
+        document.getElementById('page').innerHTML = html;
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+        document.getElementById('page').innerHTML = '<div class="card"><p style="color: red;">Error loading results</p></div>';
       }
-
-      html += '</div>';
-      document.getElementById('page').innerHTML = html;
     }
 
     // Users
     async function renderUsers() {
       document.getElementById('pageTitle').textContent = 'User Management';
 
-      const users = await apiCall('GET', 'profiles');
+      try {
+        const users = await apiCall('GET', 'profiles');
 
-      let html = `
-        <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <div class="card-title" style="margin: 0;"><i class="fas fa-users"></i> All Users</div>
-            <button class="btn btn-primary" onclick="showAddUserForm()"><i class="fas fa-plus"></i> Add User</button>
-          </div>
-          <table class="table">
-            <thead>
+        let html = `
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <div class="card-title" style="margin: 0;"><i class="fas fa-users"></i> All Users</div>
+            </div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        if (!Array.isArray(users) || users.length === 0) {
+          html += '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No users found</td></tr>';
+        } else {
+          users.forEach(u => {
+            const role = u.user_role || u.role || 'user';
+            const badgeClass = `badge-${role}`;
+            html += `
               <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <td>${u.full_name || 'N/A'}</td>
+                <td>${u.email}</td>
+                <td><span class="badge ${badgeClass}">${role}</span></td>
+                <td>✓ Active</td>
+                <td>
+                  <button class="btn btn-primary btn-sm" onclick="editUser('${u.id}', '${role}')"><i class="fas fa-edit"></i> Edit</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-      `;
+            `;
+          });
+        }
 
-      if (users.length === 0) {
-        html += '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No users found</td></tr>';
-      } else {
-        users.forEach(u => {
-          const role = u.user_role || u.role || 'user';
-          const badgeClass = `badge-${role}`;
-          html += `
-            <tr>
-              <td>${u.full_name || 'N/A'}</td>
-              <td>${u.email}</td>
-              <td><span class="badge ${badgeClass}">${role}</span></td>
-              <td>✓ Active</td>
-              <td>
-                <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="editUser('${u.id}', '${role}')"><i class="fas fa-edit"></i> Edit</button>
-              </td>
-            </tr>
-          `;
-        });
+        html += `
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        document.getElementById('page').innerHTML = html;
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+        document.getElementById('page').innerHTML = '<div class="card"><p style="color: red;">Error loading users</p></div>';
       }
-
-      html += `
-            </tbody>
-          </table>
-        </div>
-      `;
-
-      document.getElementById('page').innerHTML = html;
     }
 
     // Students
     async function renderStudents() {
       document.getElementById('pageTitle').textContent = 'Students';
 
-      document.getElementById('page').innerHTML = `
-        <div class="card">
-          <div class="card-title"><i class="fas fa-book"></i> Student Management</div>
-          <p style="color: var(--text-secondary);">Student list coming soon...</p>
-        </div>
-      `;
+      try {
+        const users = await apiCall('GET', 'profiles');
+        const students = Array.isArray(users) ? users.filter(u => u.user_role === 'user' || !u.user_role) : [];
+
+        let html = `
+          <div class="card">
+            <div class="card-title"><i class="fas fa-book"></i> Student Management</div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        if (students.length === 0) {
+          html += '<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No students found</td></tr>';
+        } else {
+          students.forEach(s => {
+            html += `
+              <tr>
+                <td>${s.full_name || 'N/A'}</td>
+                <td>${s.email}</td>
+                <td>${s.created_at ? new Date(s.created_at).toLocaleDateString() : '-'}</td>
+                <td>
+                  <button class="btn btn-primary btn-sm" onclick="viewStudentProfile('${s.id}')"><i class="fas fa-eye"></i> View</button>
+                </td>
+              </tr>
+            `;
+          });
+        }
+
+        html += '</tbody></table></div>';
+        document.getElementById('page').innerHTML = html;
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+        document.getElementById('page').innerHTML = '<div class="card"><p style="color: red;">Error loading students</p></div>';
+      }
     }
 
     // Reports
     async function renderReports() {
       document.getElementById('pageTitle').textContent = 'Reports';
 
-      const results = await apiCall('GET', 'assessment_results');
+      try {
+        const results = await apiCall('GET', 'assessment_results');
 
-      let passRate = 0;
-      let avgScore = 0;
+        let passRate = 0;
+        let avgScore = 0;
 
-      if (results.length > 0) {
-        const passed = results.filter(r => r.passed).length;
-        passRate = Math.round((passed / results.length) * 100);
+        if (Array.isArray(results) && results.length > 0) {
+          const passed = results.filter(r => r.passed).length;
+          passRate = Math.round((passed / results.length) * 100);
 
-        const totalScore = results.reduce((sum, r) => sum + (r.total_score || 0), 0);
-        avgScore = Math.round(totalScore / results.length);
+          const totalScore = results.reduce((sum, r) => sum + (r.total_score || 0), 0);
+          avgScore = Math.round(totalScore / results.length);
+        }
+
+        document.getElementById('page').innerHTML = `
+          <div class="stats-grid">
+            <div class="stat-card" style="--stat-color: #10b981;">
+              <div class="stat-value" style="color: #059669;">${passRate}%</div>
+              <div class="stat-label">Overall Pass Rate</div>
+            </div>
+            <div class="stat-card" style="--stat-color: #f59e0b;">
+              <div class="stat-value" style="color: #d97706;">${avgScore}%</div>
+              <div class="stat-label">Average Score</div>
+            </div>
+            <div class="stat-card" style="--stat-color: #7c3aed;">
+              <div class="stat-value" style="color: #6d28d9;">${Array.isArray(results) ? results.length : 0}</div>
+              <div class="stat-label">Total Submissions</div>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+        document.getElementById('page').innerHTML = '<div class="card"><p style="color: red;">Error loading reports</p></div>';
       }
-
-      document.getElementById('page').innerHTML = `
-        <div class="stats-grid">
-          <div class="stat-card" style="--stat-color: #10b981;">
-            <div class="stat-value" style="color: #059669;">${passRate}%</div>
-            <div class="stat-label">Overall Pass Rate</div>
-          </div>
-          <div class="stat-card" style="--stat-color: #f59e0b;">
-            <div class="stat-value" style="color: #d97706;">${avgScore}%</div>
-            <div class="stat-label">Average Score</div>
-          </div>
-          <div class="stat-card" style="--stat-color: #7c3aed;">
-            <div class="stat-value" style="color: #6d28d9;">${results.length}</div>
-            <div class="stat-label">Total Submissions</div>
-          </div>
-        </div>
-      `;
     }
 
     // Utilities
@@ -848,8 +1683,8 @@
       }
     }
 
-    async function editAssessment(id) {
-      alert('Edit feature coming soon');
+    async function viewAssessmentDetails(id) {
+      showMessage('View assessment feature coming soon', 'success');
     }
 
     async function editUser(id, currentRole) {
@@ -867,6 +1702,10 @@
       }
     }
 
+    async function viewStudentProfile(id) {
+      showMessage('Student profile feature coming soon', 'success');
+    }
+
     function showMessage(msg, type) {
       const el = document.getElementById('message');
       el.textContent = msg;
@@ -879,8 +1718,8 @@
       showLoginPage();
     }
 
-    function showAddUserForm() {
-      alert('Add user feature coming soon');
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
     }
 
     // Login
@@ -930,6 +1769,18 @@
     }
 
     // Initialize
+    function updateUserProfile() {
+      if (currentUser) {
+        const emailParts = (currentUser.email || '').split('@');
+        const initial = emailParts[0] ? emailParts[0][0].toUpperCase() : 'U';
+
+        document.getElementById('userEmail').textContent = currentUser.email || 'User';
+        document.getElementById('userAvatarSidebar').textContent = initial;
+        document.getElementById('userNameSidebar').textContent = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User';
+        document.getElementById('userRoleSidebar').textContent = currentUser.user_metadata?.role || 'user';
+      }
+    }
+
     setTimeout(async function() {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -945,7 +1796,7 @@
           const user = await response.json();
           if (user && user.email) {
             currentUser = user;
-            document.getElementById('userEmail').textContent = user.email;
+            updateUserProfile();
             showPage('dashboard');
           } else {
             showLoginPage();

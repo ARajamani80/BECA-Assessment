@@ -1,8 +1,0 @@
-[build]
-builder = "nixpacks"
-
-[build.nixpacks]
-node = "18"
-
-[start]
-cmd = "cd backend && npm start"
