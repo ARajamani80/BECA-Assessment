@@ -10,60 +10,57 @@
     input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
     button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }
     button:hover { background: #0056b3; }
+    .message { color: red; margin-top: 10px; display: none; }
   </style>
 </head>
 <body>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
   <div id="app">
     <div class="container">
-      <h1>Testing...</h1>
-      <p id="status">Initializing Supabase...</p>
+      <h1>BECA Assessment</h1>
+      <p id="status">Loading...</p>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4/dist/umd/supabase.js"></script>
+  
   <script>
     var supabase = null;
 
-    // Test initialization
-    console.log('Page loaded');
-    console.log('Supabase library available:', !!window.supabase);
-
     setTimeout(function() {
-      console.log('After 1s - Supabase available:', !!window.supabase);
-
       if (window.supabase) {
         try {
           supabase = window.supabase.createClient(
             'https://fgzqgqwlyeubudnbxsmx.supabase.co',
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0'
           );
-          console.log('✓ Supabase initialized');
-          
-          document.getElementById('app').innerHTML = `
-            <div class="container">
-              <h1>BECA Assessment</h1>
-              <form onsubmit="handleLogin(event)">
-                <input type="email" id="email" placeholder="Email" required>
-                <input type="password" id="password" placeholder="Password" required>
-                <button type="submit">Login</button>
-              </form>
-              <p id="message" style="color: red; display: none;"></p>
-            </div>
-          `;
+          showLoginPage();
         } catch (error) {
-          console.error('Supabase error:', error);
-          document.getElementById('status').textContent = 'Error: ' + error.message;
+          showError('Supabase error: ' + error.message);
         }
       } else {
-        document.getElementById('status').textContent = 'Supabase library not loaded';
+        showError('Supabase library failed to load. Check your internet connection.');
       }
-    }, 1500);
+    }, 2000);
+
+    function showLoginPage() {
+      document.getElementById('app').innerHTML = `
+        <div class="container">
+          <h1>BECA Assessment</h1>
+          <p style="text-align: center; color: #666;">Skills Assessment Platform</p>
+          <form onsubmit="handleLogin(event)">
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+          </form>
+          <div id="message" class="message"></div>
+        </div>
+      `;
+    }
 
     async function handleLogin(e) {
       e.preventDefault();
       if (!supabase) {
-        alert('Supabase not initialized');
+        showMessage('Supabase not initialized');
         return;
       }
 
@@ -73,14 +70,53 @@
       try {
         var result = await supabase.auth.signInWithPassword({ email: email, password: password });
         if (result.error) {
-          document.getElementById('message').textContent = 'Error: ' + result.error.message;
-          document.getElementById('message').style.display = 'block';
+          showMessage('Login failed: ' + result.error.message);
         } else {
-          alert('Login successful!');
+          showMessage('Login successful!', 'success');
+          setTimeout(showDashboard, 1500);
         }
       } catch (error) {
-        document.getElementById('message').textContent = 'Error: ' + error.message;
-        document.getElementById('message').style.display = 'block';
+        showMessage('Error: ' + error.message);
+      }
+    }
+
+    function showDashboard() {
+      document.getElementById('app').innerHTML = `
+        <div class="container">
+          <h1>BECA Assessment</h1>
+          <p>Welcome! You've logged in successfully.</p>
+          <button onclick="logout()">Logout</button>
+        </div>
+      `;
+    }
+
+    async function logout() {
+      if (supabase) {
+        await supabase.auth.signOut();
+        showLoginPage();
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('app').innerHTML = `
+        <div class="container">
+          <h1>Error</h1>
+          <p style="color: red;">${msg}</p>
+        </div>
+      `;
+    }
+
+    function showMessage(msg, type) {
+      var el = document.getElementById('message');
+      if (el) {
+        el.textContent = msg;
+        el.style.display = 'block';
+        if (type === 'success') {
+          el.style.color = 'green';
+        }
+        setTimeout(function() {
+          el.style.display = 'none';
+        }, 5000);
       }
     }
   </script>
