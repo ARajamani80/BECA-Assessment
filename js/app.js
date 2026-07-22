@@ -8,11 +8,12 @@ let currentPage = 'dashboard';
  */
 function showPage(page) {
   currentPage = page;
-  const navItems = document.querySelectorAll('.nav-item');
-  navItems.forEach(item => item.classList.remove('active'));
-  event?.target?.closest('.nav-item')?.classList.add('active');
+  const menuItems = document.querySelectorAll('.menu-item');
+  menuItems.forEach(item => item.classList.remove('active'));
+  event?.target?.closest('.menu-item')?.classList.add('active');
 
-  document.getElementById('page').innerHTML = '';
+  const pageContent = document.getElementById('pageContent');
+  if (pageContent) pageContent.innerHTML = '';
 
   switch(page) {
     case 'dashboard': return renderDashboard();
