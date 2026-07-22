@@ -851,6 +851,44 @@
       margin-bottom: 24px;
     }
 
+    /* Enhanced Button Styles for User Actions */
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+    .btn-sm i {
+      margin-right: 3px;
+    }
+
+    /* Status Badge Animations */
+    .badge-success, .badge-danger {
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Responsive Table */
+    @media (max-width: 1024px) {
+      .table {
+        font-size: 13px;
+      }
+
+      .btn-sm {
+        padding: 5px 8px;
+        font-size: 11px;
+      }
+    }
+
     /* Scrollbar */
     .sidebar::-webkit-scrollbar { width: 6px; }
     .sidebar::-webkit-scrollbar-track { background: transparent; }
@@ -1098,6 +1136,189 @@
           <button type="submit" class="btn btn-success">Send to Selected Trainees</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Password Reset Modal -->
+  <div id="passwordResetModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>Change User Password</span>
+        <button class="modal-close" onclick="closeModal('passwordResetModal')">×</button>
+      </div>
+      <form onsubmit="handleChangePassword(event)">
+        <div class="form-group">
+          <label>User Email</label>
+          <input type="email" id="resetUserEmail" readonly style="background: #f8fafc;">
+        </div>
+        <div class="form-group">
+          <label>Temporary Password</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="tempPassword" readonly style="flex: 1; background: #f8fafc;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="generateTempPassword()">
+              <i class="fas fa-refresh"></i> Generate
+            </button>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 12px; margin-top: 6px;">
+            System-generated temporary password (user should change on first login)
+          </p>
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="sendResetEmail"> Send password reset email to user
+          </label>
+          <p style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;">
+            User will receive an email with the temporary password
+          </p>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('passwordResetModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Reset Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Deactivate User Modal -->
+  <div id="deactivateModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>Deactivate User</span>
+        <button class="modal-close" onclick="closeModal('deactivateModal')">×</button>
+      </div>
+      <div style="padding: 10px 0;">
+        <p style="color: var(--text-primary); margin-bottom: 16px;">
+          Are you sure you want to deactivate this user?
+        </p>
+        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+          <p style="color: #b45309; font-size: 14px;">
+            <i class="fas fa-exclamation-triangle"></i> The user will not be able to log in or take assessments.
+          </p>
+        </div>
+        <div class="form-group">
+          <label>User Email</label>
+          <input type="email" id="deactivateUserEmail" readonly style="background: #f8fafc;">
+        </div>
+        <div class="form-group">
+          <label>Reason for Deactivation</label>
+          <textarea id="deactivationReason" placeholder="e.g., Left organization, No longer needed, etc." rows="3"></textarea>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('deactivateModal')">Cancel</button>
+          <button type="button" class="btn btn-danger" onclick="confirmDeactivateUser()">Deactivate User</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Role Permission Matrix Modal -->
+  <div id="rolePermissionsModal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+      <div class="modal-header">
+        <span>Role Permission Matrix</span>
+        <button class="modal-close" onclick="closeModal('rolePermissionsModal')">×</button>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="table" style="font-size: 13px; min-width: 800px;">
+          <thead>
+            <tr>
+              <th>Permission</th>
+              <th><span class="badge badge-superadmin">Superadmin</span></th>
+              <th><span class="badge badge-admin">Admin</span></th>
+              <th><span class="badge badge-trainer">Trainer</span></th>
+              <th><span class="badge badge-viewer">Viewer</span></th>
+              <th><span class="badge badge-user">User</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Create Assessment</strong></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+            </tr>
+            <tr>
+              <td><strong>Edit Assessment</strong></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+            </tr>
+            <tr>
+              <td><strong>Delete Assessment</strong></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+            </tr>
+            <tr>
+              <td><strong>Send Assessment to Trainees</strong></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+            </tr>
+            <tr>
+              <td><strong>View All Results</strong></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+            </tr>
+            <tr>
+              <td><strong>Manage All Users</strong></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+            </tr>
+            <tr>
+              <td><strong>Change User Roles</strong></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+            </tr>
+            <tr>
+              <td><strong>Reset User Passwords</strong></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+            </tr>
+            <tr>
+              <td><strong>Deactivate Users</strong></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-times" style="color: #ef4444;"></i></td>
+            </tr>
+            <tr>
+              <td><strong>Take Assessment</strong></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+              <td style="text-align: center;"><i class="fas fa-check" style="color: #10b981;"></i></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 8px;">
+        <p style="color: var(--text-secondary); font-size: 13px; margin: 0;">
+          <strong>Note:</strong> All users can view and take their assigned assessments. Superadmins have unrestricted access to all features.
+        </p>
+      </div>
     </div>
   </div>
 
@@ -2162,45 +2383,308 @@
       }
     }
 
-    // Users
+    // Audit Log storage (in-memory for demo, would be database in production)
+    let auditLog = [];
+
+    // Log user action for audit trail
+    async function logUserAction(action, targetUserId, targetUserEmail, details = {}) {
+      const logEntry = {
+        id: Math.random().toString(36).substr(2, 9),
+        action: action,
+        performedBy: currentUser?.id || 'system',
+        performedByEmail: currentUser?.email || 'system',
+        targetUserId: targetUserId,
+        targetUserEmail: targetUserEmail,
+        timestamp: new Date().toISOString(),
+        details: details
+      };
+
+      auditLog.unshift(logEntry);
+
+      // Try to save to database if table exists
+      try {
+        await apiCall('POST', 'user_audit_log', logEntry);
+      } catch (e) {
+        console.log('Audit log table not available, logging in memory:', logEntry);
+      }
+    }
+
+    // Generate temporary password
+    function generateTempPassword() {
+      const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
+      let password = '';
+      for (let i = 0; i < 12; i++) {
+        password += charset.charAt(Math.floor(Math.random() * charset.length));
+      }
+      document.getElementById('tempPassword').value = password;
+    }
+
+    // Open password reset modal
+    function openPasswordResetModal(userId, userEmail) {
+      document.getElementById('resetUserEmail').value = userEmail;
+      document.getElementById('tempPassword').value = '';
+      document.getElementById('sendResetEmail').checked = false;
+      document.getElementById('passwordResetModal').dataset.userId = userId;
+      document.getElementById('passwordResetModal').dataset.userEmail = userEmail;
+      generateTempPassword();
+      document.getElementById('passwordResetModal').classList.add('active');
+    }
+
+    // Handle password change
+    async function handleChangePassword(e) {
+      e.preventDefault();
+
+      try {
+        const userId = document.getElementById('passwordResetModal').dataset.userId;
+        const userEmail = document.getElementById('passwordResetModal').dataset.userEmail;
+        const tempPassword = document.getElementById('tempPassword').value;
+        const sendEmail = document.getElementById('sendResetEmail').checked;
+
+        if (!tempPassword) {
+          showMessage('Please generate a temporary password', 'error');
+          return;
+        }
+
+        // Update user password in database
+        await apiCall('PATCH', 'profiles',
+          { temporary_password: tempPassword, password_reset_required: true },
+          `?id=eq.${userId}`
+        );
+
+        // Log the action
+        await logUserAction('password_reset', userId, userEmail, {
+          sendEmailNotification: sendEmail,
+          timestamp: new Date().toISOString()
+        });
+
+        closeModal('passwordResetModal');
+        showMessage('Password reset successfully! User must change password on next login.', 'success');
+        renderUsers();
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+
+    // Open deactivate modal
+    function openDeactivateModal(userId, userEmail) {
+      document.getElementById('deactivateUserEmail').value = userEmail;
+      document.getElementById('deactivationReason').value = '';
+      document.getElementById('deactivateModal').dataset.userId = userId;
+      document.getElementById('deactivateModal').dataset.userEmail = userEmail;
+      document.getElementById('deactivateModal').classList.add('active');
+    }
+
+    // Confirm deactivation
+    async function confirmDeactivateUser() {
+      const userId = document.getElementById('deactivateModal').dataset.userId;
+      const userEmail = document.getElementById('deactivateModal').dataset.userEmail;
+      const reason = document.getElementById('deactivationReason').value;
+
+      try {
+        await apiCall('PATCH', 'profiles',
+          {
+            is_active: false,
+            deactivated_at: new Date().toISOString(),
+            deactivation_reason: reason
+          },
+          `?id=eq.${userId}`
+        );
+
+        // Log the action
+        await logUserAction('user_deactivated', userId, userEmail, {
+          reason: reason,
+          timestamp: new Date().toISOString()
+        });
+
+        closeModal('deactivateModal');
+        showMessage('User has been deactivated successfully.', 'success');
+        renderUsers();
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+
+    // Reactivate user
+    async function reactivateUser(userId, userEmail) {
+      if (!confirm('Reactivate this user? They will be able to login again.')) return;
+
+      try {
+        await apiCall('PATCH', 'profiles',
+          {
+            is_active: true,
+            deactivated_at: null
+          },
+          `?id=eq.${userId}`
+        );
+
+        // Log the action
+        await logUserAction('user_reactivated', userId, userEmail, {
+          timestamp: new Date().toISOString()
+        });
+
+        showMessage('User has been reactivated successfully.', 'success');
+        renderUsers();
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+
+    // Change user role
+    async function changeUserRole(userId, userEmail, currentRole) {
+      const roles = ['viewer', 'user', 'trainer', 'admin', 'superadmin'];
+      const roleOptions = roles.filter(r => r !== currentRole).join(', ');
+      const newRole = prompt(`Change role from "${currentRole}" to one of:\n${roleOptions}`, '');
+
+      if (newRole && roles.includes(newRole)) {
+        try {
+          await apiCall('PATCH', 'profiles', { user_role: newRole }, `?id=eq.${userId}`);
+
+          // Log the action
+          await logUserAction('role_change', userId, userEmail, {
+            fromRole: currentRole,
+            toRole: newRole,
+            timestamp: new Date().toISOString()
+          });
+
+          showMessage('User role updated successfully!', 'success');
+          renderUsers();
+        } catch (error) {
+          showMessage('Error: ' + error.message, 'error');
+        }
+      }
+    }
+
+    // Delete user
+    async function deleteUser(userId, userEmail, userName) {
+      if (!confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) return;
+
+      try {
+        await apiCall('DELETE', 'profiles', null, `?id=eq.${userId}`);
+
+        // Log the action
+        await logUserAction('user_deleted', userId, userEmail, {
+          timestamp: new Date().toISOString()
+        });
+
+        showMessage('User deleted successfully.', 'success');
+        renderUsers();
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+
+    // View audit log (superadmin only)
+    function viewAuditLog() {
+      if (currentUser?.user_metadata?.role !== 'superadmin') {
+        showMessage('Only superadmins can view audit logs', 'error');
+        return;
+      }
+
+      let html = '<div class="card"><div class="card-title"><i class="fas fa-history"></i> User Audit Log</div>';
+
+      if (auditLog.length === 0) {
+        html += '<p style="color: var(--text-secondary); text-align: center;">No audit log entries</p>';
+      } else {
+        html += '<table class="table"><thead><tr><th>Action</th><th>User</th><th>Target User</th><th>Date/Time</th><th>Details</th></tr></thead><tbody>';
+        auditLog.slice(0, 50).forEach(entry => {
+          html += `
+            <tr>
+              <td><span class="badge badge-warning">${entry.action}</span></td>
+              <td>${entry.performedByEmail}</td>
+              <td>${entry.targetUserEmail}</td>
+              <td>${new Date(entry.timestamp).toLocaleString()}</td>
+              <td style="font-size: 12px; color: var(--text-secondary);">${JSON.stringify(entry.details).substring(0, 50)}...</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+
+      document.getElementById('page').innerHTML = html;
+    }
+
+    // Enhanced Users Render Function
     async function renderUsers() {
       document.getElementById('pageTitle').textContent = 'User Management';
 
       try {
         const users = await apiCall('GET', 'profiles');
+        const isSuperadmin = currentUser?.user_metadata?.role === 'superadmin';
 
         let html = `
           <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-              <div class="card-title" style="margin: 0;"><i class="fas fa-users"></i> All Users</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+              <div class="card-title" style="margin: 0;"><i class="fas fa-users"></i> User Management</div>
+              <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary btn-sm" onclick="openModal('rolePermissionsModal')">
+                  <i class="fas fa-shield-alt"></i> Role Permissions
+                </button>
+                ${isSuperadmin ? `<button class="btn btn-secondary btn-sm" onclick="viewAuditLog()">
+                  <i class="fas fa-history"></i> Audit Log
+                </button>` : ''}
+              </div>
             </div>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+
+            <div style="overflow-x: auto;">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
         `;
 
         if (!Array.isArray(users) || users.length === 0) {
-          html += '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No users found</td></tr>';
+          html += '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No users found</td></tr>';
         } else {
           users.forEach(u => {
             const role = u.user_role || u.role || 'user';
             const badgeClass = `badge-${role}`;
+            const isActive = u.is_active !== false;
+            const statusBadge = isActive
+              ? '<span class="badge badge-success"><i class="fas fa-check-circle"></i> Active</span>'
+              : '<span class="badge badge-danger"><i class="fas fa-times-circle"></i> Inactive</span>';
+            const joinedDate = u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A';
+
             html += `
-              <tr>
-                <td>${u.full_name || 'N/A'}</td>
-                <td>${u.email}</td>
-                <td><span class="badge ${badgeClass}">${role}</span></td>
-                <td>✓ Active</td>
+              <tr ${!isActive ? 'style="opacity: 0.7;"' : ''}>
                 <td>
-                  <button class="btn btn-primary btn-sm" onclick="editUser('${u.id}', '${role}')"><i class="fas fa-edit"></i> Edit</button>
+                  <strong>${u.full_name || 'N/A'}</strong>
+                  ${!isActive && u.deactivated_at ? `<br><small style="color: #ef4444;">Deactivated: ${new Date(u.deactivated_at).toLocaleDateString()}</small>` : ''}
+                </td>
+                <td>${u.email}</td>
+                <td>
+                  <span class="badge ${badgeClass}">${role}</span>
+                </td>
+                <td>${statusBadge}</td>
+                <td>${joinedDate}</td>
+                <td>
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button class="btn btn-primary btn-sm" onclick="changeUserRole('${u.id}', '${u.email}', '${role}')" title="Change Role">
+                      <i class="fas fa-exchange-alt"></i>
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="openPasswordResetModal('${u.id}', '${u.email}')" title="Reset Password">
+                      <i class="fas fa-key"></i>
+                    </button>
+                    ${isActive
+                      ? `<button class="btn btn-danger btn-sm" onclick="openDeactivateModal('${u.id}', '${u.email}')" title="Deactivate User">
+                        <i class="fas fa-ban"></i>
+                      </button>`
+                      : `<button class="btn btn-success btn-sm" onclick="reactivateUser('${u.id}', '${u.email}')" title="Reactivate User">
+                        <i class="fas fa-check"></i>
+                      </button>`
+                    }
+                    <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}', '${u.email}', '${u.full_name || u.email}')" title="Delete User">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
                 </td>
               </tr>
             `;
@@ -2208,15 +2692,34 @@
         }
 
         html += `
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 20px;">
+            <div class="card-title"><i class="fas fa-info-circle"></i> User Management Guide</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+              <div style="padding: 12px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                <p style="font-weight: 600; margin-bottom: 6px;"><i class="fas fa-exchange-alt"></i> Change Role</p>
+                <p style="color: var(--text-secondary); font-size: 13px;">Modify user role to adjust their permissions (click role badge).</p>
+              </div>
+              <div style="padding: 12px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                <p style="font-weight: 600; margin-bottom: 6px;"><i class="fas fa-key"></i> Reset Password</p>
+                <p style="color: var(--text-secondary); font-size: 13px;">Generate a temporary password for users who forgot theirs.</p>
+              </div>
+              <div style="padding: 12px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #ef4444;">
+                <p style="font-weight: 600; margin-bottom: 6px;"><i class="fas fa-ban"></i> Deactivate User</p>
+                <p style="color: var(--text-secondary); font-size: 13px;">Temporarily disable access without deleting user record.</p>
+              </div>
+            </div>
           </div>
         `;
 
         document.getElementById('page').innerHTML = html;
       } catch (error) {
         showMessage('Error: ' + error.message, 'error');
-        document.getElementById('page').innerHTML = '<div class="card"><p style="color: red;">Error loading users</p></div>';
+        document.getElementById('page').innerHTML = '<div class="card"><p style="color: red;">Error loading users: ' + error.message + '</p></div>';
       }
     }
 
@@ -2325,19 +2828,9 @@
       showMessage('View assessment feature coming soon', 'success');
     }
 
-    async function editUser(id, currentRole) {
-      const roles = ['viewer', 'user', 'trainer', 'admin', 'superadmin'];
-      const newRole = prompt(`Change role from "${currentRole}" to:\n${roles.join(', ')}`, currentRole);
-
-      if (newRole && roles.includes(newRole)) {
-        try {
-          await apiCall('PATCH', 'profiles', { user_role: newRole }, `?id=eq.${id}`);
-          showMessage('User role updated!', 'success');
-          renderUsers();
-        } catch (error) {
-          showMessage('Error: ' + error.message, 'error');
-        }
-      }
+    // Helper function to open modals
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('active');
     }
 
     async function viewStudentProfile(id) {
