@@ -56,6 +56,10 @@ body {
   overflow-y: auto;
 }
 
+.sidebar > div:last-child {
+  margin-top: auto;
+}
+
 .sidebar-menu::-webkit-scrollbar {
   width: 6px;
 }

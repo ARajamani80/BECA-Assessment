@@ -54,9 +54,20 @@
         <div class="menu-item" data-page="results">
           <i class="fas fa-award"></i> Results
         </div>
-        <div class="menu-item" data-page="logout">
-          <i class="fas fa-sign-out-alt"></i> Logout
+      </div>
+
+      <!-- User Profile Section at Bottom -->
+      <div style="padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: auto;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+          <div id="userAvatarSidebar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; flex-shrink: 0;">U</div>
+          <div style="flex: 1; min-width: 0;">
+            <div id="userNameSidebar" style="font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">User</div>
+            <div id="userRoleSidebar" style="font-size: 11px; color: rgba(255,255,255,0.7); text-transform: capitalize;">user</div>
+          </div>
         </div>
+        <button class="menu-item" onclick="logout()" style="width: calc(100% + 16px); margin: 0 -8px; border: none; background: none; padding: 12px 20px; cursor: pointer;">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
       </div>
     </div>
 
@@ -65,11 +76,6 @@
       <!-- Header -->
       <div class="header">
         <h1 class="header-title" id="pageTitle">Dashboard</h1>
-        <div class="user-section">
-          <span id="userName" class="user-email">User</span>
-          <span id="userRole" style="font-size: 12px;">Role</span>
-          <div id="userAvatar" style="width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">U</div>
-        </div>
       </div>
 
       <!-- Content -->
