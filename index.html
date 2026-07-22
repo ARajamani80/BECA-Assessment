@@ -614,18 +614,18 @@
           <div style="background: white; padding: 40px; border-radius: 8px; width: 100%; max-width: 400px;">
             <h1 style="color: #00d4ff; text-align: center; margin-bottom: 10px;">BECA</h1>
             <p style="text-align: center; color: #888; margin-bottom: 30px;">Assessment Platform</p>
-            <form onsubmit="handleLogin(event)">
+            <form id="loginForm" onsubmit="handleLogin(event)">
               <div style="margin-bottom: 20px;">
                 <label style="display: block; font-weight: bold; margin-bottom: 8px;">Email</label>
-                <input type="email" id="email" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" required>
+                <input type="email" id="loginEmail" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" required>
               </div>
               <div style="margin-bottom: 20px;">
                 <label style="display: block; font-weight: bold; margin-bottom: 8px;">Password</label>
-                <input type="password" id="password" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" required>
+                <input type="password" id="loginPassword" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" required>
               </div>
               <button type="submit" style="width: 100%; padding: 12px; background: #00d4ff; color: #1a1a2e; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Login</button>
             </form>
-            <div id="message" style="margin-top: 15px; padding: 12px; border-radius: 4px; display: none;"></div>
+            <div id="loginMessage" style="margin-top: 15px; padding: 12px; border-radius: 4px; display: none;"></div>
           </div>
         </div>
       `;
@@ -633,20 +633,23 @@
 
     async function handleLogin(e) {
       e.preventDefault();
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
 
       try {
         await signIn(email, password);
-        document.getElementById('userEmail').textContent = currentUser.email;
-        showPage('dashboard');
+        currentUser = { email: email };
+        document.body.innerHTML = '';
+        // Reload to reinitialize
         location.reload();
       } catch (error) {
-        const msg = document.getElementById('message');
-        msg.textContent = 'Error: ' + error.message;
-        msg.style.background = '#ffe0e0';
-        msg.style.color = '#c92a2a';
-        msg.style.display = 'block';
+        const msg = document.getElementById('loginMessage');
+        if (msg) {
+          msg.textContent = 'Error: ' + error.message;
+          msg.style.background = '#ffe0e0';
+          msg.style.color = '#c92a2a';
+          msg.style.display = 'block';
+        }
       }
     }
 
