@@ -7,9 +7,9 @@
 // WORKFLOW: Create Questions → Import from Excel → Module Bank groups them
 // ============================================================================
 
-let allQuestions = [];
-let filteredQuestions = [];
-let currentPage = 1;
+let questionsData = [];
+let filteredQuestionsDataData = [];
+let questionsCurrentPage = 1;
 const itemsPerPage = 10;
 
 /**
@@ -90,12 +90,12 @@ async function loadAllQuestions() {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    allQuestions = data || [];
-    filteredQuestions = allQuestions;
+    questionsData = data || [];
+    filteredQuestionsData = questionsData;
   } catch (error) {
     console.error('Error loading questions:', error);
-    allQuestions = [];
-    filteredQuestions = [];
+    questionsData = [];
+    filteredQuestionsData = [];
   }
 }
 
@@ -106,7 +106,7 @@ function filterQuestions() {
   const searchTerm = document.getElementById('questionSearch').value.toLowerCase();
   const typeFilter = document.getElementById('questionTypeFilter').value;
 
-  filteredQuestions = allQuestions.filter(q => {
+  filteredQuestionsData = questionsData.filter(q => {
     const matchesSearch = !searchTerm ||
       q.question_text.toLowerCase().includes(searchTerm) ||
       (q.question_description && q.question_description.toLowerCase().includes(searchTerm));
@@ -116,7 +116,7 @@ function filterQuestions() {
     return matchesSearch && matchesType;
   });
 
-  currentPage = 1;
+  questionsCurrentPage = 1;
   displayQuestionsTable();
 }
 
@@ -124,9 +124,9 @@ function filterQuestions() {
  * Display questions table with pagination
  */
 function displayQuestionsTable() {
-  const start = (currentPage - 1) * itemsPerPage;
+  const start = (questionsCurrentPage - 1) * itemsPerPage;
   const end = start + itemsPerPage;
-  const pageQuestions = filteredQuestions.slice(start, end);
+  const pageQuestions = filteredQuestionsData.slice(start, end);
 
   let html = '';
   if (pageQuestions.length === 0) {
@@ -166,20 +166,20 @@ function displayQuestionsTable() {
   document.getElementById('questionsTable').innerHTML = html;
 
   // Pagination
-  const totalPages = Math.ceil(filteredQuestions.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredQuestionsData.length / itemsPerPage);
   let paginationHtml = '';
 
   if (totalPages > 1) {
     paginationHtml += `<div style="display: flex; justify-content: center; gap: 10px;">`;
 
-    if (currentPage > 1) {
-      paginationHtml += `<button class="btn btn-secondary btn-sm" onclick="currentPage--; displayQuestionsTable()">← Previous</button>`;
+    if (questionsCurrentPage > 1) {
+      paginationHtml += `<button class="btn btn-secondary btn-sm" onclick="questionsCurrentPage--; displayQuestionsTable()">← Previous</button>`;
     }
 
-    paginationHtml += `<span style="align-self: center; color: var(--text-secondary);">Page ${currentPage} of ${totalPages}</span>`;
+    paginationHtml += `<span style="align-self: center; color: var(--text-secondary);">Page ${questionsCurrentPage} of ${totalPages}</span>`;
 
-    if (currentPage < totalPages) {
-      paginationHtml += `<button class="btn btn-secondary btn-sm" onclick="currentPage++; displayQuestionsTable()">Next →</button>`;
+    if (questionsCurrentPage < totalPages) {
+      paginationHtml += `<button class="btn btn-secondary btn-sm" onclick="questionsCurrentPage++; displayQuestionsTable()">Next →</button>`;
     }
 
     paginationHtml += `</div>`;
@@ -197,7 +197,7 @@ async function openQuestionModal(questionId = null) {
   let titleText = 'Add New Question';
 
   if (questionId) {
-    const q = allQuestions.find(q => q.id === questionId);
+    const q = questionsData.find(q => q.id === questionId);
     if (q) {
       question = q;
       titleText = 'Edit Question';
@@ -446,7 +446,7 @@ function editQuestion(questionId) {
  * Delete question with confirmation
  */
 function deleteQuestionConfirm(questionId) {
-  const question = allQuestions.find(q => q.id === questionId);
+  const question = questionsData.find(q => q.id === questionId);
   if (!question) return;
 
   if (confirm(`Delete question: "${truncateText(question.question_text, 50)}"?`)) {

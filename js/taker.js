@@ -49,25 +49,25 @@ async function renderAssessmentTaker() {
 
     // Load modules and questions
     const modulesData = await getAssessmentModules(assignment.assessment_id);
-    let allQuestions = [];
+    let takerQuestionsArray = [];
 
     if (Array.isArray(modulesData)) {
       for (const module of modulesData) {
         const questions = await getAssessmentQuestions(module.id);
         if (Array.isArray(questions)) {
-          allQuestions = allQuestions.concat(questions.map(q => ({ ...q, module_name: module.name })));
+          takerQuestionsArray = takerQuestionsArray.concat(questions.map(q => ({ ...q, module_name: module.name })));
         }
       }
     }
 
     // Initialize answers object
     takerAnswers = {};
-    allQuestions.forEach(q => {
+    takerQuestionsArray.forEach(q => {
       takerAnswers[q.id] = '';
     });
 
     // Render UI
-    renderTakerInterface(takerAssessmentData, allQuestions);
+    renderTakerInterface(takerAssessmentData, takerQuestionsArray);
 
     // Start timer if duration is set
     if (takerAssessmentData.duration) {
