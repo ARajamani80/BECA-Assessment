@@ -921,15 +921,37 @@
       if (data) options.body = JSON.stringify(data);
       if (filter) url += filter;
 
-      const response = await fetch(url, options);
-      const result = await response.json();
+      try {
+        const response = await fetch(url, options);
 
-      if (!response.ok) {
-        console.error('API Error:', result);
-        throw new Error(result.message || 'API Error');
+        // Handle empty response
+        if (response.status === 204) {
+          return [];
+        }
+
+        // Get response text first
+        const text = await response.text();
+
+        // Try to parse as JSON
+        let result = [];
+        try {
+          result = text ? JSON.parse(text) : [];
+        } catch (e) {
+          console.error('Failed to parse JSON:', text, 'Error:', e);
+          console.error('URL:', url);
+          console.error('Status:', response.status);
+        }
+
+        if (!response.ok) {
+          console.error('API Error:', result);
+          throw new Error(result.message || `API Error: ${response.status}`);
+        }
+
+        return result;
+      } catch (error) {
+        console.error('API Call Error:', error);
+        throw error;
       }
-
-      return result;
     }
 
     // Navigation
