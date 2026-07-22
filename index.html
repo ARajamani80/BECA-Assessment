@@ -2,176 +2,87 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BECA Assessment Platform</title>
+  <title>BECA Assessment</title>
   <style>
-    body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #007bff, #0056b3); margin: 0; padding: 20px; min-height: 100vh; }
-    .container { max-width: 500px; margin: 50px auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-    h1 { color: #007bff; text-align: center; margin-top: 0; }
-    .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
-    .form-group { margin: 15px 0; }
-    label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
-    input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
-    input:focus { outline: none; border-color: #007bff; box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); }
-    button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: background 0.3s; }
+    body { font-family: Arial; background: linear-gradient(135deg, #007bff, #0056b3); margin: 0; padding: 20px; min-height: 100vh; }
+    .container { max-width: 500px; margin: 50px auto; background: white; padding: 40px; border-radius: 8px; }
+    h1 { color: #007bff; text-align: center; }
+    input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+    button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }
     button:hover { background: #0056b3; }
-    .message { margin-top: 15px; padding: 12px; text-align: center; border-radius: 4px; display: none; }
-    .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    .navbar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .navbar h1 { margin: 0; font-size: 24px; }
-    .user-info { font-size: 14px; color: #666; }
-    .logout-btn { background: #dc3545; padding: 8px 16px; font-size: 14px; width: auto; }
-    .logout-btn:hover { background: #c82333; }
-    .dashboard-container { max-width: 1000px; margin: 0 auto; }
-    .assessment-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
-    .assessment-card { background: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 4px solid #007bff; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
-    .assessment-card:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
-  <div id="app"></div>
+  <div id="app">
+    <div class="container">
+      <h1>Testing...</h1>
+      <p id="status">Initializing Supabase...</p>
+    </div>
+  </div>
 
   <script>
     var supabase = null;
-    var currentUser = null;
 
-    // Load config - wait for Supabase library
-    function loadConfig() {
-      var SUPABASE_URL = 'https://fgzqgqwlyeubudnbxsmx.supabase.co';
-      var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0';
+    // Test initialization
+    console.log('Page loaded');
+    console.log('Supabase library available:', !!window.supabase);
 
-      // Wait for Supabase library to load
-      if (!window.supabase) {
-        setTimeout(loadConfig, 500);
+    setTimeout(function() {
+      console.log('After 1s - Supabase available:', !!window.supabase);
+
+      if (window.supabase) {
+        try {
+          supabase = window.supabase.createClient(
+            'https://fgzqgqwlyeubudnbxsmx.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0'
+          );
+          console.log('✓ Supabase initialized');
+          
+          document.getElementById('app').innerHTML = `
+            <div class="container">
+              <h1>BECA Assessment</h1>
+              <form onsubmit="handleLogin(event)">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+              </form>
+              <p id="message" style="color: red; display: none;"></p>
+            </div>
+          `;
+        } catch (error) {
+          console.error('Supabase error:', error);
+          document.getElementById('status').textContent = 'Error: ' + error.message;
+        }
+      } else {
+        document.getElementById('status').textContent = 'Supabase library not loaded';
+      }
+    }, 1500);
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      if (!supabase) {
+        alert('Supabase not initialized');
         return;
       }
 
-      try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        console.log('✓ Supabase initialized');
-        showLoginPage();
-      } catch (error) {
-        console.error('Supabase error:', error);
-        showError('Supabase initialization error: ' + error.message);
-      }
-    }
-    function showError(msg) {
-      document.getElementById('app').innerHTML = '<div class="container"><h1>Error</h1><p style="color: red; text-align: center;">' + msg + '</p></div>';
-    }
-
-    function showLoginPage() {
-      document.getElementById('app').innerHTML = `
-        <div class="container">
-          <h1>BECA Assessment</h1>
-          <p class="subtitle">Skills Assessment Platform</p>
-          <form id="loginForm">
-            <div class="form-group">
-              <label>Email:</label>
-              <input type="email" id="email" required>
-            </div>
-            <div class="form-group">
-              <label>Password:</label>
-              <input type="password" id="password" required>
-            </div>
-            <button type="submit">Login</button>
-          </form>
-          <div id="message" class="message"></div>
-        </div>
-      `;
-
-      document.getElementById('loginForm').onsubmit = async function(e) {
-        e.preventDefault();
-        
-        if (!supabase) {
-          showMessage('Supabase not initialized', 'error');
-          return;
-        }
-
-        var email = document.getElementById('email').value;
-        var password = document.getElementById('password').value;
-
-        try {
-          var result = await supabase.auth.signInWithPassword({ email: email, password: password });
-          
-          if (result.error) {
-            showMessage('Login failed: ' + result.error.message, 'error');
-          } else {
-            currentUser = result.data.user;
-            showMessage('Login successful!', 'success');
-            setTimeout(showDashboard, 1500);
-          }
-        } catch (error) {
-          showMessage('Error: ' + error.message, 'error');
-        }
-      };
-    }
-
-    async function showDashboard() {
-      document.getElementById('app').innerHTML = `
-        <div class="dashboard-container">
-          <div class="navbar">
-            <h1>BECA Assessment</h1>
-            <div>
-              <span class="user-info">Welcome, ${currentUser.email}</span>
-              <button class="logout-btn" onclick="logout()">Logout</button>
-            </div>
-          </div>
-          <h2>Available Assessments</h2>
-          <div id="assessmentList" class="assessment-list">
-            <p>Loading assessments...</p>
-          </div>
-        </div>
-      `;
-
-      await loadAssessments();
-    }
-
-    async function loadAssessments() {
-      if (!supabase) return;
+      var email = document.getElementById('email').value;
+      var password = document.getElementById('password').value;
 
       try {
-        var result = await supabase
-          .from('assessments')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        var html = '';
-        if (result.data && result.data.length > 0) {
-          result.data.forEach(function(a) {
-            html += '<div class="assessment-card"><h3>' + a.title + '</h3><p>' + (a.description || 'No description') + '</p></div>';
-          });
+        var result = await supabase.auth.signInWithPassword({ email: email, password: password });
+        if (result.error) {
+          document.getElementById('message').textContent = 'Error: ' + result.error.message;
+          document.getElementById('message').style.display = 'block';
         } else {
-          html = '<p style="color: #999;">No assessments available</p>';
+          alert('Login successful!');
         }
-        document.getElementById('assessmentList').innerHTML = html;
       } catch (error) {
-        console.error('Error:', error);
+        document.getElementById('message').textContent = 'Error: ' + error.message;
+        document.getElementById('message').style.display = 'block';
       }
     }
-
-    async function logout() {
-      if (supabase) {
-        await supabase.auth.signOut();
-        currentUser = null;
-        showLoginPage();
-      }
-    }
-
-    function showMessage(msg, type) {
-      var el = document.getElementById('message');
-      el.textContent = msg;
-      el.className = 'message ' + type;
-      el.style.display = 'block';
-      setTimeout(function() {
-        el.style.display = 'none';
-      }, 5000);
-    }
-
-    // Initialize when page loads
-    setTimeout(loadConfig, 1500);
   </script>
 </body>
 </html>
