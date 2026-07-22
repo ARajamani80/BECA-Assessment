@@ -4,52 +4,98 @@
   <meta charset="UTF-8">
   <title>BECA Assessment</title>
   <style>
-    body { font-family: Arial; background: linear-gradient(135deg, #007bff, #0056b3); margin: 0; padding: 20px; min-height: 100vh; }
-    .container { max-width: 500px; margin: 50px auto; background: white; padding: 40px; border-radius: 8px; }
-    h1 { color: #007bff; text-align: center; }
-    input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
-    button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #007bff, #0056b3); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); width: 100%; max-width: 500px; }
+    h1 { color: #007bff; text-align: center; margin-bottom: 10px; }
+    .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
+    .form-group { margin: 15px 0; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+    input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+    input:focus { outline: none; border-color: #007bff; box-shadow: 0 0 5px rgba(0, 123, 255, 0.3); }
+    button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
     button:hover { background: #0056b3; }
-    .message { color: red; margin-top: 10px; display: none; }
+    .message { margin-top: 15px; padding: 12px; border-radius: 4px; display: none; text-align: center; }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+    .navbar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .navbar h1 { margin: 0; font-size: 24px; }
+    .user-info { font-size: 14px; color: #666; }
+    .logout-btn { background: #dc3545; padding: 8px 16px; font-size: 14px; width: auto; }
+    .logout-btn:hover { background: #c82333; }
+    .dashboard-container { max-width: 1000px; margin: 0 auto; }
   </style>
 </head>
 <body>
-  <div id="app">
-    <div class="container">
-      <h1>BECA Assessment</h1>
-      <p id="status">Loading...</p>
-    </div>
-  </div>
+  <div id="app"></div>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  
   <script>
-    var supabase = null;
+    const SUPABASE_URL = 'https://fgzqgqwlyeubudnbxsmx.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0';
+    let currentUser = null;
 
-    setTimeout(function() {
-      if (window.supabase) {
-        try {
-          supabase = window.supabase.createClient(
-            'https://fgzqgqwlyeubudnbxsmx.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0'
-          );
-          showLoginPage();
-        } catch (error) {
-          showError('Supabase error: ' + error.message);
+    // Supabase Auth using REST API
+    async function signIn(email, password) {
+      try {
+        const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_KEY
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error_description || data.error);
         }
-      } else {
-        showError('Supabase library failed to load. Check your internet connection.');
+
+        currentUser = data.user;
+        localStorage.setItem('token', data.access_token);
+        return true;
+      } catch (error) {
+        throw error;
       }
-    }, 2000);
+    }
+
+    async function signOut() {
+      currentUser = null;
+      localStorage.removeItem('token');
+    }
+
+    async function getAssessments() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/assessments`, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
+        });
+
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching assessments:', error);
+        return [];
+      }
+    }
 
     function showLoginPage() {
       document.getElementById('app').innerHTML = `
         <div class="container">
           <h1>BECA Assessment</h1>
-          <p style="text-align: center; color: #666;">Skills Assessment Platform</p>
+          <p class="subtitle">Skills Assessment Platform</p>
           <form onsubmit="handleLogin(event)">
-            <input type="email" id="email" placeholder="Email" required>
-            <input type="password" id="password" placeholder="Password" required>
+            <div class="form-group">
+              <label>Email:</label>
+              <input type="email" id="email" required>
+            </div>
+            <div class="form-group">
+              <label>Password:</label>
+              <input type="password" id="password" required>
+            </div>
             <button type="submit">Login</button>
           </form>
           <div id="message" class="message"></div>
@@ -59,66 +105,69 @@
 
     async function handleLogin(e) {
       e.preventDefault();
-      if (!supabase) {
-        showMessage('Supabase not initialized');
-        return;
-      }
-
-      var email = document.getElementById('email').value;
-      var password = document.getElementById('password').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
 
       try {
-        var result = await supabase.auth.signInWithPassword({ email: email, password: password });
-        if (result.error) {
-          showMessage('Login failed: ' + result.error.message);
-        } else {
-          showMessage('Login successful!', 'success');
-          setTimeout(showDashboard, 1500);
-        }
+        await signIn(email, password);
+        showMessage('Login successful!', 'success');
+        setTimeout(showDashboard, 1500);
       } catch (error) {
-        showMessage('Error: ' + error.message);
+        showMessage('Login failed: ' + error.message, 'error');
       }
     }
 
-    function showDashboard() {
+    async function showDashboard() {
       document.getElementById('app').innerHTML = `
-        <div class="container">
-          <h1>BECA Assessment</h1>
-          <p>Welcome! You've logged in successfully.</p>
-          <button onclick="logout()">Logout</button>
+        <div class="dashboard-container">
+          <div class="navbar">
+            <h1>BECA Assessment</h1>
+            <div>
+              <span class="user-info">Welcome, ${currentUser.email}</span>
+              <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+          </div>
+          <div class="container">
+            <h2>Available Assessments</h2>
+            <div id="assessmentList"></div>
+          </div>
         </div>
       `;
-    }
 
-    async function logout() {
-      if (supabase) {
-        await supabase.auth.signOut();
-        showLoginPage();
+      const assessments = await getAssessments();
+      let html = '';
+      if (assessments.length > 0) {
+        html = assessments.map(a => `
+          <div style="background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 4px; border-left: 4px solid #007bff;">
+            <h3 style="margin: 0 0 5px 0; color: #007bff;">${a.title}</h3>
+            <p style="margin: 0; color: #666;">${a.description || 'No description'}</p>
+          </div>
+        `).join('');
+      } else {
+        html = '<p style="color: #999;">No assessments available</p>';
       }
+      document.getElementById('assessmentList').innerHTML = html;
     }
 
-    function showError(msg) {
-      document.getElementById('app').innerHTML = `
-        <div class="container">
-          <h1>Error</h1>
-          <p style="color: red;">${msg}</p>
-        </div>
-      `;
+    function handleLogout() {
+      signOut();
+      showLoginPage();
     }
 
     function showMessage(msg, type) {
-      var el = document.getElementById('message');
+      const el = document.getElementById('message');
       if (el) {
         el.textContent = msg;
+        el.className = 'message ' + type;
         el.style.display = 'block';
-        if (type === 'success') {
-          el.style.color = 'green';
-        }
-        setTimeout(function() {
+        setTimeout(() => {
           el.style.display = 'none';
         }, 5000);
       }
     }
+
+    // Initialize
+    showLoginPage();
   </script>
 </body>
 </html>
