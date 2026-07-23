@@ -1,6 +1,7 @@
 // BECA Assessment Platform - API Module (Supabase)
 // Uses global getSupabaseClient from index.html HEAD script
 // This file just provides API functions that use the global client
+// Updated: 2026-07-23 - Supabase initialization fix
 
 // Note: getSupabaseClient() is defined in index.html HEAD script
 // If it doesn't exist, create a fallback

@@ -1,4 +1,5 @@
 // BECA Assessment Platform - Authentication Module
+// Updated: 2026-07-23 - Supabase initialization fix
 
 let currentUser = null;
 
