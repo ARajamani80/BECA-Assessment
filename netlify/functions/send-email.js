@@ -433,11 +433,18 @@ async function sendAssessmentInvitation(payload) {
     };
 
     // Send email
-    const [response] = await sgMail.send(msg);
-    console.log('Email sent successfully:', {
+    console.log('📤 Attempting to send email with:', {
+      to: msg.to,
+      from: msg.from,
+      subject: msg.subject,
+      apiKeyExists: !!process.env.SENDGRID_API_KEY
+    });
+
+    const response = await sgMail.send(msg);
+    console.log('✅ Email sent successfully:', {
       to: to_email,
-      messageId: response.headers['x-message-id'],
-      status: response.statusCode
+      messageId: response[0]?.headers?.['x-message-id'],
+      status: response[0]?.statusCode
     });
 
     // Log email send
@@ -634,15 +641,23 @@ exports.handler = async (event, context) => {
       body: JSON.stringify(result)
     };
   } catch (error) {
-    console.error('Error in email handler:', error);
+    console.error('❌ Error in email handler:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      response: error.response?.body || error.response,
+      fullError: JSON.stringify(error, null, 2)
+    });
 
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
         error: 'Failed to send email',
-        message: error.message,
-        type: error.name
+        message: error.message || 'Unknown error',
+        code: error.code,
+        status: error.status,
+        details: error.response?.body || 'No details available'
       })
     };
   }
