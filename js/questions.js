@@ -32,6 +32,12 @@ async function renderQuestions() {
             <button class="btn btn-secondary btn-sm" onclick="openExcelImportModal()">
               <i class="fas fa-file-excel"></i> Import Excel
             </button>
+            <button class="btn btn-info btn-sm" id="exportQuestionsBtn" onclick="exportQuestionsToExcel(questionsData)" title="Export all questions to Excel">
+              <i class="fas fa-download"></i> Export
+            </button>
+            <button class="btn btn-secondary btn-sm" id="refreshQuestionsBtn" onclick="refreshQuestionBank()" title="Refresh questions list">
+              <i class="fas fa-redo"></i> Refresh
+            </button>
           </div>
         </div>
 
@@ -41,10 +47,13 @@ async function renderQuestions() {
                  onkeyup="filterQuestions()" style="flex: 1; min-width: 200px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
           <select id="questionTypeFilter" onchange="filterQuestions()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
             <option value="">All Types</option>
-            <option value="mcq">Multiple Choice (MCQ)</option>
-            <option value="shortanswer">Short Answer</option>
-            <option value="essay">Essay</option>
-            <option value="fileupload">File Upload</option>
+            <option value="mcq">MCQ - Multiple Choice</option>
+            <option value="true_false">T/F - True/False</option>
+            <option value="pick_list">PL - Pick List</option>
+            <option value="file_upload">FT - File Upload</option>
+            <option value="ordered_list">OL - Ordered List</option>
+            <option value="shortanswer">SA - Short Answer</option>
+            <option value="essay">EA - Essay</option>
           </select>
         </div>
 
@@ -54,10 +63,10 @@ async function renderQuestions() {
             <thead>
               <tr>
                 <th>Question Text</th>
-                <th>Type</th>
-                <th>Points</th>
-                <th>Created</th>
-                <th>Actions</th>
+                <th style="width: 100px;">Type Code</th>
+                <th style="width: 80px;">Points</th>
+                <th style="width: 120px;">Created</th>
+                <th style="width: 100px;">Actions</th>
               </tr>
             </thead>
             <tbody id="questionsTable">
@@ -127,19 +136,14 @@ function displayQuestionsTable() {
     html = '<tr><td colspan="5" style="text-align: center; color: #999;">No questions found</td></tr>';
   } else {
     pageQuestions.forEach(q => {
-      const typeLabel = {
-        'mcq': 'Multiple Choice',
-        'shortanswer': 'Short Answer',
-        'essay': 'Essay',
-        'fileupload': 'File Upload'
-      }[q.question_type] || q.question_type;
-
+      const typeCode = getQuestionTypeCode(q.question_type);
+      const typeLabel = getQuestionTypeLabel(q.question_type);
       const createdDate = q.created_at ? formatDate(q.created_at) : 'N/A';
 
       html += `
         <tr>
           <td>${truncateText(q.question_text, 60)}</td>
-          <td><span class="badge">${typeLabel}</span></td>
+          <td><span class="badge" title="${typeLabel}">${typeCode}</span></td>
           <td>${q.points || 0}</td>
           <td>${createdDate}</td>
           <td>
@@ -215,10 +219,13 @@ async function openQuestionModal(questionId = null) {
       <div class="form-group">
         <label>Question Type *</label>
         <select id="questionType" onchange="updateQuestionTypeFields()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-          <option value="mcq" ${questionType === 'mcq' ? 'selected' : ''}>Multiple Choice (MCQ)</option>
-          <option value="shortanswer" ${questionType === 'shortanswer' ? 'selected' : ''}>Short Answer</option>
-          <option value="essay" ${questionType === 'essay' ? 'selected' : ''}>Essay</option>
-          <option value="fileupload" ${questionType === 'fileupload' ? 'selected' : ''}>File Upload</option>
+          <option value="mcq" ${questionType === 'mcq' ? 'selected' : ''}>MCQ - Multiple Choice Question</option>
+          <option value="true_false" ${questionType === 'true_false' ? 'selected' : ''}>T/F - True/False</option>
+          <option value="pick_list" ${questionType === 'pick_list' ? 'selected' : ''}>PL - Pick List (Dropdown)</option>
+          <option value="file_upload" ${questionType === 'file_upload' ? 'selected' : ''}>FT - File Upload with Dataset</option>
+          <option value="ordered_list" ${questionType === 'ordered_list' ? 'selected' : ''}>OL - Ordered List (Ranking)</option>
+          <option value="shortanswer" ${questionType === 'shortanswer' ? 'selected' : ''}>SA - Short Answer</option>
+          <option value="essay" ${questionType === 'essay' ? 'selected' : ''}>EA - Essay</option>
         </select>
       </div>
 
@@ -255,14 +262,17 @@ async function openQuestionModal(questionId = null) {
       <!-- Dataset Upload Section -->
       <div class="form-group" style="background: #f0f7ff; padding: 15px; border-radius: 4px; border-left: 4px solid #3b82f6;">
         <label style="font-weight: 600; color: #1e40af;"><i class="fas fa-database"></i> Upload Dataset (Optional)</label>
-        <p style="margin: 8px 0; font-size: 13px; color: #64748b;">Attach a CSV or Excel file that trainees will reference for this question.</p>
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <input type="file" id="datasetFile" accept=".csv,.xlsx,.xls,.json" style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+        <p style="margin: 8px 0; font-size: 13px; color: #64748b;">Attach reference files for trainees. Supports: CSV, Excel, JSON, PDF, Images, or Autodesk files (DWG, RVT, etc.) - up to 100MB.</p>
+        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+          <input type="file" id="datasetFile"
+                 accept=".csv,.xlsx,.xls,.json,.pdf,.jpg,.jpeg,.png,.gif,.dwg,.dwt,.rvt,.rfa,.rte,.rft,.iam,.ipt,.ipj,.f3d,.f3z,.zip"
+                 style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
           <button type="button" class="btn btn-secondary btn-sm" onclick="viewDatasetInfo()">
             <i class="fas fa-info-circle"></i> Info
           </button>
         </div>
-        <div id="datasetPreview" style="margin-top: 10px; font-size: 12px; color: #64748b;"></div>
+        <div id="datasetPreview" style="margin-top: 8px; font-size: 12px; color: #64748b;"></div>
+        <div id="fileWarning" style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: 3px; color: #856404; font-size: 12px; display: none;"></div>
       </div>
 
       <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -358,7 +368,7 @@ function updateQuestionTypeFields() {
   const type = document.getElementById('questionType').value;
 
   document.getElementById('mcqFieldsContainer').style.display = type === 'mcq' ? 'block' : 'none';
-  document.getElementById('fileUploadFieldsContainer').style.display = type === 'fileupload' ? 'block' : 'none';
+  document.getElementById('fileUploadFieldsContainer').style.display = (type === 'file_upload' || type === 'fileupload') ? 'block' : 'none';
 
   if (type === 'mcq' && document.getElementById('optionsContainer').children.length === 0) {
     loadMCQOptions(null);
@@ -402,7 +412,7 @@ async function handleQuestionSave(e) {
       }
 
       questionData.options = options;
-    } else if (type === 'fileupload') {
+    } else if (type === 'file_upload' || type === 'fileupload') {
       const fileTypes = [];
       document.querySelectorAll('input[name="fileType"]:checked').forEach(cb => {
         fileTypes.push(cb.value);
@@ -474,8 +484,24 @@ function viewDatasetInfo() {
   }
 
   const sizeKB = (file.size / 1024).toFixed(2);
-  const preview = `<strong>Selected:</strong> ${file.name} (${sizeKB} KB)`;
+  const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+  const isAutodesk = isValidAutodeskFile(file);
+  const fileValidation = validateFileSize(file, 100);
+
+  let preview = `<strong>Selected:</strong> ${file.name} (${sizeMB} MB)`;
+  if (isAutodesk) {
+    preview += ` <span style="color: #d97706; font-weight: 600;"><i class="fas fa-cad"></i> Autodesk Format</span>`;
+  }
   document.getElementById('datasetPreview').innerHTML = preview;
+
+  // Show warning if file is large
+  const warningDiv = document.getElementById('fileWarning');
+  if (fileValidation.warning) {
+    warningDiv.textContent = '⚠ ' + fileValidation.warning;
+    warningDiv.style.display = 'block';
+  } else {
+    warningDiv.style.display = 'none';
+  }
 }
 
 /**
@@ -594,4 +620,28 @@ function formatDate(dateString) {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
   return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+}
+
+/**
+ * Refresh question bank - reload all questions
+ */
+async function refreshQuestionBank() {
+  const btn = document.getElementById('refreshQuestionsBtn');
+  if (!btn) return;
+
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+
+  try {
+    await loadAllQuestions();
+    questionsCurrentPage = 1;
+    displayQuestionsTable();
+    showMessage('Data refreshed successfully', 'success');
+  } catch (error) {
+    showMessage('Error refreshing data: ' + error.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
 }

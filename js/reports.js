@@ -21,6 +21,18 @@ async function renderReports() {
     }
 
     document.getElementById('page').innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <h2 style="margin: 0;">Reports & Analytics</h2>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-info btn-sm" id="exportReportsBtn" onclick="exportResultsToExcel(await getResults())" title="Export report data to Excel">
+            <i class="fas fa-download"></i> Export
+          </button>
+          <button class="btn btn-secondary btn-sm" id="refreshReportsBtn" onclick="refreshReportsPage()" title="Refresh report data">
+            <i class="fas fa-redo"></i> Refresh
+          </button>
+        </div>
+      </div>
+
       <div class="stats-grid">
         <div class="stat-card" style="--stat-color: #10b981;">
           <div class="stat-value" style="color: #059669;">${passRate}%</div>
@@ -39,5 +51,27 @@ async function renderReports() {
   } catch (error) {
     showMessage('Error: ' + error.message, 'error');
     document.getElementById('page').innerHTML = '<div class="card"><p style="color: red;">Error loading reports</p></div>';
+  }
+}
+
+/**
+ * Refresh reports page
+ */
+async function refreshReportsPage() {
+  const btn = document.getElementById('refreshReportsBtn');
+  if (!btn) return;
+
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+
+  try {
+    await renderReports();
+    showMessage('Data refreshed successfully', 'success');
+  } catch (error) {
+    showMessage('Error refreshing data: ' + error.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
   }
 }

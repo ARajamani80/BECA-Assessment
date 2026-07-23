@@ -15,8 +15,11 @@ async function renderSendTrainees() {
 
     let html = `
       <div class="card">
-        <div class="card-title" style="margin-bottom: 20px;">
-          <i class="fas fa-paper-plane"></i> Send Assessment to Trainees
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div class="card-title" style="margin: 0;"><i class="fas fa-paper-plane"></i> Send Assessment to Trainees</div>
+          <button class="btn btn-secondary btn-sm" id="refreshSendTraineesBtn" onclick="refreshSendTraineesPage()" title="Refresh assessments and takers list">
+            <i class="fas fa-redo"></i> Refresh
+          </button>
         </div>
 
         <form id="sendAssessmentForm" onsubmit="handleSendToTrainees(event)">
@@ -273,5 +276,27 @@ async function handleSendToTrainees(e) {
     setTimeout(() => renderSendTrainees(), 1000);
   } catch (error) {
     showMessage('Error: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Refresh send trainees page
+ */
+async function refreshSendTraineesPage() {
+  const btn = document.getElementById('refreshSendTraineesBtn');
+  if (!btn) return;
+
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+
+  try {
+    await renderSendTrainees();
+    showMessage('Data refreshed successfully', 'success');
+  } catch (error) {
+    showMessage('Error refreshing data: ' + error.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
   }
 }

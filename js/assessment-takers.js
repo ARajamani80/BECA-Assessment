@@ -25,6 +25,12 @@ async function renderAssessmentTakers() {
             <button class="btn btn-secondary btn-sm" onclick="openBulkUploadModal()">
               <i class="fas fa-file-csv"></i> Import CSV
             </button>
+            <button class="btn btn-info btn-sm" id="exportTakersBtn" onclick="exportTakersToExcel(allAssessmentTakers)" title="Export all takers to Excel">
+              <i class="fas fa-download"></i> Export
+            </button>
+            <button class="btn btn-secondary btn-sm" id="refreshTakersBtn" onclick="refreshTakersList()" title="Refresh takers list">
+              <i class="fas fa-redo"></i> Refresh
+            </button>
           </div>
         </div>
 
@@ -586,4 +592,26 @@ function generateToken(length = 32) {
     token += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return token;
+}
+
+/**
+ * Refresh takers list
+ */
+async function refreshTakersList() {
+  const btn = document.getElementById('refreshTakersBtn');
+  if (!btn) return;
+
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+
+  try {
+    await renderAssessmentTakers();
+    showMessage('Data refreshed successfully', 'success');
+  } catch (error) {
+    showMessage('Error refreshing data: ' + error.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
 }

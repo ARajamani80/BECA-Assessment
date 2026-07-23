@@ -24,7 +24,18 @@ async function renderAssessments() {
   try {
     allAssessments = await getAssessments();
 
-    let html = '<div class="card"><div class="card-title"><i class="fas fa-list-check"></i> All Assessments</div>';
+    let html = `<div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div class="card-title" style="margin: 0;"><i class="fas fa-list-check"></i> All Assessments</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-info btn-sm" id="exportAssessmentsBtn" onclick="exportAssessmentsToExcel(allAssessments)" title="Export all assessments to Excel">
+            <i class="fas fa-download"></i> Export
+          </button>
+          <button class="btn btn-secondary btn-sm" id="refreshAssessmentsBtn" onclick="refreshAssessmentsList()" title="Refresh assessments list">
+            <i class="fas fa-redo"></i> Refresh
+          </button>
+        </div>
+      </div>`;
 
     if (!Array.isArray(allAssessments) || allAssessments.length === 0) {
       html += '<p style="color: var(--text-secondary);">No assessments yet. <a href="#" onclick="openCreateAssessmentModal()" style="color: var(--primary);">Create one</a></p>';
@@ -559,4 +570,26 @@ function formatDate(dateString) {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
   return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+}
+
+/**
+ * Refresh assessments list
+ */
+async function refreshAssessmentsList() {
+  const btn = document.getElementById('refreshAssessmentsBtn');
+  if (!btn) return;
+
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+
+  try {
+    await renderAssessments();
+    showMessage('Data refreshed successfully', 'success');
+  } catch (error) {
+    showMessage('Error refreshing data: ' + error.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
 }

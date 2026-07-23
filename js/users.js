@@ -55,6 +55,9 @@ async function renderUsers() {
             ${isSuperadmin ? `<button class="btn btn-secondary btn-sm" onclick="viewAuditLog()">
               <i class="fas fa-history"></i> Audit Log
             </button>` : ''}
+            <button class="btn btn-secondary btn-sm" id="refreshUsersBtn" onclick="refreshUsersList()" title="Refresh users list">
+              <i class="fas fa-redo"></i> Refresh
+            </button>
           </div>
         </div>
 
@@ -509,5 +512,27 @@ async function savePermissionChanges() {
     renderUsers();
   } catch (error) {
     showMessage('Error saving permissions: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Refresh users list
+ */
+async function refreshUsersList() {
+  const btn = document.getElementById('refreshUsersBtn');
+  if (!btn) return;
+
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+
+  try {
+    await renderUsers();
+    showMessage('Data refreshed successfully', 'success');
+  } catch (error) {
+    showMessage('Error refreshing data: ' + error.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
   }
 }

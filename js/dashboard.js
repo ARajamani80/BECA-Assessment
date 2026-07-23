@@ -52,15 +52,20 @@ async function renderDashboard() {
 
     document.getElementById('page').innerHTML = `
       <!-- Quick Action Buttons -->
-      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-        <button class="btn btn-primary" onclick="showPage('assessments')">
-          <i class="fas fa-plus"></i> Create Assessment
-        </button>
-        <button class="btn btn-primary" onclick="showPage('questions')">
-          <i class="fas fa-plus"></i> Add Questions
-        </button>
-        <button class="btn btn-primary" onclick="showPage('send-trainees')">
-          <i class="fas fa-paper-plane"></i> Send Assessment
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-primary" onclick="showPage('assessments')">
+            <i class="fas fa-plus"></i> Create Assessment
+          </button>
+          <button class="btn btn-primary" onclick="showPage('questions')">
+            <i class="fas fa-plus"></i> Add Questions
+          </button>
+          <button class="btn btn-primary" onclick="showPage('send-trainees')">
+            <i class="fas fa-paper-plane"></i> Send Assessment
+          </button>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="refreshDashboardBtn" onclick="refreshDashboard()" title="Refresh dashboard statistics">
+          <i class="fas fa-redo"></i> Refresh
         </button>
       </div>
 
@@ -238,4 +243,26 @@ function createSubmissionStatusChart(completed, pending) {
       }
     }
   });
+}
+
+/**
+ * Refresh dashboard statistics
+ */
+async function refreshDashboard() {
+  const btn = document.getElementById('refreshDashboardBtn');
+  if (!btn) return;
+
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+
+  try {
+    await renderDashboard();
+    showMessage('Dashboard refreshed successfully', 'success');
+  } catch (error) {
+    showMessage('Error refreshing dashboard: ' + error.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
 }

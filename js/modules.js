@@ -28,9 +28,17 @@ async function renderModules() {
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
           <div class="card-title" style="margin: 0;"><i class="fas fa-book"></i> Module Bank</div>
-          <button class="btn btn-primary btn-sm" onclick="openCreateModuleModal()">
-            <i class="fas fa-plus"></i> Create Module
-          </button>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-sm" onclick="openCreateModuleModal()">
+              <i class="fas fa-plus"></i> Create Module
+            </button>
+            <button class="btn btn-info btn-sm" id="exportModulesBtn" onclick="exportModulesToExcel(allModules)" title="Export all modules to Excel">
+              <i class="fas fa-download"></i> Export
+            </button>
+            <button class="btn btn-secondary btn-sm" id="refreshModulesBtn" onclick="refreshModuleBank()" title="Refresh modules list">
+              <i class="fas fa-redo"></i> Refresh
+            </button>
+          </div>
         </div>
 
         <!-- Search -->
@@ -493,4 +501,29 @@ function formatDate(dateString) {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
   return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+}
+
+/**
+ * Refresh module bank - reload all modules
+ */
+async function refreshModuleBank() {
+  const btn = document.getElementById('refreshModulesBtn');
+  if (!btn) return;
+
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+
+  try {
+    await loadAllModules();
+    await loadAllQuestionsForModules();
+    moduleCurrentPage = 1;
+    displayModulesTable();
+    showMessage('Data refreshed successfully', 'success');
+  } catch (error) {
+    showMessage('Error refreshing data: ' + error.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
 }
