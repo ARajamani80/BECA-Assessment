@@ -82,7 +82,7 @@ async function loadAssessmentForTaker() {
     }
 
     assessmentState.assessment = assessment;
-    console.log('Assessment loaded:', assessment.name);
+    console.log('Assessment loaded:', assessment.title);
 
     // Get assessment questions (all modules and their questions)
     const modules = await getAssessmentModules(assessment.id);
@@ -105,7 +105,7 @@ async function loadAssessmentForTaker() {
     renderAssessmentInterface();
 
     // Start the timer
-    startAssessmentTimer(assessment.duration_minutes || 60);
+    startAssessmentTimer(assessment.duration || 60);
 
     // Setup auto-save
     setupAutoSave();
@@ -129,7 +129,7 @@ function renderAssessmentInterface() {
       <!-- Instructions Banner -->
       <div class="taker-instructions-banner">
         <div class="instructions-content">
-          <h2>${escapeHtml(assessmentState.assessment.name)}</h2>
+          <h2>${escapeHtml(assessmentState.assessment.title)}</h2>
           <p>${escapeHtml(assessmentState.assessment.instructions || 'Please answer all questions to the best of your ability.')}</p>
           <div class="instructions-meta">
             <span><i class="fas fa-file-alt"></i> ${assessmentState.questions.length} Questions</span>
