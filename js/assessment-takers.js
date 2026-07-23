@@ -210,35 +210,52 @@ function filterTakers() {
  * Open modal to add new taker
  */
 async function openAddTakerModal() {
-  document.getElementById('takerModalContent').innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2 style="margin: 0;">Add Assessment Taker</h2>
-      <button onclick="closeModal('takerModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
-    </div>
+  try {
+    console.log('👤 openAddTakerModal() called');
 
-    <form id="takerForm" onsubmit="handleSaveTaker(event)">
-      <div class="form-group">
-        <label>Email Address *</label>
-        <input type="email" id="takerEmail" required placeholder="user@example.com" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+    document.getElementById('takerModalContent').innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">Add Assessment Taker</h2>
+        <button onclick="closeModal('takerModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
       </div>
 
-      <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" id="takerName" placeholder="Full name (optional)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-      </div>
+      <form id="takerForm" onsubmit="handleSaveTaker(event)">
+        <div class="form-group">
+          <label><span style="color: #dc2626;">*</span> Email Address</label>
+          <input type="email" id="takerEmail" required placeholder="user@example.com" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+        </div>
 
-      <div style="display: flex; gap: 10px; margin-top: 20px;">
-        <button type="submit" class="btn btn-success" style="flex: 1;">
-          <i class="fas fa-save"></i> Add Taker
-        </button>
-        <button type="button" class="btn btn-secondary" onclick="closeModal('takerModal')" style="flex: 1;">
-          <i class="fas fa-times"></i> Cancel
-        </button>
-      </div>
-    </form>
-  `;
+        <div class="form-group">
+          <label>Full Name (Optional)</label>
+          <input type="text" id="takerName" placeholder="Full name (optional)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+        </div>
 
-  showModal('takerModal');
+        <div class="form-group">
+          <label>Department (Optional)</label>
+          <input type="text" id="takerDepartment" placeholder="Department (optional)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" class="btn btn-success" style="flex: 1;">
+            <i class="fas fa-save"></i> Add Taker
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('takerModal')" style="flex: 1;">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+        </div>
+      </form>
+    `;
+
+    const result = showModal('takerModal');
+    if (result) {
+      console.log('✅ Add Taker modal opened successfully');
+    }
+    return result;
+  } catch (error) {
+    console.error('🔴 Error opening Add Taker Modal:', error);
+    alert('Error: ' + error.message);
+    return false;
+  }
 }
 
 /**
@@ -248,34 +265,49 @@ async function handleSaveTaker(event) {
   event.preventDefault();
 
   try {
+    console.log('💾 Saving assessment taker...');
+
     const email = document.getElementById('takerEmail').value;
     const fullName = document.getElementById('takerName').value;
+    const department = document.getElementById('takerDepartment').value;
 
     if (!email) {
       showMessage('Email is required', 'error');
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showMessage('Please enter a valid email address', 'error');
+      return;
+    }
+
     // Check if taker already exists
-    const existing = allAssessmentTakers.find(t => t.email === email);
+    const existing = allAssessmentTakers.find(t => t.email.toLowerCase() === email.toLowerCase());
     if (existing) {
       showMessage('This email is already registered', 'error');
+      console.log('⚠️ Duplicate email:', email);
       return;
     }
 
     const takerData = {
       email: email,
       full_name: fullName || null,
-      token: generateToken(16),
+      department: department || null,
+      token: generateToken(32),
       created_at: new Date().toISOString()
     };
+
+    console.log('📝 Taker data prepared:', takerData);
 
     await createAssessmentTaker(takerData);
     showMessage('Taker added successfully!', 'success');
     closeModal('takerModal');
     await renderAssessmentTakers();
+    console.log('✅ Taker saved and view refreshed');
   } catch (error) {
-    console.error('Error saving taker:', error);
+    console.error('🔴 Error saving taker:', error);
     showMessage('Error: ' + error.message, 'error');
   }
 }

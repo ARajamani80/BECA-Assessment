@@ -5,12 +5,21 @@
  * @param {string} modalId - Modal element ID
  */
 function showModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) {
+  try {
+    console.log('📋 showModal() called with ID:', modalId);
+    const modal = document.getElementById(modalId);
+    if (!modal) {
+      console.error('❌ Modal not found:', modalId);
+      console.error('Available modals:', Array.from(document.querySelectorAll('.modal')).map(m => m.id));
+      alert('Modal element not found: ' + modalId);
+      return false;
+    }
     modal.style.display = 'flex';
-    console.log('✓ Modal shown:', modalId);
-  } else {
-    console.error('❌ Modal not found:', modalId);
+    console.log('✅ Modal shown successfully:', modalId);
+    return true;
+  } catch (error) {
+    console.error('🔴 Error showing modal:', error);
+    return false;
   }
 }
 
@@ -19,12 +28,19 @@ function showModal(modalId) {
  * @param {string} modalId - Modal element ID
  */
 function closeModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) {
+  try {
+    console.log('📋 closeModal() called with ID:', modalId);
+    const modal = document.getElementById(modalId);
+    if (!modal) {
+      console.error('❌ Modal not found:', modalId);
+      return false;
+    }
     modal.style.display = 'none';
-    console.log('✓ Modal closed:', modalId);
-  } else {
-    console.error('❌ Modal not found:', modalId);
+    console.log('✅ Modal closed successfully:', modalId);
+    return true;
+  } catch (error) {
+    console.error('🔴 Error closing modal:', error);
+    return false;
   }
 }
 
@@ -41,9 +57,17 @@ document.addEventListener('click', function(e) {
  * Open Question Modal
  */
 function openQuestionModal(questionId = null) {
-  showModal('questionModal');
-  if (questionId) {
-    console.log('Editing question:', questionId);
+  try {
+    console.log('📌 openQuestionModal() called with ID:', questionId);
+    const result = showModal('questionModal');
+    if (result && questionId) {
+      console.log('✏️ Editing question:', questionId);
+    }
+    return result;
+  } catch (error) {
+    console.error('🔴 Error opening Question Modal:', error);
+    alert('Error: ' + error.message);
+    return false;
   }
 }
 
@@ -51,9 +75,17 @@ function openQuestionModal(questionId = null) {
  * Open Module Modal
  */
 function openModuleModal(moduleId = null) {
-  showModal('moduleModal');
-  if (moduleId) {
-    console.log('Editing module:', moduleId);
+  try {
+    console.log('📌 openModuleModal() called with ID:', moduleId);
+    const result = showModal('moduleModal');
+    if (result && moduleId) {
+      console.log('✏️ Editing module:', moduleId);
+    }
+    return result;
+  } catch (error) {
+    console.error('🔴 Error opening Module Modal:', error);
+    alert('Error: ' + error.message);
+    return false;
   }
 }
 
@@ -61,9 +93,17 @@ function openModuleModal(moduleId = null) {
  * Open Assessment Modal
  */
 function openAssessmentModal(assessmentId = null) {
-  showModal('assessmentModal');
-  if (assessmentId) {
-    console.log('Editing assessment:', assessmentId);
+  try {
+    console.log('📌 openAssessmentModal() called with ID:', assessmentId);
+    const result = showModal('assessmentModal');
+    if (result && assessmentId) {
+      console.log('✏️ Editing assessment:', assessmentId);
+    }
+    return result;
+  } catch (error) {
+    console.error('🔴 Error opening Assessment Modal:', error);
+    alert('Error: ' + error.message);
+    return false;
   }
 }
 
@@ -71,16 +111,45 @@ function openAssessmentModal(assessmentId = null) {
  * Open Excel Import Modal
  */
 function openExcelImportModal() {
-  showModal('excelImportModal');
+  try {
+    console.log('📌 openExcelImportModal() called');
+    return showModal('excelImportModal');
+  } catch (error) {
+    console.error('🔴 Error opening Excel Import Modal:', error);
+    alert('Error: ' + error.message);
+    return false;
+  }
+}
+
+/**
+ * Open Assessment Taker Modal (Alternative Name)
+ */
+function openAddTakerModal() {
+  try {
+    console.log('📌 openAddTakerModal() called');
+    return showModal('takerModal');
+  } catch (error) {
+    console.error('🔴 Error opening Add Taker Modal:', error);
+    alert('Error: ' + error.message);
+    return false;
+  }
 }
 
 /**
  * Open Assessment Taker Modal
  */
 function openTakerModal(takerId = null) {
-  showModal('takerModal');
-  if (takerId) {
-    console.log('Editing taker:', takerId);
+  try {
+    console.log('📌 openTakerModal() called with ID:', takerId);
+    const result = showModal('takerModal');
+    if (result && takerId) {
+      console.log('✏️ Editing taker:', takerId);
+    }
+    return result;
+  } catch (error) {
+    console.error('🔴 Error opening Taker Modal:', error);
+    alert('Error: ' + error.message);
+    return false;
   }
 }
 
@@ -88,9 +157,17 @@ function openTakerModal(takerId = null) {
  * Open Permission Editor Modal
  */
 function openPermissionEditor(userId = null) {
-  showModal('userModal');
-  if (userId) {
-    console.log('Editing permissions for:', userId);
+  try {
+    console.log('📌 openPermissionEditor() called with ID:', userId);
+    const result = showModal('userModal');
+    if (result && userId) {
+      console.log('✏️ Editing permissions for:', userId);
+    }
+    return result;
+  } catch (error) {
+    console.error('🔴 Error opening Permission Editor:', error);
+    alert('Error: ' + error.message);
+    return false;
   }
 }
 
@@ -98,8 +175,14 @@ function openPermissionEditor(userId = null) {
  * Open Role Permissions Modal
  */
 function openRolePermissionsModal(role) {
-  showModal('userModal');
-  console.log('Managing permissions for role:', role);
+  try {
+    console.log('📌 openRolePermissionsModal() called for role:', role);
+    return showModal('userModal');
+  } catch (error) {
+    console.error('🔴 Error opening Role Permissions Modal:', error);
+    alert('Error: ' + error.message);
+    return false;
+  }
 }
 
 /**

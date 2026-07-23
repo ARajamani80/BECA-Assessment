@@ -267,6 +267,29 @@
   <script src="js/taker.js"></script>
   <script src="js/app.js"></script>
 
+  <!-- Global Error Handler -->
+  <script>
+    // Global error handler for JavaScript errors
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+      console.error('🔴 GLOBAL JavaScript Error:', {
+        message: msg,
+        url: url,
+        line: lineNo,
+        column: columnNo,
+        error: error,
+        stack: error?.stack
+      });
+      return false;
+    };
+
+    // Handle unhandled promise rejections
+    window.addEventListener('unhandledrejection', event => {
+      console.error('🔴 Unhandled Promise Rejection:', event.reason);
+    });
+
+    console.log('✅ Global error handlers initialized');
+  </script>
+
   <!-- Initialization -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {

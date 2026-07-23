@@ -32,6 +32,9 @@ async function renderQuestions() {
             <button class="btn btn-secondary btn-sm" onclick="openExcelImportModal()">
               <i class="fas fa-file-excel"></i> Import Excel
             </button>
+            <button class="btn btn-info btn-sm" id="downloadTemplateBtn" onclick="downloadQuestionTemplate()" title="Download blank template for importing questions">
+              <i class="fas fa-file-excel"></i> Download Template
+            </button>
             <button class="btn btn-info btn-sm" id="exportQuestionsBtn" onclick="exportQuestionsToExcel(questionsData)" title="Export all questions to Excel">
               <i class="fas fa-download"></i> Export
             </button>
@@ -191,111 +194,220 @@ function displayQuestionsTable() {
  * @param {string} questionId - Optional question ID for editing
  */
 async function openQuestionModal(questionId = null) {
-  let question = null;
-  let titleText = 'Add New Question';
+  try {
+    console.log('📝 Opening Question Modal, ID:', questionId);
 
-  if (questionId) {
-    const q = questionsData.find(q => q.id === questionId);
-    if (q) {
-      question = q;
-      titleText = 'Edit Question';
+    let question = null;
+    let titleText = 'Add New Question';
+
+    if (questionId) {
+      const q = questionsData.find(q => q.id === questionId);
+      if (q) {
+        question = q;
+        titleText = 'Edit Question';
+      }
     }
-  }
 
-  const questionType = question?.question_type || 'mcq';
+    const questionType = question?.question_type || 'mcq';
 
-  document.getElementById('questionModalContent').innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2 style="margin: 0;">${titleText}</h2>
-      <button onclick="closeModal('questionModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
-    </div>
-
-    <form id="questionForm" onsubmit="handleQuestionSave(event)">
-      <div class="form-group">
-        <label>Question Text *</label>
-        <textarea id="questionText" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: Arial; resize: vertical; min-height: 80px;">${question?.question_text || ''}</textarea>
+    document.getElementById('questionModalContent').innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">${titleText}</h2>
+        <button onclick="closeModal('questionModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
       </div>
 
-      <div class="form-group">
-        <label>Question Type *</label>
-        <select id="questionType" onchange="updateQuestionTypeFields()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-          <option value="mcq" ${questionType === 'mcq' ? 'selected' : ''}>MCQ - Multiple Choice Question</option>
-          <option value="true_false" ${questionType === 'true_false' ? 'selected' : ''}>T/F - True/False</option>
-          <option value="pick_list" ${questionType === 'pick_list' ? 'selected' : ''}>PL - Pick List (Dropdown)</option>
-          <option value="file_upload" ${questionType === 'file_upload' ? 'selected' : ''}>FT - File Upload with Dataset</option>
-          <option value="ordered_list" ${questionType === 'ordered_list' ? 'selected' : ''}>OL - Ordered List (Ranking)</option>
-          <option value="shortanswer" ${questionType === 'shortanswer' ? 'selected' : ''}>SA - Short Answer</option>
-          <option value="essay" ${questionType === 'essay' ? 'selected' : ''}>EA - Essay</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Points *</label>
-        <input type="number" id="questionPoints" value="${question?.points || 1}" min="1" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-      </div>
-
-      <div class="form-group">
-        <label>Description (Optional)</label>
-        <textarea id="questionDescription" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: Arial; resize: vertical; min-height: 60px;">${question?.question_description || ''}</textarea>
-      </div>
-
-      <!-- MCQ Options -->
-      <div id="mcqFieldsContainer" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0;">
-        <h4 style="margin-top: 0;">Answer Options</h4>
-        <div id="optionsContainer"></div>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="addOption()" style="margin-top: 10px;">
-          <i class="fas fa-plus"></i> Add Option
-        </button>
-      </div>
-
-      <!-- File Upload Types -->
-      <div id="fileUploadFieldsContainer" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0;">
-        <h4 style="margin-top: 0;">Allowed File Types</h4>
-        <div>
-          <label><input type="checkbox" name="fileType" value="pdf"> PDF</label>
-          <label style="margin-left: 15px;"><input type="checkbox" name="fileType" value="doc"> Word (.doc, .docx)</label>
-          <label style="margin-left: 15px;"><input type="checkbox" name="fileType" value="image"> Images</label>
-          <label style="margin-left: 15px;"><input type="checkbox" name="fileType" value="other"> Other</label>
+      <form id="questionForm" onsubmit="handleQuestionSave(event)">
+        <div class="form-group">
+          <label><span style="color: #dc2626;">*</span> Question Text</label>
+          <textarea id="questionText" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: Arial; resize: vertical; min-height: 80px;">${question?.question_text || ''}</textarea>
         </div>
-      </div>
 
-      <!-- Dataset Upload Section -->
-      <div class="form-group" style="background: #f0f7ff; padding: 15px; border-radius: 4px; border-left: 4px solid #3b82f6;">
-        <label style="font-weight: 600; color: #1e40af;"><i class="fas fa-database"></i> Upload Dataset (Optional)</label>
-        <p style="margin: 8px 0; font-size: 13px; color: #64748b;">Attach reference files for trainees. Supports: CSV, Excel, JSON, PDF, Images, or Autodesk files (DWG, RVT, etc.) - up to 100MB.</p>
-        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
-          <input type="file" id="datasetFile"
-                 accept=".csv,.xlsx,.xls,.json,.pdf,.jpg,.jpeg,.png,.gif,.dwg,.dwt,.rvt,.rfa,.rte,.rft,.iam,.ipt,.ipj,.f3d,.f3z,.zip"
-                 style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="viewDatasetInfo()">
-            <i class="fas fa-info-circle"></i> Info
+        <div class="form-group">
+          <label><span style="color: #dc2626;">*</span> Question Type</label>
+          <select id="questionType" onchange="updateQuestionTypeFields()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="mcq" ${questionType === 'mcq' ? 'selected' : ''}>MCQ - Multiple Choice Question</option>
+            <option value="true_false" ${questionType === 'true_false' ? 'selected' : ''}>T/F - True/False</option>
+            <option value="pick_list" ${questionType === 'pick_list' ? 'selected' : ''}>PL - Pick List (Dropdown)</option>
+            <option value="file_upload" ${questionType === 'file_upload' ? 'selected' : ''}>FT - File Upload with Dataset</option>
+            <option value="ordered_list" ${questionType === 'ordered_list' ? 'selected' : ''}>OL - Ordered List (Ranking)</option>
+            <option value="shortanswer" ${questionType === 'shortanswer' ? 'selected' : ''}>SA - Short Answer</option>
+            <option value="essay" ${questionType === 'essay' ? 'selected' : ''}>EA - Essay</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label><span style="color: #dc2626;">*</span> Points</label>
+          <input type="number" id="questionPoints" value="${question?.points || 1}" min="1" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+
+        <div class="form-group">
+          <label>Description (Optional)</label>
+          <textarea id="questionDescription" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: Arial; resize: vertical; min-height: 60px;">${question?.question_description || ''}</textarea>
+        </div>
+
+        <!-- MCQ Options -->
+        <div id="mcqFieldsContainer" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0; opacity: 0; transition: opacity 0.3s;">
+          <h4 style="margin-top: 0; color: #1e293b;"><i class="fas fa-list-ol"></i> Answer Options <span style="color: #dc2626;">*</span></h4>
+          <p style="font-size: 12px; color: #64748b; margin: 8px 0;">Add multiple choice options and select the correct answer</p>
+          <div id="optionsContainer"></div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addOption()" style="margin-top: 10px;">
+            <i class="fas fa-plus"></i> Add Option
           </button>
         </div>
-        <div id="datasetPreview" style="margin-top: 8px; font-size: 12px; color: #64748b;"></div>
-        <div id="fileWarning" style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: 3px; color: #856404; font-size: 12px; display: none;"></div>
-      </div>
 
-      <div style="display: flex; gap: 10px; margin-top: 20px;">
-        <button type="submit" class="btn btn-success" style="flex: 1;">
-          <i class="fas fa-save"></i> Save Question
-        </button>
-        <button type="button" class="btn btn-secondary" onclick="closeModal('questionModal')" style="flex: 1;">
-          <i class="fas fa-times"></i> Cancel
-        </button>
-      </div>
-    </form>
-  `;
+        <!-- True/False Options -->
+        <div id="trueFalseFieldsContainer" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0; opacity: 0; transition: opacity 0.3s;">
+          <h4 style="margin-top: 0; color: #1e293b;"><i class="fas fa-toggle-on"></i> Correct Answer <span style="color: #dc2626;">*</span></h4>
+          <div style="display: flex; gap: 20px;">
+            <label style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+              <input type="radio" name="tfCorrectAnswer" value="true" required>
+              <span>True</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+              <input type="radio" name="tfCorrectAnswer" value="false">
+              <span>False</span>
+            </label>
+          </div>
+        </div>
 
-  document.getElementById('questionModal').dataset.questionId = questionId || '';
+        <!-- Pick List Options -->
+        <div id="pickListFieldsContainer" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0; opacity: 0; transition: opacity 0.3s;">
+          <h4 style="margin-top: 0; color: #1e293b;"><i class="fas fa-list"></i> List Items <span style="color: #dc2626;">*</span></h4>
+          <p style="font-size: 12px; color: #64748b; margin: 8px 0;">Add items that will appear in a dropdown menu</p>
+          <div id="pickListContainer"></div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addPickListItem()" style="margin-top: 10px;">
+            <i class="fas fa-plus"></i> Add Item
+          </button>
+        </div>
 
-  if (questionType === 'mcq') {
-    loadMCQOptions(question);
-  } else if (questionType === 'fileupload') {
-    loadFileTypes(question);
+        <!-- File Upload -->
+        <div id="fileUploadFieldsContainer" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0; opacity: 0; transition: opacity 0.3s;">
+          <h4 style="margin-top: 0; color: #1e293b;"><i class="fas fa-file-upload"></i> Allowed File Types <span style="color: #dc2626;">*</span></h4>
+          <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 8px;"><input type="checkbox" name="fileType" value="pdf"> PDF Documents</label>
+            <label style="display: block; margin-bottom: 8px;"><input type="checkbox" name="fileType" value="doc"> Word (.doc, .docx)</label>
+            <label style="display: block; margin-bottom: 8px;"><input type="checkbox" name="fileType" value="image"> Images (JPG, PNG, GIF)</label>
+            <label style="display: block;"><input type="checkbox" name="fileType" value="other"> Other Formats</label>
+          </div>
+          <div class="form-group">
+            <label>Max File Size (MB)</label>
+            <input type="number" id="maxFileSize" value="50" min="1" max="100" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div class="form-group">
+            <label>Instructions (Optional)</label>
+            <textarea id="fileInstructions" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 60px;" placeholder="Provide instructions for file upload..."></textarea>
+          </div>
+        </div>
+
+        <!-- Ordered List -->
+        <div id="orderedListFieldsContainer" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0; opacity: 0; transition: opacity 0.3s;">
+          <h4 style="margin-top: 0; color: #1e293b;"><i class="fas fa-sort-numeric-down"></i> Items to Rank <span style="color: #dc2626;">*</span></h4>
+          <p style="font-size: 12px; color: #64748b; margin: 8px 0;">Add items that need to be arranged in correct order</p>
+          <div id="orderedListContainer"></div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addOrderedListItem()" style="margin-top: 10px;">
+            <i class="fas fa-plus"></i> Add Item
+          </button>
+        </div>
+
+        <!-- Short Answer -->
+        <div id="shortAnswerFieldsContainer" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0; opacity: 0; transition: opacity 0.3s;">
+          <h4 style="margin-top: 0; color: #1e293b;"><i class="fas fa-pen-square"></i> Expected Answer <span style="color: #dc2626;">*</span></h4>
+          <div class="form-group">
+            <label>Expected Answer</label>
+            <input type="text" id="saExpectedAnswer" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+          </div>
+          <div class="form-group">
+            <label>Keywords (comma-separated)</label>
+            <input type="text" id="saKeywords" placeholder="e.g., keyword1, keyword2, keyword3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <label style="display: flex; align-items: center; gap: 8px; margin: 10px 0; cursor: pointer;">
+            <input type="checkbox" id="saCaseSensitive">
+            <span>Case Sensitive</span>
+          </label>
+        </div>
+
+        <!-- Essay Answer -->
+        <div id="essayFieldsContainer" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0; opacity: 0; transition: opacity 0.3s;">
+          <h4 style="margin-top: 0; color: #1e293b;"><i class="fas fa-book"></i> Rubric Criteria</h4>
+          <div class="form-group">
+            <label>Min Words (Optional)</label>
+            <input type="number" id="eaMinWords" min="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div class="form-group">
+            <label>Max Words (Optional)</label>
+            <input type="number" id="eaMaxWords" min="0" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <div class="form-group">
+            <label>Rubric Criteria (Optional)</label>
+            <textarea id="eaRubricCriteria" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 80px;" placeholder="Define how this essay will be graded..."></textarea>
+          </div>
+        </div>
+
+        <!-- Dataset Upload Section -->
+        <div class="form-group" style="background: #f0f7ff; padding: 15px; border-radius: 4px; border-left: 4px solid #3b82f6;">
+          <label style="font-weight: 600; color: #1e40af;"><i class="fas fa-database"></i> Upload Dataset (Optional)</label>
+          <p style="margin: 8px 0; font-size: 13px; color: #64748b;">Attach reference files for trainees. Supports: CSV, Excel, JSON, PDF, Images, or Autodesk files (DWG, RVT, etc.) - up to 100MB.</p>
+          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+            <input type="file" id="datasetFile"
+                   accept=".csv,.xlsx,.xls,.json,.pdf,.jpg,.jpeg,.png,.gif,.dwg,.dwt,.rvt,.rfa,.rte,.rft,.iam,.ipt,.ipj,.f3d,.f3z,.zip"
+                   style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="viewDatasetInfo()">
+              <i class="fas fa-info-circle"></i> Info
+            </button>
+          </div>
+          <div id="datasetPreview" style="margin-top: 8px; font-size: 12px; color: #64748b;"></div>
+          <div id="fileWarning" style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: 3px; color: #856404; font-size: 12px; display: none;"></div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" class="btn btn-success" style="flex: 1;">
+            <i class="fas fa-save"></i> Save Question
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('questionModal')" style="flex: 1;">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+        </div>
+      </form>
+    `;
+
+    document.getElementById('questionModal').dataset.questionId = questionId || '';
+
+    // Initialize type-specific fields
+    if (questionType === 'mcq') {
+      loadMCQOptions(question);
+    } else if (questionType === 'file_upload' || questionType === 'fileupload') {
+      loadFileTypes(question);
+    } else if (questionType === 'true_false') {
+      // Load T/F correct answer
+      if (question?.correct_answer) {
+        const val = question.correct_answer === 'true' || question.correct_answer === true ? 'true' : 'false';
+        document.querySelector(`input[name="tfCorrectAnswer"][value="${val}"]`).checked = true;
+      }
+    } else if (questionType === 'pick_list') {
+      loadPickListItems(question);
+    } else if (questionType === 'ordered_list') {
+      loadOrderedListItems(question);
+    } else if (questionType === 'shortanswer') {
+      if (question?.correct_answer) document.getElementById('saExpectedAnswer').value = question.correct_answer;
+      if (question?.keywords) document.getElementById('saKeywords').value = question.keywords.join(', ');
+      if (question?.case_sensitive) document.getElementById('saCaseSensitive').checked = true;
+    } else if (questionType === 'essay') {
+      if (question?.min_words) document.getElementById('eaMinWords').value = question.min_words;
+      if (question?.max_words) document.getElementById('eaMaxWords').value = question.max_words;
+      if (question?.rubric_criteria) document.getElementById('eaRubricCriteria').value = question.rubric_criteria;
+    }
+
+    updateQuestionTypeFields();
+    const result = showModal('questionModal');
+
+    if (result) {
+      console.log('✅ Question Modal opened successfully');
+    }
+
+  } catch (error) {
+    console.error('🔴 Error opening Question Modal:', error);
+    alert('Error: ' + error.message);
   }
-
-  updateQuestionTypeFields();
-  showModal('questionModal');
 }
 
 /**
@@ -336,6 +448,90 @@ function loadFileTypes(question) {
   document.querySelectorAll('input[name="fileType"]').forEach(cb => {
     cb.checked = allowedTypes.includes(cb.value);
   });
+  if (question?.max_file_size) document.getElementById('maxFileSize').value = question.max_file_size;
+  if (question?.file_instructions) document.getElementById('fileInstructions').value = question.file_instructions;
+}
+
+/**
+ * Load pick list items into modal
+ */
+function loadPickListItems(question) {
+  let html = '';
+  const items = question?.list_items || ['', '', '', ''];
+
+  items.forEach((item, idx) => {
+    html += `
+      <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+        <input type="text" class="pick-list-input" value="${item || ''}" placeholder="Item ${idx + 1}" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    `;
+  });
+
+  document.getElementById('pickListContainer').innerHTML = html;
+}
+
+/**
+ * Add pick list item
+ */
+function addPickListItem() {
+  const container = document.getElementById('pickListContainer');
+  const itemCount = container.children.length;
+
+  const newItem = document.createElement('div');
+  newItem.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px; align-items: center;';
+  newItem.innerHTML = `
+    <input type="text" class="pick-list-input" placeholder="Item ${itemCount + 1}" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+    <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">
+      <i class="fas fa-trash"></i>
+    </button>
+  `;
+
+  container.appendChild(newItem);
+}
+
+/**
+ * Load ordered list items into modal
+ */
+function loadOrderedListItems(question) {
+  let html = '';
+  const items = question?.list_items || ['', '', '', ''];
+
+  items.forEach((item, idx) => {
+    html += `
+      <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+        <span style="font-weight: 600; color: #64748b; min-width: 30px;">${idx + 1}.</span>
+        <input type="text" class="ordered-list-input" value="${item || ''}" placeholder="Item ${idx + 1}" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    `;
+  });
+
+  document.getElementById('orderedListContainer').innerHTML = html;
+}
+
+/**
+ * Add ordered list item
+ */
+function addOrderedListItem() {
+  const container = document.getElementById('orderedListContainer');
+  const itemCount = container.children.length;
+
+  const newItem = document.createElement('div');
+  newItem.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px; align-items: center;';
+  newItem.innerHTML = `
+    <span style="font-weight: 600; color: #64748b; min-width: 30px;">${itemCount + 1}.</span>
+    <input type="text" class="ordered-list-input" placeholder="Item ${itemCount + 1}" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+    <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">
+      <i class="fas fa-trash"></i>
+    </button>
+  `;
+
+  container.appendChild(newItem);
 }
 
 /**
@@ -362,26 +558,91 @@ function addOption() {
 }
 
 /**
- * Update question type fields visibility
+ * Update question type fields visibility with dynamic field switching
  */
 function updateQuestionTypeFields() {
-  const type = document.getElementById('questionType').value;
+  try {
+    const type = document.getElementById('questionType').value;
+    console.log('🔄 Updating question fields for type:', type);
 
-  document.getElementById('mcqFieldsContainer').style.display = type === 'mcq' ? 'block' : 'none';
-  document.getElementById('fileUploadFieldsContainer').style.display = (type === 'file_upload' || type === 'fileupload') ? 'block' : 'none';
+    // Hide all type-specific containers first
+    const containers = [
+      'mcqFieldsContainer',
+      'fileUploadFieldsContainer',
+      'trueFalseFieldsContainer',
+      'pickListFieldsContainer',
+      'orderedListFieldsContainer',
+      'shortAnswerFieldsContainer',
+      'essayFieldsContainer'
+    ];
 
-  if (type === 'mcq' && document.getElementById('optionsContainer').children.length === 0) {
-    loadMCQOptions(null);
+    containers.forEach(id => {
+      const elem = document.getElementById(id);
+      if (elem) {
+        elem.style.display = 'none';
+        elem.style.opacity = '0';
+        elem.style.transition = 'opacity 0.3s ease-in-out';
+      }
+    });
+
+    // Show relevant fields based on type with smooth transition
+    setTimeout(() => {
+      let targetId = null;
+
+      switch(type) {
+        case 'mcq':
+          targetId = 'mcqFieldsContainer';
+          if (document.getElementById('optionsContainer').children.length === 0) {
+            loadMCQOptions(null);
+          }
+          break;
+        case 'true_false':
+          targetId = 'trueFalseFieldsContainer';
+          break;
+        case 'pick_list':
+          targetId = 'pickListFieldsContainer';
+          break;
+        case 'file_upload':
+        case 'fileupload':
+          targetId = 'fileUploadFieldsContainer';
+          break;
+        case 'ordered_list':
+          targetId = 'orderedListFieldsContainer';
+          break;
+        case 'shortanswer':
+          targetId = 'shortAnswerFieldsContainer';
+          break;
+        case 'essay':
+          targetId = 'essayFieldsContainer';
+          break;
+      }
+
+      if (targetId) {
+        const elem = document.getElementById(targetId);
+        if (elem) {
+          elem.style.display = 'block';
+          setTimeout(() => {
+            elem.style.opacity = '1';
+          }, 10);
+          console.log('✅ Showing fields for:', type);
+        }
+      }
+    }, 10);
+
+  } catch (error) {
+    console.error('🔴 Error updating question fields:', error);
   }
 }
 
 /**
- * Handle question save
+ * Handle question save with validation for all question types
  */
 async function handleQuestionSave(e) {
   e.preventDefault();
 
   try {
+    console.log('💾 Saving question...');
+
     const questionId = document.getElementById('questionModal').dataset.questionId;
     const type = document.getElementById('questionType').value;
     const text = document.getElementById('questionText').value;
@@ -395,6 +656,7 @@ async function handleQuestionSave(e) {
       question_description: description
     };
 
+    // Type-specific validation and data collection
     if (type === 'mcq') {
       const options = [];
       document.querySelectorAll('.option-input').forEach((input, idx) => {
@@ -412,6 +674,33 @@ async function handleQuestionSave(e) {
       }
 
       questionData.options = options;
+      console.log('✅ MCQ options collected:', options.length);
+
+    } else if (type === 'true_false') {
+      const tfValue = document.querySelector('input[name="tfCorrectAnswer"]:checked');
+      if (!tfValue) {
+        showMessage('Please select the correct answer for True/False', 'error');
+        return;
+      }
+      questionData.correct_answer = tfValue.value;
+      console.log('✅ T/F answer set:', tfValue.value);
+
+    } else if (type === 'pick_list') {
+      const items = [];
+      document.querySelectorAll('.pick-list-input').forEach(input => {
+        if (input.value) {
+          items.push(input.value);
+        }
+      });
+
+      if (items.length < 2) {
+        showMessage('Pick List must have at least 2 items', 'error');
+        return;
+      }
+
+      questionData.list_items = items;
+      console.log('✅ Pick list items collected:', items.length);
+
     } else if (type === 'file_upload' || type === 'fileupload') {
       const fileTypes = [];
       document.querySelectorAll('input[name="fileType"]:checked').forEach(cb => {
@@ -424,6 +713,43 @@ async function handleQuestionSave(e) {
       }
 
       questionData.allowed_file_types = fileTypes;
+      questionData.max_file_size = parseInt(document.getElementById('maxFileSize').value) || 50;
+      questionData.file_instructions = document.getElementById('fileInstructions').value;
+      console.log('✅ File upload settings collected');
+
+    } else if (type === 'ordered_list') {
+      const items = [];
+      document.querySelectorAll('.ordered-list-input').forEach(input => {
+        if (input.value) {
+          items.push(input.value);
+        }
+      });
+
+      if (items.length < 2) {
+        showMessage('Ordered List must have at least 2 items', 'error');
+        return;
+      }
+
+      questionData.list_items = items;
+      console.log('✅ Ordered list items collected:', items.length);
+
+    } else if (type === 'shortanswer') {
+      const expectedAnswer = document.getElementById('saExpectedAnswer').value;
+      if (!expectedAnswer) {
+        showMessage('Please provide the expected answer for Short Answer', 'error');
+        return;
+      }
+
+      questionData.correct_answer = expectedAnswer;
+      questionData.keywords = document.getElementById('saKeywords').value.split(',').map(k => k.trim()).filter(k => k);
+      questionData.case_sensitive = document.getElementById('saCaseSensitive').checked;
+      console.log('✅ Short answer settings collected');
+
+    } else if (type === 'essay') {
+      questionData.min_words = parseInt(document.getElementById('eaMinWords').value) || null;
+      questionData.max_words = parseInt(document.getElementById('eaMaxWords').value) || null;
+      questionData.rubric_criteria = document.getElementById('eaRubricCriteria').value;
+      console.log('✅ Essay criteria collected');
     }
 
     // Handle dataset upload
@@ -469,6 +795,7 @@ async function handleQuestionSave(e) {
     closeModal('questionModal');
     await renderQuestions();
   } catch (error) {
+    console.error('🔴 Error saving question:', error);
     showMessage('Error: ' + error.message, 'error');
   }
 }

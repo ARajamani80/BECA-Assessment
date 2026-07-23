@@ -607,7 +607,7 @@ async function deleteAssessmentTaker(id) {
 }
 
 // ============================================================================
-// EXPORT TO EXCEL FUNCTIONS (NEW)
+// EXPORT TO EXCEL FUNCTIONS (COMPREHENSIVE)
 // ============================================================================
 
 /**
@@ -752,29 +752,633 @@ function exportToExcel(data, fileName, sheetName = 'Data') {
 
   // Write file
   XLSX.writeFile(wb, finalFileName);
-  console.log('✓ Exported to', finalFileName);
+  console.log('Exported to', finalFileName);
 }
 
 /**
- * Export questions to Excel
+ * Create comprehensive Excel question import template
+ * @returns {void}
+ */
+function downloadQuestionTemplate() {
+  if (typeof XLSX === 'undefined') {
+    alert('XLSX library not loaded. Please refresh the page.');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  // ========== INSTRUCTIONS SHEET ==========
+  const instructionsData = [
+    ['BECA Assessment Question Bank - Excel Import Template'],
+    ['Version: 1.0', 'Updated: 2026-07-23'],
+    [],
+    ['OVERVIEW'],
+    ['This template allows you to create or import questions into the BECA Assessment Platform.'],
+    ['Each sheet contains a different question type with all required and optional fields.'],
+    [],
+    ['QUESTION TYPES:'],
+    ['MCQ', 'Multiple Choice Question - 4-5 options with one correct answer'],
+    ['T/F', 'True/False - Single boolean answer'],
+    ['PL', 'Pick List/Dropdown - Select from predefined list'],
+    ['FT', 'Free Text with File Upload - Upload files (CAD, PDF, etc.)'],
+    ['OL', 'Ordered List/Ranking - Arrange items in correct sequence'],
+    ['SA', 'Short Answer - Text response with keyword matching'],
+    ['EA', 'Essay Answer - Long-form response with rubric scoring'],
+    [],
+    ['FIELD DEFINITIONS:'],
+    ['Question ID', 'Unique identifier (UUID format) - AUTO-GENERATED if blank'],
+    ['Title', 'Question title/name (VARCHAR, max 255 characters)'],
+    ['Type', 'Question type code: MCQ, T/F, PL, FT, OL, SA, EA'],
+    ['Points', 'Score value for correct answer (INTEGER, 1-100)'],
+    ['Category', 'Topic/subject category (VARCHAR, e.g., AutoCAD, Revit, General)'],
+    ['Difficulty', 'Easy, Medium, or Hard'],
+    ['Question Text', 'Full question prompt (TEXT, detailed description)'],
+    ['Question Description', 'Additional context or instructions'],
+    ['Image URL', 'URL to question image/diagram (optional)'],
+    ['Dataset URL', 'URL or path to reference dataset file'],
+    ['Time Limit (seconds)', 'Optional time limit for answering (INTEGER)'],
+    [],
+    ['HOW TO FILL EACH COLUMN:'],
+    ['1. Use appropriate sheet for your question type'],
+    ['2. Fill required fields (marked with *)'],
+    ['3. Leave optional fields blank if not needed'],
+    ['4. For MCQ: List options in Option 1-5 columns'],
+    ['5. For T/F: Enter True or False in Correct Answer'],
+    ['6. For PL: List dropdown options separated by semicolons'],
+    ['7. For OL: List items in Item 1-5, then order (e.g., 2,4,1,3)'],
+    ['8. For SA: Provide expected answer and keywords'],
+    ['9. For EA: Provide rubric criteria with points'],
+    ['10. Copy sample rows and modify as needed'],
+    [],
+    ['EXAMPLE USAGE:'],
+    ['MCQ: Which CAD command opens the file dialog?', 'MCQ', '5', 'AutoCAD', 'Medium', 'Q-001'],
+    ['T/F: Revit is parametric', 'T/F', '3', 'Revit', 'Easy', 'True'],
+    ['SA: Autocad shortcut for zoom', 'SA', '2', 'AutoCAD', 'Easy', 'Z'],
+    [],
+    ['SUPPORTED FILE FORMATS:'],
+    ['AutoCAD:', '.DWG, .DWT'],
+    ['Revit:', '.RVT, .RFA, .RTE, .RFT'],
+    ['Inventor:', '.IAM, .IPT, .IPJ'],
+    ['Fusion 360:', '.F3D, .F3Z'],
+    ['General:', '.PDF, .CSV, .XLSX, .JSON, .JPG, .PNG, .ZIP'],
+    [],
+    ['TIPS:'],
+    ['• Leave Question ID blank for new questions (auto-generated)'],
+    ['• Use consistent category names for better organization'],
+    ['• Add dataset files for practical, hands-on questions'],
+    ['• Review sample rows in each sheet before creating your own'],
+    ['• Export existing questions to see the data format'],
+    ['• Contact support for format validation or troubleshooting']
+  ];
+
+  const wsInstructions = XLSX.utils.aoa_to_sheet(instructionsData);
+  wsInstructions['!cols'] = [{ wch: 50 }, { wch: 60 }];
+  XLSX.utils.book_append_sheet(wb, wsInstructions, 'INSTRUCTIONS');
+
+  // ========== MCQ SHEET ==========
+  const mcqHeaders = [
+    'Question ID', 'Title', 'Type', 'Points', 'Category', 'Difficulty',
+    'Question Text', 'Image URL', 'Option 1', 'Option 2', 'Option 3', 'Option 4', 'Option 5',
+    'Correct Answer', 'Explanation', 'Dataset URL', 'Time Limit (seconds)', 'Shuffle Options', 'Show All Options'
+  ];
+
+  const mcqSamples = [
+    [
+      'Q-MCQ-001', 'AutoCAD File Dialog Command', 'MCQ', 5, 'AutoCAD', 'Medium',
+      'Which command opens the file dialog in AutoCAD?',
+      '', 'OPEN', 'NEW', 'SAVE', 'EXIT', '',
+      'OPEN', 'The OPEN command is the standard AutoCAD command for opening files. It displays the file selection dialog.',
+      '', 30, 'Yes', 'Yes'
+    ],
+    [
+      'Q-MCQ-002', 'Revit Element Type Identification', 'MCQ', 5, 'Revit', 'Medium',
+      'Which of the following is a structural element in Revit?',
+      '', 'Wall', 'Column', 'Door', 'Window', 'Ceiling',
+      'Column', 'Columns are primary structural elements that support loads. While walls can also be structural, columns are specifically designed for vertical load transfer.',
+      '', 45, 'Yes', 'Yes'
+    ]
+  ];
+
+  const mcqData = [mcqHeaders, ...mcqSamples];
+  const wsMCQ = XLSX.utils.aoa_to_sheet(mcqData);
+  wsMCQ['!cols'] = [
+    { wch: 15 }, { wch: 30 }, { wch: 8 }, { wch: 8 }, { wch: 15 }, { wch: 12 },
+    { wch: 40 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+    { wch: 15 }, { wch: 30 }, { wch: 25 }, { wch: 12 }, { wch: 12 }, { wch: 12 }
+  ];
+  XLSX.utils.book_append_sheet(wb, wsMCQ, 'MCQ');
+
+  // ========== TRUE/FALSE SHEET ==========
+  const tfHeaders = [
+    'Question ID', 'Title', 'Type', 'Points', 'Category', 'Difficulty',
+    'Question Text', 'Image URL', 'Correct Answer', 'Explanation', 'Dataset URL', 'Time Limit (seconds)', 'Show Explanation'
+  ];
+
+  const tfSamples = [
+    [
+      'Q-TF-001', 'Revit BIM Basics', 'T/F', 3, 'Revit', 'Easy',
+      'Revit is a parametric modeling tool.',
+      '', 'True', 'Revit is built on parametric and associative design principles, allowing intelligent relationships between building elements.',
+      '', 20, 'Yes'
+    ],
+    [
+      'Q-TF-002', 'AutoCAD 3D Modeling', 'T/F', 3, 'AutoCAD', 'Medium',
+      'AutoCAD blocks can contain both 2D and 3D geometry.',
+      '', 'True', 'AutoCAD blocks are containers that can hold multiple types of geometry including 2D entities (lines, circles) and 3D solids.',
+      '', 25, 'Yes'
+    ]
+  ];
+
+  const tfData = [tfHeaders, ...tfSamples];
+  const wsTF = XLSX.utils.aoa_to_sheet(tfData);
+  wsTF['!cols'] = [
+    { wch: 15 }, { wch: 30 }, { wch: 8 }, { wch: 8 }, { wch: 15 }, { wch: 12 },
+    { wch: 40 }, { wch: 25 }, { wch: 12 }, { wch: 40 }, { wch: 25 }, { wch: 12 }, { wch: 12 }
+  ];
+  XLSX.utils.book_append_sheet(wb, wsTF, 'T/F');
+
+  // ========== PICK LIST SHEET ==========
+  const plHeaders = [
+    'Question ID', 'Title', 'Type', 'Points', 'Category', 'Difficulty',
+    'Question Text', 'Image URL', 'List Option 1', 'List Option 2', 'List Option 3', 'List Option 4', 'List Option 5',
+    'Correct Answer', 'Explanation', 'Dataset URL', 'Time Limit (seconds)'
+  ];
+
+  const plSamples = [
+    [
+      'Q-PL-001', 'Revit Element Type Selection', 'PL', 4, 'Revit', 'Medium',
+      'Which element type is primarily used for structural support?',
+      '', 'Wall', 'Column', 'Door', 'Window', 'Beam',
+      'Column', 'Columns are primary structural elements designed to support vertical loads and transfer them to the foundation.',
+      '', 30
+    ],
+    [
+      'Q-PL-002', 'CAD Tool Selection', 'PL', 3, 'AutoCAD', 'Easy',
+      'Which tool is used to measure distance in AutoCAD?',
+      '', 'Distance', 'Measure', 'Length', 'Dimension', 'Scale',
+      'Measure', 'The MEASURE command provides accurate distance measurement between points in AutoCAD drawings.',
+      '', 20
+    ]
+  ];
+
+  const plData = [plHeaders, ...plSamples];
+  const wsPL = XLSX.utils.aoa_to_sheet(plData);
+  wsPL['!cols'] = [
+    { wch: 15 }, { wch: 30 }, { wch: 8 }, { wch: 8 }, { wch: 15 }, { wch: 12 },
+    { wch: 40 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+    { wch: 15 }, { wch: 30 }, { wch: 25 }, { wch: 12 }
+  ];
+  XLSX.utils.book_append_sheet(wb, wsPL, 'PL');
+
+  // ========== FILE UPLOAD SHEET ==========
+  const ftHeaders = [
+    'Question ID', 'Title', 'Type', 'Points', 'Category', 'Difficulty',
+    'Question Text', 'Image URL', 'Allowed File Types', 'Max File Size (MB)', 'Expected Answer',
+    'Dataset URL', 'Time Limit (seconds)', 'Instructions'
+  ];
+
+  const ftSamples = [
+    [
+      'Q-FT-001', 'Upload CAD Site Plan', 'FT', 10, 'AutoCAD', 'Hard',
+      'Upload your site plan drawing in AutoCAD format.',
+      '', '.DWG, .PDF', 50, 'Detailed site plan with property boundaries, buildings, and landscaping',
+      'sample-site-plan.dwg', 300, 'Include all major site features and dimensions'
+    ],
+    [
+      'Q-FT-002', 'Upload Revit Project Model', 'FT', 15, 'Revit', 'Hard',
+      'Upload your building information model for analysis.',
+      '', '.RVT', 100, 'Complete BIM model with all building systems documented',
+      'sample-building.rvt', 600, 'Ensure all parameters and properties are filled in'
+    ]
+  ];
+
+  const ftData = [ftHeaders, ...ftSamples];
+  const wsFT = XLSX.utils.aoa_to_sheet(ftData);
+  wsFT['!cols'] = [
+    { wch: 15 }, { wch: 30 }, { wch: 8 }, { wch: 8 }, { wch: 15 }, { wch: 12 },
+    { wch: 40 }, { wch: 25 }, { wch: 20 }, { wch: 12 }, { wch: 35 },
+    { wch: 25 }, { wch: 12 }, { wch: 35 }
+  ];
+  XLSX.utils.book_append_sheet(wb, wsFT, 'FT');
+
+  // ========== ORDERED LIST SHEET ==========
+  const olHeaders = [
+    'Question ID', 'Title', 'Type', 'Points', 'Category', 'Difficulty',
+    'Question Text', 'Image URL', 'Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5',
+    'Correct Order', 'Explanation', 'Dataset URL', 'Time Limit (seconds)'
+  ];
+
+  const olSamples = [
+    [
+      'Q-OL-001', 'CAD Workflow Steps', 'OL', 6, 'AutoCAD', 'Medium',
+      'Order these steps in the correct sequence for creating a technical drawing:',
+      '', 'Draw geometry', 'Apply constraints', 'Add dimensions', 'Export to PDF', '',
+      '1,2,3,4', 'First draw the base geometry, then apply constraints, add dimensions for clarity, and finally export the completed drawing.',
+      '', 60
+    ],
+    [
+      'Q-OL-002', 'BIM Project Setup Steps', 'OL', 8, 'Revit', 'Medium',
+      'Arrange these BIM project setup steps in correct order:',
+      '', 'Create project template', 'Set coordinate system', 'Configure levels', 'Add building systems', 'Coordinate with consultants',
+      '1,2,3,4,5', 'Start with template selection, establish coordinate systems, define floor levels, add mechanical/electrical systems, and finally coordinate between disciplines.',
+      '', 90
+    ]
+  ];
+
+  const olData = [olHeaders, ...olSamples];
+  const wsOL = XLSX.utils.aoa_to_sheet(olData);
+  wsOL['!cols'] = [
+    { wch: 15 }, { wch: 30 }, { wch: 8 }, { wch: 8 }, { wch: 15 }, { wch: 12 },
+    { wch: 40 }, { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 },
+    { wch: 15 }, { wch: 40 }, { wch: 25 }, { wch: 12 }
+  ];
+  XLSX.utils.book_append_sheet(wb, wsOL, 'OL');
+
+  // ========== SHORT ANSWER SHEET ==========
+  const saHeaders = [
+    'Question ID', 'Title', 'Type', 'Points', 'Category', 'Difficulty',
+    'Question Text', 'Image URL', 'Expected Answer', 'Keyword 1', 'Keyword 2', 'Keyword 3', 'Keyword 4', 'Keyword 5',
+    'Explanation', 'Case Sensitive', 'Dataset URL', 'Time Limit (seconds)'
+  ];
+
+  const saSamples = [
+    [
+      'Q-SA-001', 'AutoCAD Zoom Shortcut', 'SA', 2, 'AutoCAD', 'Easy',
+      'What is the keyboard shortcut for the ZOOM command in AutoCAD?',
+      '', 'Z', 'Z', 'zoom', 'shortcut', '', '',
+      'The keyboard shortcut Z activates the ZOOM command in AutoCAD. You can also type ZOOM in the command line.',
+      'No', '', 15
+    ],
+    [
+      'Q-SA-002', 'BIM Coordination Challenge', 'SA', 5, 'Revit', 'Medium',
+      'Name the Revit tool used to detect clashes between building systems.',
+      '', 'Interference Check', 'Interference', 'Clash', 'Check', 'Detection', '',
+      'The Interference Check tool in Revit identifies overlapping elements and conflicts between MEP and structural systems.',
+      'No', '', 30
+    ]
+  ];
+
+  const saData = [saHeaders, ...saSamples];
+  const wsSA = XLSX.utils.aoa_to_sheet(saData);
+  wsSA['!cols'] = [
+    { wch: 15 }, { wch: 30 }, { wch: 8 }, { wch: 8 }, { wch: 15 }, { wch: 12 },
+    { wch: 40 }, { wch: 25 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+    { wch: 35 }, { wch: 12 }, { wch: 25 }, { wch: 12 }
+  ];
+  XLSX.utils.book_append_sheet(wb, wsSA, 'SA');
+
+  // ========== ESSAY SHEET ==========
+  const eaHeaders = [
+    'Question ID', 'Title', 'Type', 'Points', 'Category', 'Difficulty',
+    'Question Text', 'Image URL', 'Min Words', 'Max Words',
+    'Rubric Criteria 1', 'Rubric Points 1', 'Rubric Criteria 2', 'Rubric Points 2', 'Rubric Criteria 3', 'Rubric Points 3',
+    'Explanation', 'Dataset URL', 'Time Limit (seconds)'
+  ];
+
+  const eaSamples = [
+    [
+      'Q-EA-001', 'CAD Drawing Analysis', 'EA', 15, 'AutoCAD', 'Hard',
+      'Analyze the provided CAD drawing and describe the design intent, building components, and technical requirements.',
+      '', 100, 500,
+      'Understanding and Technical Knowledge', 5, 'Clarity and Organization', 5, 'Detail and Completeness', 5,
+      'Comprehensive analysis should address design purpose, structural elements, spatial relationships, and any special requirements.',
+      'sample-drawing.dwg', 600
+    ],
+    [
+      'Q-EA-002', 'BIM Implementation Strategy', 'EA', 20, 'Revit', 'Hard',
+      'Develop and explain a BIM implementation strategy for a large-scale construction project including team roles, workflow, and deliverables.',
+      '', 150, 750,
+      'Strategic Planning and Feasibility', 7, 'BIM Expertise and Standards', 7, 'Implementation Detail and Timeline', 6,
+      'Answer should demonstrate understanding of BIM workflows, collaborative processes, required software, and project delivery methods.',
+      'sample-bim-project.rvt', 900
+    ]
+  ];
+
+  const eaData = [eaHeaders, ...eaSamples];
+  const wsEA = XLSX.utils.aoa_to_sheet(eaData);
+  wsEA['!cols'] = [
+    { wch: 15 }, { wch: 30 }, { wch: 8 }, { wch: 8 }, { wch: 15 }, { wch: 12 },
+    { wch: 40 }, { wch: 25 }, { wch: 10 }, { wch: 10 },
+    { wch: 25 }, { wch: 10 }, { wch: 25 }, { wch: 10 }, { wch: 25 }, { wch: 10 },
+    { wch: 40 }, { wch: 25 }, { wch: 12 }
+  ];
+  XLSX.utils.book_append_sheet(wb, wsEA, 'EA');
+
+  // ========== BULK IMPORT SHEET ==========
+  const bulkHeaders = [
+    'Question ID', 'Title', 'Type', 'Points', 'Category', 'Difficulty',
+    'Question Text', 'Image URL',
+    'Option 1', 'Option 2', 'Option 3', 'Option 4', 'Option 5',
+    'List Option 1', 'List Option 2', 'List Option 3',
+    'Item 1', 'Item 2', 'Item 3',
+    'Expected Answer', 'Keywords',
+    'Correct Answer', 'Explanation',
+    'File Types', 'Max File Size (MB)',
+    'Min Words', 'Max Words', 'Rubric',
+    'Dataset URL', 'Time Limit (seconds)'
+  ];
+
+  const bulkSamples = [
+    [
+      'Q-MCQ-BULK-001', 'MCQ Example', 'MCQ', 5, 'AutoCAD', 'Medium',
+      'Which command opens the file dialog?', '',
+      'OPEN', 'NEW', 'SAVE', 'EXIT', '',
+      '', '', '',
+      '', '', '',
+      '', '',
+      'OPEN', 'OPEN is the standard command to open files in AutoCAD.',
+      '', '',
+      '', '', '',
+      '', 30
+    ],
+    [
+      'Q-TF-BULK-001', 'T/F Example', 'T/F', 3, 'Revit', 'Easy',
+      'Revit uses parametric design.', '',
+      '', '', '', '', '',
+      '', '', '',
+      '', '', '',
+      '', '',
+      'True', 'Revit is built on parametric design principles.',
+      '', '',
+      '', '', '',
+      '', 20
+    ],
+    [
+      'Q-PL-BULK-001', 'Pick List Example', 'PL', 4, 'Revit', 'Medium',
+      'Which is a structural element?', '',
+      '', '', '', '', '',
+      'Wall', 'Column', 'Door', '', '',
+      '', '', '',
+      '', '',
+      'Column', 'Columns provide vertical structural support.',
+      '', '',
+      '', '', '',
+      '', 30
+    ],
+    [
+      'Q-SA-BULK-001', 'Short Answer Example', 'SA', 2, 'AutoCAD', 'Easy',
+      'Keyboard shortcut for zoom?', '',
+      '', '', '', '', '',
+      '', '', '',
+      '', '', '',
+      'Z', 'zoom; Z shortcut',
+      '', 'The Z key activates ZOOM in AutoCAD.',
+      '', '',
+      '', '', '',
+      '', 15
+    ],
+    [
+      'Q-OL-BULK-001', 'Ordered List Example', 'OL', 6, 'AutoCAD', 'Medium',
+      'Order the CAD workflow steps:', '',
+      '', '', '', '', '',
+      '', '', '',
+      'Draw geometry', 'Apply constraints', 'Add dimensions',
+      '', '',
+      '1,2,3', 'Follow the standard workflow: geometry, constraints, then dimensions.',
+      '', '',
+      '', '', '',
+      '', 60
+    ],
+    [
+      'Q-EA-BULK-001', 'Essay Example', 'EA', 15, 'Revit', 'Hard',
+      'Analyze the BIM model and explain the design strategy.', '',
+      '', '', '', '', '',
+      '', '', '',
+      '', '', '',
+      '', '',
+      '', 'Analysis should address design purpose and coordination.',
+      '', '',
+      100, 500, 'Understanding(5);Clarity(5);Detail(5)',
+      'sample-model.rvt', 600
+    ],
+    [
+      'Q-FT-BULK-001', 'File Upload Example', 'FT', 10, 'AutoCAD', 'Hard',
+      'Upload your CAD drawing:', '',
+      '', '', '', '', '',
+      '', '', '',
+      '', '', '',
+      '', '',
+      '', '',
+      '.DWG,.PDF', 50,
+      '', '', '',
+      '', 300
+    ]
+  ];
+
+  const bulkData = [bulkHeaders, ...bulkSamples];
+  const wsBulk = XLSX.utils.aoa_to_sheet(bulkData);
+  wsBulk['!cols'] = Array(bulkHeaders.length).fill({ wch: 15 });
+  XLSX.utils.book_append_sheet(wb, wsBulk, 'BULK IMPORT');
+
+  // Write file
+  XLSX.writeFile(wb, 'BECA-Questions-Complete-Template.xlsx');
+  console.log('Downloaded question template successfully');
+}
+
+/**
+ * Export questions to Excel with comprehensive fields
  * @param {array} questionsData - Questions array
  * @returns {void}
  */
 function exportQuestionsToExcel(questionsData) {
-  const exportData = questionsData.map(q => ({
-    'Question ID': q.id,
-    'Type Code': getQuestionTypeCode(q.question_type),
-    'Type': getQuestionTypeLabel(q.question_type),
-    'Text': q.question_text,
+  if (typeof XLSX === 'undefined') {
+    alert('XLSX library not loaded. Please refresh the page.');
+    return;
+  }
+
+  if (!questionsData || questionsData.length === 0) {
+    alert('No questions to export');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  // Group questions by type
+  const groupedByType = {};
+  questionsData.forEach(q => {
+    const type = q.question_type || 'unknown';
+    if (!groupedByType[type]) {
+      groupedByType[type] = [];
+    }
+    groupedByType[type].push(q);
+  });
+
+  // Create MCQ sheet
+  if (groupedByType['mcq']) {
+    const mcqData = groupedByType['mcq'].map(q => ({
+      'Question ID': q.id || '',
+      'Title': q.title || '',
+      'Type': 'MCQ',
+      'Points': q.points || 0,
+      'Category': q.category || '',
+      'Difficulty': q.difficulty || '',
+      'Question Text': q.question_text || '',
+      'Image URL': q.image_url || '',
+      'Option 1': q.options?.[0]?.text || '',
+      'Option 2': q.options?.[1]?.text || '',
+      'Option 3': q.options?.[2]?.text || '',
+      'Option 4': q.options?.[3]?.text || '',
+      'Option 5': q.options?.[4]?.text || '',
+      'Correct Answer': q.options?.find(o => o.correct)?.text || '',
+      'Explanation': q.explanation || '',
+      'Dataset URL': q.dataset_url || '',
+      'Time Limit (seconds)': q.time_limit_seconds || '',
+      'Shuffle Options': q.shuffle_options ? 'Yes' : 'No',
+      'Show All Options': 'Yes'
+    }));
+    const wsMCQ = XLSX.utils.json_to_sheet(mcqData);
+    XLSX.utils.book_append_sheet(wb, wsMCQ, 'MCQ');
+  }
+
+  // Create T/F sheet
+  if (groupedByType['true_false']) {
+    const tfData = groupedByType['true_false'].map(q => ({
+      'Question ID': q.id || '',
+      'Title': q.title || '',
+      'Type': 'T/F',
+      'Points': q.points || 0,
+      'Category': q.category || '',
+      'Difficulty': q.difficulty || '',
+      'Question Text': q.question_text || '',
+      'Image URL': q.image_url || '',
+      'Correct Answer': q.correct_answer || '',
+      'Explanation': q.explanation || '',
+      'Dataset URL': q.dataset_url || '',
+      'Time Limit (seconds)': q.time_limit_seconds || '',
+      'Show Explanation': 'Yes'
+    }));
+    const wsTF = XLSX.utils.json_to_sheet(tfData);
+    XLSX.utils.book_append_sheet(wb, wsTF, 'T/F');
+  }
+
+  // Create PL sheet
+  if (groupedByType['pick_list']) {
+    const plData = groupedByType['pick_list'].map(q => ({
+      'Question ID': q.id || '',
+      'Title': q.title || '',
+      'Type': 'PL',
+      'Points': q.points || 0,
+      'Category': q.category || '',
+      'Difficulty': q.difficulty || '',
+      'Question Text': q.question_text || '',
+      'Image URL': q.image_url || '',
+      'List Options': Array.isArray(q.list_options) ? q.list_options.join('; ') : q.list_options || '',
+      'Correct Answer': q.correct_answer || '',
+      'Explanation': q.explanation || '',
+      'Dataset URL': q.dataset_url || '',
+      'Time Limit (seconds)': q.time_limit_seconds || ''
+    }));
+    const wsPL = XLSX.utils.json_to_sheet(plData);
+    XLSX.utils.book_append_sheet(wb, wsPL, 'PL');
+  }
+
+  // Create FT sheet
+  if (groupedByType['file_upload']) {
+    const ftData = groupedByType['file_upload'].map(q => ({
+      'Question ID': q.id || '',
+      'Title': q.title || '',
+      'Type': 'FT',
+      'Points': q.points || 0,
+      'Category': q.category || '',
+      'Difficulty': q.difficulty || '',
+      'Question Text': q.question_text || '',
+      'Image URL': q.image_url || '',
+      'Allowed File Types': Array.isArray(q.allowed_file_types) ? q.allowed_file_types.join(', ') : q.allowed_file_types || '',
+      'Max File Size (MB)': q.max_file_size_mb || '',
+      'Expected Answer': q.expected_answer || '',
+      'Dataset URL': q.dataset_url || '',
+      'Time Limit (seconds)': q.time_limit_seconds || '',
+      'Instructions': q.file_upload_instructions || ''
+    }));
+    const wsFT = XLSX.utils.json_to_sheet(ftData);
+    XLSX.utils.book_append_sheet(wb, wsFT, 'FT');
+  }
+
+  // Create OL sheet
+  if (groupedByType['ordered_list']) {
+    const olData = groupedByType['ordered_list'].map(q => ({
+      'Question ID': q.id || '',
+      'Title': q.title || '',
+      'Type': 'OL',
+      'Points': q.points || 0,
+      'Category': q.category || '',
+      'Difficulty': q.difficulty || '',
+      'Question Text': q.question_text || '',
+      'Image URL': q.image_url || '',
+      'List Items': Array.isArray(q.list_items) ? q.list_items.join('; ') : q.list_items || '',
+      'Correct Order': q.correct_order || '',
+      'Explanation': q.explanation || '',
+      'Dataset URL': q.dataset_url || '',
+      'Time Limit (seconds)': q.time_limit_seconds || ''
+    }));
+    const wsOL = XLSX.utils.json_to_sheet(olData);
+    XLSX.utils.book_append_sheet(wb, wsOL, 'OL');
+  }
+
+  // Create SA sheet
+  if (groupedByType['shortanswer']) {
+    const saData = groupedByType['shortanswer'].map(q => ({
+      'Question ID': q.id || '',
+      'Title': q.title || '',
+      'Type': 'SA',
+      'Points': q.points || 0,
+      'Category': q.category || '',
+      'Difficulty': q.difficulty || '',
+      'Question Text': q.question_text || '',
+      'Image URL': q.image_url || '',
+      'Expected Answer': q.expected_answer || '',
+      'Keywords': Array.isArray(q.keywords) ? q.keywords.join('; ') : q.keywords || '',
+      'Explanation': q.explanation || '',
+      'Case Sensitive': q.case_sensitive ? 'Yes' : 'No',
+      'Dataset URL': q.dataset_url || '',
+      'Time Limit (seconds)': q.time_limit_seconds || ''
+    }));
+    const wsSA = XLSX.utils.json_to_sheet(saData);
+    XLSX.utils.book_append_sheet(wb, wsSA, 'SA');
+  }
+
+  // Create EA sheet
+  if (groupedByType['essay']) {
+    const eaData = groupedByType['essay'].map(q => ({
+      'Question ID': q.id || '',
+      'Title': q.title || '',
+      'Type': 'EA',
+      'Points': q.points || 0,
+      'Category': q.category || '',
+      'Difficulty': q.difficulty || '',
+      'Question Text': q.question_text || '',
+      'Image URL': q.image_url || '',
+      'Min Words': q.min_words || '',
+      'Max Words': q.max_words || '',
+      'Rubric': q.rubric_items ? JSON.stringify(q.rubric_items) : '',
+      'Explanation': q.explanation || '',
+      'Dataset URL': q.dataset_url || '',
+      'Time Limit (seconds)': q.time_limit_seconds || ''
+    }));
+    const wsEA = XLSX.utils.json_to_sheet(eaData);
+    XLSX.utils.book_append_sheet(wb, wsEA, 'EA');
+  }
+
+  // Create ALL QUESTIONS summary sheet
+  const allQuestionsData = questionsData.map(q => ({
+    'Question ID': q.id || '',
+    'Title': q.title || '',
+    'Type': getQuestionTypeCode(q.question_type),
     'Points': q.points || 0,
     'Category': q.category || '',
     'Difficulty': q.difficulty || '',
-    'Description': q.question_description || '',
-    'Dataset File': q.dataset_file || '',
-    'Created': q.created_at ? new Date(q.created_at).toISOString().split('T')[0] : ''
+    'Question Text': q.question_text || '',
+    'Created': q.created_at ? new Date(q.created_at).toISOString().split('T')[0] : '',
+    'Updated': q.updated_at ? new Date(q.updated_at).toISOString().split('T')[0] : '',
+    'Created By': q.created_by || ''
   }));
+  const wsAll = XLSX.utils.json_to_sheet(allQuestionsData);
+  XLSX.utils.book_append_sheet(wb, wsAll, 'ALL QUESTIONS');
 
-  exportToExcel(exportData, 'BECA-Questions', 'Questions');
+  // Write file
+  const timestamp = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, `BECA-Questions-Export-${timestamp}.xlsx`);
+  console.log('Exported questions successfully');
 }
 
 /**

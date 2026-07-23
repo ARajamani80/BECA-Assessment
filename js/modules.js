@@ -192,45 +192,56 @@ function displayModulesTable() {
  * Open create module modal
  */
 function openCreateModuleModal() {
-  currentModuleEdit = null;
+  try {
+    console.log('📚 openCreateModuleModal() called');
+    currentModuleEdit = null;
 
-  document.getElementById('moduleModalContent').innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2 style="margin: 0;">Create New Module</h2>
-      <button onclick="closeModal('moduleModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
-    </div>
-
-    <form id="moduleForm" onsubmit="handleModuleSave(event)">
-      <div class="form-group">
-        <label>Module Name *</label>
-        <input type="text" id="moduleName" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+    document.getElementById('moduleModalContent').innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">Create New Module</h2>
+        <button onclick="closeModal('moduleModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
       </div>
 
-      <div class="form-group">
-        <label>Description</label>
-        <textarea id="moduleDescription" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 60px;"></textarea>
-      </div>
-
-      <div class="form-group">
-        <label>Select Questions *</label>
-        <p style="color: var(--text-secondary); font-size: 12px; margin: 5px 0;">Choose questions to include in this module</p>
-        <div id="questionsChecklistContainer" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
-          ${loadQuestionsChecklist()}
+      <form id="moduleForm" onsubmit="handleModuleSave(event)">
+        <div class="form-group">
+          <label><span style="color: #dc2626;">*</span> Module Name</label>
+          <input type="text" id="moduleName" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
         </div>
-      </div>
 
-      <div style="display: flex; gap: 10px; margin-top: 20px;">
-        <button type="submit" class="btn btn-success" style="flex: 1;">
-          <i class="fas fa-save"></i> Create Module
-        </button>
-        <button type="button" class="btn btn-secondary" onclick="closeModal('moduleModal')" style="flex: 1;">
-          <i class="fas fa-times"></i> Cancel
-        </button>
-      </div>
-    </form>
-  `;
+        <div class="form-group">
+          <label>Description (Optional)</label>
+          <textarea id="moduleDescription" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 60px;"></textarea>
+        </div>
 
-  showModal('moduleModal');
+        <div class="form-group">
+          <label><span style="color: #dc2626;">*</span> Select Questions</label>
+          <p style="color: var(--text-secondary); font-size: 12px; margin: 5px 0;">Choose questions to include in this module</p>
+          <div id="questionsChecklistContainer" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
+            ${loadQuestionsChecklist()}
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" class="btn btn-success" style="flex: 1;">
+            <i class="fas fa-save"></i> Create Module
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('moduleModal')" style="flex: 1;">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+        </div>
+      </form>
+    `;
+
+    const result = showModal('moduleModal');
+    if (result) {
+      console.log('✅ Module Modal opened successfully');
+    }
+    return result;
+  } catch (error) {
+    console.error('🔴 Error opening Module Modal:', error);
+    alert('Error: ' + error.message);
+    return false;
+  }
 }
 
 /**
@@ -325,48 +336,63 @@ async function handleModuleSave(e) {
  * Edit module
  */
 async function editModule(moduleId) {
-  const module = allModules.find(m => m.id === moduleId);
-  if (!module) return;
+  try {
+    console.log('📚 editModule() called with ID:', moduleId);
 
-  currentModuleEdit = moduleId;
+    const module = allModules.find(m => m.id === moduleId);
+    if (!module) {
+      showMessage('Module not found', 'error');
+      return;
+    }
 
-  document.getElementById('moduleModalContent').innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2 style="margin: 0;">Edit Module</h2>
-      <button onclick="closeModal('moduleModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
-    </div>
+    currentModuleEdit = moduleId;
 
-    <form id="moduleForm" onsubmit="handleModuleSave(event)">
-      <div class="form-group">
-        <label>Module Name *</label>
-        <input type="text" id="moduleName" value="${module.name}" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+    document.getElementById('moduleModalContent').innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">Edit Module</h2>
+        <button onclick="closeModal('moduleModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
       </div>
 
-      <div class="form-group">
-        <label>Description</label>
-        <textarea id="moduleDescription" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 60px;">${module.description || ''}</textarea>
-      </div>
-
-      <div class="form-group">
-        <label>Select Questions *</label>
-        <p style="color: var(--text-secondary); font-size: 12px; margin: 5px 0;">Choose questions to include in this module</p>
-        <div id="questionsChecklistContainer" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
-          ${loadQuestionsChecklistForEdit(module)}
+      <form id="moduleForm" onsubmit="handleModuleSave(event)">
+        <div class="form-group">
+          <label><span style="color: #dc2626;">*</span> Module Name</label>
+          <input type="text" id="moduleName" value="${module.name}" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
         </div>
-      </div>
 
-      <div style="display: flex; gap: 10px; margin-top: 20px;">
-        <button type="submit" class="btn btn-success" style="flex: 1;">
-          <i class="fas fa-save"></i> Update Module
-        </button>
-        <button type="button" class="btn btn-secondary" onclick="closeModal('moduleModal')" style="flex: 1;">
-          <i class="fas fa-times"></i> Cancel
-        </button>
-      </div>
-    </form>
-  `;
+        <div class="form-group">
+          <label>Description (Optional)</label>
+          <textarea id="moduleDescription" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 60px;">${module.description || ''}</textarea>
+        </div>
 
-  showModal('moduleModal');
+        <div class="form-group">
+          <label><span style="color: #dc2626;">*</span> Select Questions</label>
+          <p style="color: var(--text-secondary); font-size: 12px; margin: 5px 0;">Choose questions to include in this module</p>
+          <div id="questionsChecklistContainer" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px;">
+            ${loadQuestionsChecklistForEdit(module)}
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" class="btn btn-success" style="flex: 1;">
+            <i class="fas fa-save"></i> Update Module
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('moduleModal')" style="flex: 1;">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+        </div>
+      </form>
+    `;
+
+    const result = showModal('moduleModal');
+    if (result) {
+      console.log('✅ Module edit modal opened successfully');
+    }
+    return result;
+  } catch (error) {
+    console.error('🔴 Error editing module:', error);
+    alert('Error: ' + error.message);
+    return false;
+  }
 }
 
 /**
