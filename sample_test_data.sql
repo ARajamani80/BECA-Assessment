@@ -17,7 +17,7 @@ VALUES (
 ) ON CONFLICT DO NOTHING;
 
 -- Insert Sample Modules
-INSERT INTO assessment_modules (assessment_id, name, description, order)
+INSERT INTO assessment_modules (assessment_id, name, description, "order")
 VALUES (
   (SELECT id FROM assessments WHERE name = 'AutoCAD Fundamentals Assessment'),
   'Basic Commands',
