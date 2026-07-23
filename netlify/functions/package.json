@@ -1,27 +1,13 @@
 {
-  "name": "beca-email-functions",
+  "name": "beca-netlify-functions",
   "version": "1.0.0",
-  "description": "BECA Assessment Platform - Email sending functions",
+  "description": "BECA Assessment Platform Netlify Functions",
   "main": "send-email.js",
   "dependencies": {
     "@sendgrid/mail": "^7.7.0",
-    "@supabase/supabase-js": "^2.38.0",
-    "dotenv": "^16.3.1"
+    "@supabase/supabase-js": "^2.38.0"
   },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "email",
-    "sendgrid",
-    "netlify",
-    "functions",
-    "assessment"
-  ],
-  "author": "BECA Assessment Platform",
-  "license": "MIT",
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   }
 }
