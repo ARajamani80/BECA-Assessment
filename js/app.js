@@ -54,7 +54,20 @@ function showPage(page) {
  */
 async function initializeApp() {
   try {
-    // Check authentication
+    // Check if in Assessment Taker mode (has token parameter)
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (token) {
+      console.log('Assessment Taker mode detected, loading taker interface...');
+      // Initialize assessment taker interface
+      const isTakerMode = await initializeAssessmentTaker();
+      if (isTakerMode) {
+        return; // Taker interface is loaded, exit here
+      }
+    }
+
+    // Check authentication for dashboard
     const isAuthenticated = await initializeAuth();
 
     if (!isAuthenticated) {

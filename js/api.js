@@ -1544,3 +1544,232 @@ function getQuestionTypeLabel(type) {
   };
   return labels[type?.toLowerCase()] || type || 'Unknown';
 }
+
+// ============================================================================
+// ASSESSMENT SUBMISSION FUNCTIONS (TAKER INTERFACE)
+// ============================================================================
+
+/**
+ * Submit assessment answers
+ * @param {object} submissionData - Submission data with answers
+ * @returns {Promise<object>} Submission record
+ */
+async function submitAssessmentToDatabase(submissionData) {
+  try {
+    const client = await getSupabaseClient();
+
+    // Create submission record
+    const { data, error } = await client
+      .from('assessment_submissions')
+      .insert([{
+        assessment_id: submissionData.assessment_id,
+        taker_id: submissionData.taker_id,
+        token: submissionData.token,
+        answers: submissionData.answers,
+        submitted_at: submissionData.submitted_at,
+        time_taken_seconds: submissionData.time_taken_seconds,
+        status: 'submitted'
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error submitting assessment:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get submission by ID
+ * @param {string} submissionId - Submission ID
+ * @returns {Promise<object>} Submission data
+ */
+async function getSubmission(submissionId) {
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_submissions')
+      .select('*')
+      .eq('id', submissionId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching submission:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get submission by token
+ * @param {string} token - Submission token
+ * @returns {Promise<object>} Submission data
+ */
+async function getSubmissionByToken(token) {
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_submissions')
+      .select('*')
+      .eq('token', token)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return data || null;
+  } catch (error) {
+    console.error('Error fetching submission by token:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get submissions for assessment
+ * @param {string} assessmentId - Assessment ID
+ * @returns {Promise<array>} Submissions list
+ */
+async function getAssessmentSubmissions(assessmentId) {
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_submissions')
+      .select('*')
+      .eq('assessment_id', assessmentId)
+      .order('submitted_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching submissions:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get submissions for taker
+ * @param {string} takerId - Taker ID
+ * @returns {Promise<array>} Submissions list
+ */
+async function getTakerSubmissions(takerId) {
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_submissions')
+      .select('*')
+      .eq('taker_id', takerId)
+      .order('submitted_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching taker submissions:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update submission (for grading/scoring)
+ * @param {string} submissionId - Submission ID
+ * @param {object} data - Update data
+ * @returns {Promise<object>} Updated submission
+ */
+async function updateSubmission(submissionId, data) {
+  try {
+    const client = await getSupabaseClient();
+    const { data: result, error } = await client
+      .from('assessment_submissions')
+      .update(data)
+      .eq('id', submissionId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result;
+  } catch (error) {
+    console.error('Error updating submission:', error);
+    throw error;
+  }
+}
+
+/**
+ * Auto-save draft submission
+ * @param {object} draftData - Draft submission data
+ * @returns {Promise<object>} Draft submission record
+ */
+async function saveDraftSubmission(draftData) {
+  try {
+    const client = await getSupabaseClient();
+
+    // Check if draft already exists
+    const existing = await getSubmissionByToken(draftData.token);
+
+    if (existing) {
+      // Update existing draft
+      const { data, error } = await client
+        .from('assessment_submissions')
+        .update({
+          answers: draftData.answers,
+          time_taken_seconds: draftData.time_taken_seconds
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } else {
+      // Create new draft
+      const { data, error } = await client
+        .from('assessment_submissions')
+        .insert([{
+          assessment_id: draftData.assessment_id,
+          taker_id: draftData.taker_id,
+          token: draftData.token,
+          answers: draftData.answers,
+          time_taken_seconds: draftData.time_taken_seconds,
+          status: 'in_progress'
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+  } catch (error) {
+    console.error('Error saving draft submission:', error);
+    throw error;
+  }
+}
+
+/**
+ * Export submissions to Excel
+ * @param {array} submissionsData - Submissions array
+ * @returns {void}
+ */
+function exportSubmissionsToExcel(submissionsData) {
+  if (typeof XLSX === 'undefined') {
+    alert('XLSX library not loaded. Please refresh the page.');
+    return;
+  }
+
+  if (!submissionsData || submissionsData.length === 0) {
+    alert('No submissions to export');
+    return;
+  }
+
+  const exportData = submissionsData.map(s => ({
+    'Submission ID': s.id,
+    'Taker ID': s.taker_id,
+    'Assessment ID': s.assessment_id,
+    'Score': s.score || 'Not graded',
+    'Pass/Fail': s.pass_fail || 'Pending',
+    'Status': s.status,
+    'Time Taken (seconds)': s.time_taken_seconds,
+    'Submitted': s.submitted_at ? new Date(s.submitted_at).toISOString().split('T')[0] : '',
+    'Graded': s.graded_at ? new Date(s.graded_at).toISOString().split('T')[0] : ''
+  }));
+
+  exportToExcel(exportData, 'BECA-Submissions', 'Submissions');
+}
