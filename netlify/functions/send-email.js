@@ -441,10 +441,16 @@ async function sendAssessmentInvitation(payload) {
     });
 
     const response = await sgMail.send(msg);
+
+    // Extract response info (response is an array from SendGrid)
+    const responseInfo = Array.isArray(response) ? response[0] : response;
+    const messageId = responseInfo?.headers?.['x-message-id'] || 'unknown';
+    const statusCode = responseInfo?.statusCode || 202;
+
     console.log('✅ Email sent successfully:', {
       to: to_email,
-      messageId: response[0]?.headers?.['x-message-id'],
-      status: response[0]?.statusCode
+      messageId: messageId,
+      status: statusCode
     });
 
     // Log email send
@@ -456,7 +462,7 @@ async function sendAssessmentInvitation(payload) {
         assessment_id: assessment_id || null,
         taker_id: taker_id || null,
         status: 'sent',
-        message_id: response.headers['x-message-id'] || null,
+        message_id: messageId,
         sent_at: new Date().toISOString()
       });
     }
@@ -464,7 +470,7 @@ async function sendAssessmentInvitation(payload) {
     return {
       success: true,
       message: 'Email sent successfully',
-      messageId: response.headers['x-message-id'],
+      messageId: messageId,
       to: to_email
     };
   } catch (error) {
@@ -534,10 +540,15 @@ async function sendWelcomeEmail(payload) {
     };
 
     // Send email
-    const [response] = await sgMail.send(msg);
+    const response = await sgMail.send(msg);
+
+    // Extract response info (response is an array from SendGrid)
+    const responseInfo = Array.isArray(response) ? response[0] : response;
+    const messageId = responseInfo?.headers?.['x-message-id'] || 'unknown';
+
     console.log('Welcome email sent successfully:', {
       to: to_email,
-      messageId: response.headers['x-message-id']
+      messageId: messageId
     });
 
     // Log email send
@@ -548,7 +559,7 @@ async function sendWelcomeEmail(payload) {
         subject: msg.subject,
         taker_id: taker_id || null,
         status: 'sent',
-        message_id: response.headers['x-message-id'] || null,
+        message_id: messageId,
         sent_at: new Date().toISOString()
       });
     }
@@ -556,7 +567,7 @@ async function sendWelcomeEmail(payload) {
     return {
       success: true,
       message: 'Welcome email sent successfully',
-      messageId: response.headers['x-message-id'],
+      messageId: messageId,
       to: to_email
     };
   } catch (error) {
