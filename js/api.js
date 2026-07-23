@@ -1,71 +1,40 @@
 // BECA Assessment Platform - API Module (Supabase)
-// Properly initializes and manages Supabase client with proper error handling
+// Uses global getSupabaseClient from index.html HEAD script
+// This file just provides API functions that use the global client
 
-const SUPABASE_URL = 'https://fgzqgqwlyeubudnbxsmx.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0';
+// Note: getSupabaseClient() is defined in index.html HEAD script
+// If it doesn't exist, create a fallback
+if (typeof getSupabaseClient !== 'function') {
+  console.warn('⚠ getSupabaseClient not found in global scope, creating fallback');
 
-// Initialize Supabase client - make it globally accessible
-let supabase = null;
-let supabaseInitializing = false;
-let supabaseInitialized = false;
-const supabaseCallbacks = [];
+  const SUPABASE_URL = 'https://fgzqgqwlyeubudnbxsmx.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0';
 
-/**
- * Properly initialize Supabase client
- * @returns {Promise<void>}
- */
-async function initializeSupabaseClient() {
-  if (supabaseInitialized || supabaseInitializing) return;
+  let supabase = null;
+  let supabaseReady = false;
 
-  supabaseInitializing = true;
-
-  try {
-    // Wait for the Supabase library to be available
+  async function initSupabase() {
     let attempts = 0;
-    while (!window.supabase && attempts < 50) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+    while (!window.supabase && attempts < 100) {
+      await new Promise(r => setTimeout(r, 50));
       attempts++;
     }
-
-    if (!window.supabase) {
-      throw new Error('Supabase library failed to load');
-    }
-
-    // Create client
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    supabaseInitialized = true;
-    console.log('✓ Supabase client initialized successfully');
-
-    // Call any waiting callbacks
-    supabaseCallbacks.forEach(cb => cb());
-    supabaseCallbacks.length = 0;
-  } catch (error) {
-    console.error('Failed to initialize Supabase:', error);
-    supabaseInitializing = false;
-    throw error;
-  }
-}
-
-/**
- * Get Supabase client (wait if not ready)
- * @returns {Promise<object>} Supabase client
- */
-async function getSupabaseClient() {
-  if (!supabaseInitialized) {
-    if (!supabaseInitializing) {
-      await initializeSupabaseClient();
+    if (window.supabase) {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      supabaseReady = true;
+      console.log('✓ Supabase initialized in api.js fallback');
     } else {
-      // Wait for initialization to complete
-      return new Promise(resolve => {
-        supabaseCallbacks.push(() => resolve(supabase));
-      });
+      console.error('✗ Supabase library failed to load');
     }
   }
-  return supabase;
-}
 
-// Start initialization immediately when script loads
-initializeSupabaseClient().catch(err => console.error('Supabase init error:', err));
+  window.getSupabaseClient = async function() {
+    if (!supabaseReady) await initSupabase();
+    return supabase;
+  };
+
+  initSupabase();
+}
 
 
 /**

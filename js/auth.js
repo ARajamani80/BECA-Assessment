@@ -11,7 +11,16 @@ let currentUser = null;
  */
 async function signIn(email, password) {
   try {
+    // Ensure Supabase is ready
+    if (typeof getSupabaseClient !== 'function') {
+      throw new Error('Supabase not initialized - please wait and try again');
+    }
+
     const client = await getSupabaseClient();
+    if (!client) {
+      throw new Error('Failed to get Supabase client');
+    }
+
     const { data, error } = await client.auth.signInWithPassword({
       email,
       password
