@@ -8,6 +8,7 @@
   <!-- External Libraries -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- CSS Stylesheets -->
   <link rel="stylesheet" href="css/theme.css">
@@ -114,8 +115,76 @@
     </div>
   </div>
 
-  <!-- Modals will be injected by JS -->
-  <div id="modalsContainer"></div>
+  <!-- Modals -->
+  <div id="modalsContainer">
+    <!-- Assessment Modal -->
+    <div id="assessmentModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <div id="assessmentModalContent"></div>
+      </div>
+    </div>
+
+    <!-- View Assessment Modal -->
+    <div id="viewAssessmentModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+        <div id="viewAssessmentModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Question Modal -->
+    <div id="questionModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 600px;">
+        <div id="questionModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Module Modal -->
+    <div id="moduleModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 600px;">
+        <div id="moduleModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Taker Modal -->
+    <div id="takerModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 500px;">
+        <div id="takerModalContent"></div>
+      </div>
+    </div>
+
+    <!-- View Taker Modal -->
+    <div id="viewTakerModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 500px;">
+        <div id="viewTakerModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Excel Import Modal -->
+    <div id="excelImportModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+        <div id="excelImportModalContent"></div>
+      </div>
+    </div>
+
+    <!-- User/Permission Modal -->
+    <div id="userModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 500px;">
+        <div id="userModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Generic Modal -->
+    <div id="confirmModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 400px;">
+        <h2 style="margin-top: 0;" id="confirmTitle">Confirm Action</h2>
+        <p id="confirmMessage"></p>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button class="btn btn-danger" id="confirmBtn" style="flex: 1;">Confirm</button>
+          <button class="btn btn-secondary" onclick="closeModal('confirmModal')" style="flex: 1;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- JavaScript Files (order matters - api.js must load FIRST) -->
   <script src="js/api.js"></script>
@@ -126,6 +195,8 @@
   <script src="js/questions.js"></script>
   <script src="js/modules.js"></script>
   <script src="js/assessments.js"></script>
+  <script src="js/assessment-takers.js"></script>
+  <script src="js/excel-import.js"></script>
   <script src="js/permissions.js"></script>
   <script src="js/users.js"></script>
   <script src="js/send-trainees.js"></script>

@@ -84,13 +84,7 @@ async function renderQuestions() {
  */
 async function loadAllQuestions() {
   try {
-    const { data, error } = await supabase
-      .from('questions')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    questionsData = data || [];
+    questionsData = await getAllQuestions();
     filteredQuestionsData = questionsData;
   } catch (error) {
     console.error('Error loading questions:', error);

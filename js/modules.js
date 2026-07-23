@@ -76,13 +76,7 @@ async function renderModules() {
  */
 async function loadAllModules() {
   try {
-    const { data, error } = await supabase
-      .from('modules')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    allModules = data || [];
+    allModules = await getModules();
     filteredModules = allModules;
   } catch (error) {
     console.error('Error loading modules:', error);
@@ -96,13 +90,7 @@ async function loadAllModules() {
  */
 async function loadAllQuestionsForModules() {
   try {
-    const { data, error } = await supabase
-      .from('questions')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    allQuestions = data || [];
+    allQuestions = await getAllQuestions();
   } catch (error) {
     console.error('Error loading questions:', error);
     allQuestions = [];

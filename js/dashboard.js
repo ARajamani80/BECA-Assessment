@@ -11,17 +11,17 @@ async function renderDashboard() {
     const results = await getResults();
 
     let passRate = 0;
-    if (Array.isArray(results) && results.length > 0) {
-      const passed = results.filter(r => r.passed).length;
+    if (results && results.length > 0) {
+      const passed = results.filter(r => r.passed || r.total_score >= 60).length;
       passRate = Math.round((passed / results.length) * 100);
     }
 
     const uniqueStudents = new Set(
-      Array.isArray(results) ? results.map(r => r.user_id) : []
+      results && results.length > 0 ? results.map(r => r.user_id).filter(Boolean) : []
     ).size;
 
-    const assessmentCount = Array.isArray(assessments) ? assessments.length : 0;
-    const resultCount = Array.isArray(results) ? results.length : 0;
+    const assessmentCount = assessments && assessments.length > 0 ? assessments.length : 0;
+    const resultCount = results && results.length > 0 ? results.length : 0;
 
     document.getElementById('page').innerHTML = `
       <div class="stats-grid">

@@ -1,155 +1,91 @@
 // BECA Assessment Platform - API Module (Supabase)
+// Properly initializes and manages Supabase client with proper error handling
 
-// Make globally accessible
-window.SUPABASE_URL = 'https://fgzqgqwlyeubudnbxsmx.supabase.co';
-window.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0';
+const SUPABASE_URL = 'https://fgzqgqwlyeubudnbxsmx.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0';
 
-// Also set as local constants for this file
-const SUPABASE_URL = window.SUPABASE_URL;
-const SUPABASE_KEY = window.SUPABASE_KEY;
-
-// Initialize Supabase client - wait for library to load
+// Initialize Supabase client - make it globally accessible
 let supabase = null;
+let supabaseInitializing = false;
+let supabaseInitialized = false;
+const supabaseCallbacks = [];
 
-function initializeSupabase() {
-  if (typeof window.supabase !== 'undefined' && !supabase) {
+/**
+ * Properly initialize Supabase client
+ * @returns {Promise<void>}
+ */
+async function initializeSupabaseClient() {
+  if (supabaseInitialized || supabaseInitializing) return;
+
+  supabaseInitializing = true;
+
+  try {
+    // Wait for the Supabase library to be available
+    let attempts = 0;
+    while (!window.supabase && attempts < 50) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+
+    if (!window.supabase) {
+      throw new Error('Supabase library failed to load');
+    }
+
+    // Create client
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    console.log('✓ Supabase initialized');
-  } else if (!supabase) {
-    setTimeout(initializeSupabase, 100);
-  }
-}
+    supabaseInitialized = true;
+    console.log('✓ Supabase client initialized successfully');
 
-// Wait for DOM to ensure scripts are loaded
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeSupabase);
-} else {
-  initializeSupabase();
-}
-
-/**
- * Check if token is expired
- * @returns {boolean} Is token expired
- */
-function isTokenExpired() {
-  const expiry = localStorage.getItem('tokenExpiry');
-  if (!expiry) return true;
-  return Date.now() > parseInt(expiry);
-}
-
-/**
- * Refresh authentication token
- * @returns {Promise<boolean>} Success flag
- */
-async function refreshToken() {
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) return false;
-
-  try {
-    const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY
-      },
-      body: JSON.stringify({ refresh_token: refreshToken })
-    });
-
-    const data = await response.json();
-    if (data.error) throw new Error(data.error);
-
-    localStorage.setItem('token', data.access_token);
-    localStorage.setItem('tokenExpiry', Date.now() + (3600 * 1000));
-    return true;
+    // Call any waiting callbacks
+    supabaseCallbacks.forEach(cb => cb());
+    supabaseCallbacks.length = 0;
   } catch (error) {
-    console.error('Token refresh failed:', error);
-    return false;
-  }
-}
-
-/**
- * Make API call to Supabase
- * @param {string} method - HTTP method (GET, POST, PATCH, DELETE)
- * @param {string} table - Table name
- * @param {object} data - Request body data
- * @param {string} filter - Query filter string
- * @returns {Promise<array|object>} API response
- * @throws {Error} API error
- */
-async function apiCall(method, table, data = null, filter = null) {
-  // Check if token is expired and refresh
-  if (isTokenExpired()) {
-    const refreshed = await refreshToken();
-    if (!refreshed) {
-      throw new Error('Session expired. Please login again.');
-    }
-  }
-
-  const token = localStorage.getItem('token');
-  let url = `${SUPABASE_URL}/rest/v1/${table}`;
-
-  const options = {
-    method,
-    headers: {
-      'apikey': SUPABASE_KEY,
-      'Authorization': token ? `Bearer ${token}` : '',
-      'Content-Type': 'application/json'
-    }
-  };
-
-  if (data) options.body = JSON.stringify(data);
-  if (filter) url += filter;
-
-  try {
-    const response = await fetch(url, options);
-
-    // Handle 401 Unauthorized (token issue)
-    if (response.status === 401) {
-      console.error('Unauthorized - refreshing token');
-      const refreshed = await refreshToken();
-      if (!refreshed) {
-        throw new Error('Session expired. Please login again.');
-      }
-      // Retry the request with new token
-      return apiCall(method, table, data, filter);
-    }
-
-    // Handle empty response
-    if (response.status === 204) {
-      return [];
-    }
-
-    // Get response text first
-    const text = await response.text();
-
-    // Try to parse as JSON
-    let result = [];
-    try {
-      result = text ? JSON.parse(text) : [];
-    } catch (e) {
-      console.error('Failed to parse JSON:', text, 'Error:', e);
-      console.error('URL:', url);
-      console.error('Status:', response.status);
-    }
-
-    if (!response.ok) {
-      console.error('API Error:', result);
-      throw new Error(result.message || `API Error: ${response.status}`);
-    }
-
-    return result;
-  } catch (error) {
-    console.error('API Call Error:', error);
+    console.error('Failed to initialize Supabase:', error);
+    supabaseInitializing = false;
     throw error;
   }
 }
+
+/**
+ * Get Supabase client (wait if not ready)
+ * @returns {Promise<object>} Supabase client
+ */
+async function getSupabaseClient() {
+  if (!supabaseInitialized) {
+    if (!supabaseInitializing) {
+      await initializeSupabaseClient();
+    } else {
+      // Wait for initialization to complete
+      return new Promise(resolve => {
+        supabaseCallbacks.push(() => resolve(supabase));
+      });
+    }
+  }
+  return supabase;
+}
+
+// Start initialization immediately when script loads
+initializeSupabaseClient().catch(err => console.error('Supabase init error:', err));
+
 
 /**
  * Get assessments
  * @returns {Promise<array>} Assessments list
  */
 async function getAssessments() {
-  return await apiCall('GET', 'assessments');
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessments')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching assessments:', error);
+    throw error;
+  }
 }
 
 /**
@@ -158,8 +94,20 @@ async function getAssessments() {
  * @returns {Promise<object>} Assessment data
  */
 async function getAssessment(id) {
-  const result = await apiCall('GET', `assessments?id=eq.${id}`);
-  return Array.isArray(result) ? result[0] : result;
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessments')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching assessment:', error);
+    throw error;
+  }
 }
 
 /**
@@ -168,7 +116,20 @@ async function getAssessment(id) {
  * @returns {Promise<object>} Created assessment
  */
 async function createAssessment(data) {
-  return await apiCall('POST', 'assessments', data);
+  try {
+    const client = await getSupabaseClient();
+    const { data: result, error } = await client
+      .from('assessments')
+      .insert([data])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result;
+  } catch (error) {
+    console.error('Error creating assessment:', error);
+    throw error;
+  }
 }
 
 /**
@@ -178,7 +139,21 @@ async function createAssessment(data) {
  * @returns {Promise<object>} Updated assessment
  */
 async function updateAssessment(id, data) {
-  return await apiCall('PATCH', 'assessments', data, `?id=eq.${id}`);
+  try {
+    const client = await getSupabaseClient();
+    const { data: result, error } = await client
+      .from('assessments')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result;
+  } catch (error) {
+    console.error('Error updating assessment:', error);
+    throw error;
+  }
 }
 
 /**
@@ -187,7 +162,18 @@ async function updateAssessment(id, data) {
  * @returns {Promise<void>}
  */
 async function deleteAssessment(id) {
-  return await apiCall('DELETE', 'assessments', null, `?id=eq.${id}`);
+  try {
+    const client = await getSupabaseClient();
+    const { error } = await client
+      .from('assessments')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting assessment:', error);
+    throw error;
+  }
 }
 
 /**
@@ -196,7 +182,20 @@ async function deleteAssessment(id) {
  * @returns {Promise<array>} Modules list
  */
 async function getAssessmentModules(assessmentId) {
-  return await apiCall('GET', `assessment_modules?assessment_id=eq.${assessmentId}`);
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_modules')
+      .select('*')
+      .eq('assessment_id', assessmentId)
+      .order('order', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching modules:', error);
+    throw error;
+  }
 }
 
 /**
@@ -205,7 +204,20 @@ async function getAssessmentModules(assessmentId) {
  * @returns {Promise<object>} Created module
  */
 async function createModule(data) {
-  return await apiCall('POST', 'assessment_modules', data);
+  try {
+    const client = await getSupabaseClient();
+    const { data: result, error } = await client
+      .from('assessment_modules')
+      .insert([data])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result;
+  } catch (error) {
+    console.error('Error creating module:', error);
+    throw error;
+  }
 }
 
 /**
@@ -215,7 +227,21 @@ async function createModule(data) {
  * @returns {Promise<object>} Updated module
  */
 async function updateModule(id, data) {
-  return await apiCall('PATCH', 'assessment_modules', data, `?id=eq.${id}`);
+  try {
+    const client = await getSupabaseClient();
+    const { data: result, error } = await client
+      .from('assessment_modules')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result;
+  } catch (error) {
+    console.error('Error updating module:', error);
+    throw error;
+  }
 }
 
 /**
@@ -224,7 +250,38 @@ async function updateModule(id, data) {
  * @returns {Promise<void>}
  */
 async function deleteModule(id) {
-  return await apiCall('DELETE', 'assessment_modules', null, `?id=eq.${id}`);
+  try {
+    const client = await getSupabaseClient();
+    const { error } = await client
+      .from('assessment_modules')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting module:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all modules
+ * @returns {Promise<array>} All modules
+ */
+async function getModules() {
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_modules')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching modules:', error);
+    throw error;
+  }
 }
 
 /**
@@ -233,7 +290,40 @@ async function deleteModule(id) {
  * @returns {Promise<array>} Questions list
  */
 async function getAssessmentQuestions(moduleId) {
-  return await apiCall('GET', `assessment_questions?module_id=eq.${moduleId}`);
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_questions')
+      .select('*')
+      .eq('module_id', moduleId)
+      .order('order', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching questions:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all questions
+ * @returns {Promise<array>} All questions
+ */
+async function getAllQuestions() {
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_questions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching questions:', error);
+    throw error;
+  }
 }
 
 /**
@@ -242,7 +332,20 @@ async function getAssessmentQuestions(moduleId) {
  * @returns {Promise<object>} Created question
  */
 async function createQuestion(data) {
-  return await apiCall('POST', 'assessment_questions', data);
+  try {
+    const client = await getSupabaseClient();
+    const { data: result, error } = await client
+      .from('assessment_questions')
+      .insert([data])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result;
+  } catch (error) {
+    console.error('Error creating question:', error);
+    throw error;
+  }
 }
 
 /**
@@ -252,7 +355,21 @@ async function createQuestion(data) {
  * @returns {Promise<object>} Updated question
  */
 async function updateQuestion(id, data) {
-  return await apiCall('PATCH', 'assessment_questions', data, `?id=eq.${id}`);
+  try {
+    const client = await getSupabaseClient();
+    const { data: result, error } = await client
+      .from('assessment_questions')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result;
+  } catch (error) {
+    console.error('Error updating question:', error);
+    throw error;
+  }
 }
 
 /**
@@ -261,7 +378,18 @@ async function updateQuestion(id, data) {
  * @returns {Promise<void>}
  */
 async function deleteQuestion(id) {
-  return await apiCall('DELETE', 'assessment_questions', null, `?id=eq.${id}`);
+  try {
+    const client = await getSupabaseClient();
+    const { error } = await client
+      .from('assessment_questions')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting question:', error);
+    throw error;
+  }
 }
 
 /**
@@ -269,7 +397,19 @@ async function deleteQuestion(id) {
  * @returns {Promise<array>} Users list
  */
 async function getUsers() {
-  return await apiCall('GET', 'profiles');
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    throw error;
+  }
 }
 
 /**
@@ -277,7 +417,19 @@ async function getUsers() {
  * @returns {Promise<array>} Results list
  */
 async function getResults() {
-  return await apiCall('GET', 'assessment_results');
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_results')
+      .select('*')
+      .order('submitted_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching results:', error);
+    throw error;
+  }
 }
 
 /**
@@ -286,8 +438,20 @@ async function getResults() {
  * @returns {Promise<object|null>} Taker assignment
  */
 async function getAssessmentTakerByToken(token) {
-  const result = await apiCall('GET', `assessment_takers?token=eq.${token}`);
-  return Array.isArray(result) && result.length > 0 ? result[0] : null;
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_takers')
+      .select('*')
+      .eq('token', token)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found
+    return data || null;
+  } catch (error) {
+    console.error('Error fetching taker:', error);
+    throw error;
+  }
 }
 
 /**
@@ -296,7 +460,20 @@ async function getAssessmentTakerByToken(token) {
  * @returns {Promise<object>} Created taker
  */
 async function createAssessmentTaker(data) {
-  return await apiCall('POST', 'assessment_takers', data);
+  try {
+    const client = await getSupabaseClient();
+    const { data: result, error } = await client
+      .from('assessment_takers')
+      .insert([data])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result;
+  } catch (error) {
+    console.error('Error creating taker:', error);
+    throw error;
+  }
 }
 
 /**
@@ -306,19 +483,61 @@ async function createAssessmentTaker(data) {
  * @returns {Promise<object>} Updated taker
  */
 async function updateAssessmentTaker(id, data) {
-  return await apiCall('PATCH', 'assessment_takers', data, `?id=eq.${id}`);
+  try {
+    const client = await getSupabaseClient();
+    const { data: result, error } = await client
+      .from('assessment_takers')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return result;
+  } catch (error) {
+    console.error('Error updating taker:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get assessment takers
+ * @returns {Promise<array>} Assessment takers
+ */
+async function getAssessmentTakers() {
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_takers')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching takers:', error);
+    throw error;
+  }
 }
 
 /**
  * Save audit log
  * @param {object} logEntry - Log entry data
- * @returns {Promise<object>} Saved log entry
+ * @returns {Promise<object|null>} Saved log entry
  */
 async function saveAuditLog(logEntry) {
   try {
-    return await apiCall('POST', 'user_audit_log', logEntry);
-  } catch (e) {
-    console.log('Audit log table not available:', e);
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('user_audit_log')
+      .insert([logEntry])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.log('Audit log not available:', error.message);
     return null;
   }
 }

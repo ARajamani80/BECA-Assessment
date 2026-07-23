@@ -22,13 +22,7 @@ async function renderAssessments() {
   document.getElementById('pageTitle').textContent = 'Assessments';
 
   try {
-    const { data, error } = await supabase
-      .from('assessments')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    allAssessments = data || [];
+    allAssessments = await getAssessments();
 
     let html = '<div class="card"><div class="card-title"><i class="fas fa-list-check"></i> All Assessments</div>';
 
@@ -54,7 +48,7 @@ async function renderAssessments() {
             <div class="assessment-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
               <button class="btn btn-primary btn-sm" onclick="editAssessment('${a.id}')"><i class="fas fa-edit"></i> Edit</button>
               <button class="btn btn-info btn-sm" onclick="viewAssessmentDetails('${a.id}')"><i class="fas fa-eye"></i> View</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteAssessmentConfirm('${a.id}')"><i class="fas fa-trash"></i></button>
+              <button class="btn btn-danger btn-sm" onclick="deleteAssessmentConfirm('${a.id}')"><i class="fas fa-trash"></i> Delete</button>
             </div>
           </div>
         `;
@@ -86,13 +80,7 @@ async function openCreateAssessmentModal() {
 
   // Load available modules
   try {
-    const { data, error } = await supabase
-      .from('modules')
-      .select('*')
-      .order('name', { ascending: true });
-
-    if (error) throw error;
-    availableModulesForAssessment = data || [];
+    availableModulesForAssessment = await getModules();
   } catch (error) {
     console.error('Error loading modules:', error);
     availableModulesForAssessment = [];
@@ -291,20 +279,11 @@ async function handleAssessmentSave(e) {
 
     if (currentAssessmentEdit) {
       // Update existing assessment
-      const { error } = await supabase
-        .from('assessments')
-        .update(assessmentData)
-        .eq('id', currentAssessmentEdit);
-
-      if (error) throw error;
+      await updateAssessment(currentAssessmentEdit, assessmentData);
       showMessage('Assessment updated successfully!', 'success');
     } else {
       // Create new assessment
-      const { error } = await supabase
-        .from('assessments')
-        .insert([assessmentData]);
-
-      if (error) throw error;
+      await createAssessment(assessmentData);
       showMessage('Assessment created successfully!', 'success');
     }
 
@@ -326,13 +305,7 @@ async function editAssessment(assessmentId) {
 
   // Load available modules
   try {
-    const { data, error } = await supabase
-      .from('modules')
-      .select('*')
-      .order('name', { ascending: true });
-
-    if (error) throw error;
-    availableModulesForAssessment = data || [];
+    availableModulesForAssessment = await getModules();
   } catch (error) {
     console.error('Error loading modules:', error);
     availableModulesForAssessment = [];
@@ -550,21 +523,16 @@ function deleteAssessmentConfirm(assessmentId) {
   if (!assessment) return;
 
   if (confirm(`Delete assessment "${assessment.title}"?`)) {
-    deleteAssessment(assessmentId);
+    deleteAssessmentAction(assessmentId);
   }
 }
 
 /**
  * Delete assessment from database
  */
-async function deleteAssessment(assessmentId) {
+async function deleteAssessmentAction(assessmentId) {
   try {
-    const { error } = await supabase
-      .from('assessments')
-      .delete()
-      .eq('id', assessmentId);
-
-    if (error) throw error;
+    await deleteAssessment(assessmentId);
     showMessage('Assessment deleted successfully!', 'success');
     await renderAssessments();
   } catch (error) {
