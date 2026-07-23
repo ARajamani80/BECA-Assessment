@@ -336,16 +336,34 @@
 
       // Initialize app
       setTimeout(() => {
-        const token = localStorage.getItem('access_token') || localStorage.getItem('token');
-        if (token) {
-          console.log('✓ Token found, showing dashboard');
+        // First check if this is assessment taker mode (URL token parameter)
+        const urlParams = new URLSearchParams(window.location.search);
+        const takerToken = urlParams.get('token');
+
+        if (takerToken) {
+          console.log('✓ Assessment taker token found, initializing taker mode');
+          // Hide everything initially, taker interface will show itself
+          document.getElementById('loginContainer').style.display = 'none';
+          document.getElementById('dashboardContainer').style.display = 'none';
+          document.getElementById('takerContainer').style.display = 'none';
+          // Call initializeApp which will handle the taker mode
+          initializeApp();
+          return;
+        }
+
+        // Otherwise check for authentication token
+        const authToken = localStorage.getItem('access_token') || localStorage.getItem('token');
+        if (authToken) {
+          console.log('✓ Auth token found, showing dashboard');
           document.getElementById('loginContainer').style.display = 'none';
           document.getElementById('dashboardContainer').style.display = 'flex';
+          document.getElementById('takerContainer').style.display = 'none';
           initializeApp();
         } else {
           console.log('ℹ No token, showing login');
           document.getElementById('loginContainer').style.display = 'flex';
           document.getElementById('dashboardContainer').style.display = 'none';
+          document.getElementById('takerContainer').style.display = 'none';
         }
       }, 500);
     });
