@@ -3,8 +3,24 @@
 const SUPABASE_URL = 'https://fgzqgqwlyeubudnbxsmx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0';
 
-// Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Initialize Supabase client - wait for library to load
+let supabase = null;
+
+function initializeSupabase() {
+  if (typeof window.supabase !== 'undefined' && !supabase) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log('✓ Supabase initialized');
+  } else if (!supabase) {
+    setTimeout(initializeSupabase, 100);
+  }
+}
+
+// Wait for DOM to ensure scripts are loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeSupabase);
+} else {
+  initializeSupabase();
+}
 
 /**
  * Check if token is expired
