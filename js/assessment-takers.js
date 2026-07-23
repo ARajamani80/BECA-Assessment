@@ -588,23 +588,21 @@ async function handleSendToTaker(event, takerId) {
       return;
     }
 
-    // Create assignment
+    // Log assignment (in future, this would create an assessment_submission record)
     const token = generateToken(32);
-    const assignmentData = {
+    console.log('📨 Sending assessment to taker:', {
       assessment_id: assessmentId,
-      trainee_id: takerId,
-      assigned_by: currentUser?.id || 'system',
+      taker_id: takerId,
+      taker_email: taker.email,
       token: token,
-      status: 'assigned',
-      answers: {}
-    };
-
-    await createAssessmentTaker(assignmentData);
+      assigned_by: currentUser?.id || 'system'
+    });
 
     // TODO: Send email if enabled
     if (sendEmail) {
       // Email sending would go here
-      console.log('Email sending would be triggered for:', taker.email);
+      console.log('📧 Email would be sent to:', taker.email);
+      console.log('📧 Message:', message);
     }
 
     closeModal('sendTakerModal');

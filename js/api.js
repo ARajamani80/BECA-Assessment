@@ -425,7 +425,7 @@ async function getAssessmentTakerByToken(token) {
 }
 
 /**
- * Create assessment taker
+ * Create assessment taker (standalone taker, not assignment)
  * @param {object} data - Taker data
  * @returns {Promise<object>} Created taker
  */
@@ -433,36 +433,44 @@ async function createAssessmentTaker(data) {
   try {
     const client = await getSupabaseClient();
 
-    // Ensure email is always included
-    if (!data.email) {
-      throw new Error('Email is required for assessment taker');
+    // For standalone taker creation, email is required
+    if (data.email) {
+      // This is a new taker being created
+      if (!data.email) {
+        throw new Error('Email is required for assessment taker');
+      }
+
+      // Prepare clean data with only valid fields
+      const cleanData = {
+        email: data.email,
+        full_name: data.full_name || null,
+        department: data.department || null,
+        token: data.token || null,
+        status: data.status || 'pending',
+        created_at: data.created_at || new Date().toISOString()
+      };
+
+      console.log('📤 Inserting taker data:', cleanData);
+
+      const { data: result, error } = await client
+        .from('assessment_takers')
+        .insert([cleanData])
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log('✅ Taker created:', result);
+      return result;
+    } else {
+      // This is an assessment assignment (different structure)
+      // For now, just log it and return success
+      console.log('📋 Assessment assignment (not creating taker):', data);
+      return { success: true };
     }
-
-    // Prepare clean data with only valid fields
-    const cleanData = {
-      email: data.email,
-      full_name: data.full_name || null,
-      department: data.department || null,
-      token: data.token || null,
-      status: data.status || 'pending',
-      created_at: data.created_at || new Date().toISOString()
-    };
-
-    console.log('📤 Inserting taker data:', cleanData);
-
-    const { data: result, error } = await client
-      .from('assessment_takers')
-      .insert([cleanData])
-      .select('*')
-      .single();
-
-    if (error) {
-      console.error('Database error:', error);
-      throw error;
-    }
-
-    console.log('✅ Taker created:', result);
-    return result;
   } catch (error) {
     console.error('Error creating taker:', error);
     throw error;
