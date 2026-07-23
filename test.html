@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <h1>BECA Debug Test</h1>
+  <div id="status"></div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+
+    function log(msg) {
+      console.log(msg);
+      statusEl.innerHTML += msg + '<br>';
+    }
+
+    log('1. Page loaded');
+    log('2. Checking if window.supabase exists: ' + (!!window.supabase));
+
+    setTimeout(() => {
+      log('3. After 100ms, window.supabase: ' + (!!window.supabase));
+
+      if (window.supabase) {
+        try {
+          const client = window.supabase.createClient(
+            'https://fgzqgqwlyeubudnbxsmx.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0'
+          );
+          log('4. ✓ Supabase client created successfully!');
+          log('5. Testing client methods...');
+          log('   - from method exists: ' + (!!client.from));
+          log('   - auth method exists: ' + (!!client.auth));
+        } catch (err) {
+          log('4. ✗ Error creating client: ' + err.message);
+        }
+      } else {
+        log('3. ✗ Supabase library failed to load from CDN!');
+      }
+    }, 100);
+
+    setTimeout(() => {
+      log('6. After 500ms, window.supabase: ' + (!!window.supabase));
+    }, 500);
+  </script>
+
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    #status { white-space: pre-wrap; background: #f0f0f0; padding: 15px; border-radius: 5px; margin-top: 20px; }
+  </style>
+</body>
+</html>

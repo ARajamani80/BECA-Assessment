@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BECA Assessment Platform</title>
+
+  <!-- External Libraries -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+
+  <!-- CRITICAL: Inline Supabase initialization BEFORE any other scripts -->
+  <script>
+    console.log('🔧 Initializing Supabase client...');
+
+    const SUPABASE_URL = 'https://fgzqgqwlyeubudnbxsmx.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0';
+
+    let supabaseClient = null;
+    let supabaseInitialized = false;
+
+    async function initSupabaseNow() {
+      return new Promise((resolve) => {
+        const checkInterval = setInterval(() => {
+          if (window.supabase) {
+            clearInterval(checkInterval);
+            try {
+              supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+              supabaseInitialized = true;
+              console.log('✅ Supabase client created successfully');
+              resolve(true);
+            } catch (err) {
+              console.error('❌ Failed to create Supabase client:', err);
+              resolve(false);
+            }
+          }
+        }, 50);
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          console.error('❌ Supabase library timeout');
+          resolve(false);
+        }, 5000);
+      });
+    }
+
+    // Make getSupabaseClient globally available
+    async function getSupabaseClient() {
+      if (!supabaseInitialized) {
+        await initSupabaseNow();
+      }
+      return supabaseClient;
+    }
+
+    // Start initialization immediately
+    initSupabaseNow();
+
+    console.log('✓ getSupabaseClient function defined globally');
+  </script>
+</head>
+<body>
+  <!-- Message Container -->
+  <div id="messageContainer"></div>
+
+  <!-- Dashboard Container -->
+  <div id="dashboardContainer" style="display: none;">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <img src="images/logo.png" alt="DJBH Logo" style="width: 40px; height: 40px; border-radius: 8px; object-fit: contain; flex-shrink: 0;">
+        <div>
+          <div style="font-size: 14px; font-weight: 700;">BECA-Skill</div>
+          <div style="font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 2px;">Assessment</div>
+        </div>
+      </div>
+      <div class="sidebar-menu">
+        <div class="menu-item active" data-page="dashboard">
+          <i class="fas fa-chart-line"></i> Dashboard
+        </div>
+        <div class="menu-item" data-page="questions">
+          <i class="fas fa-question-circle"></i> Question Bank
+        </div>
+        <div class="menu-item" data-page="modules">
+          <i class="fas fa-layer-group"></i> Module Bank
+        </div>
+        <div class="menu-item" data-page="assessments">
+          <i class="fas fa-list-check"></i> Assessments
+        </div>
+        <div class="menu-item" data-page="users">
+          <i class="fas fa-users"></i> User Management
+        </div>
+        <div class="menu-item" data-page="send-trainees">
+          <i class="fas fa-paper-plane"></i> Send to Trainees
+        </div>
+        <div class="menu-item" data-page="reports">
+          <i class="fas fa-chart-bar"></i> Reports
+        </div>
+        <div class="menu-item" data-page="results">
+          <i class="fas fa-award"></i> Results
+        </div>
+      </div>
+
+      <!-- User Profile Section at Bottom -->
+      <div style="padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: auto;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+          <div id="userAvatarSidebar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; flex-shrink: 0;">U</div>
+          <div style="flex: 1; min-width: 0;">
+            <div id="userNameSidebar" style="font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">User</div>
+            <div id="userRoleSidebar" style="font-size: 11px; color: rgba(255,255,255,0.7); text-transform: capitalize;">user</div>
+          </div>
+        </div>
+        <button class="menu-item" onclick="logout()" style="width: calc(100% + 16px); margin: 0 -8px; border: none; background: none; padding: 12px 20px; cursor: pointer;">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+      <!-- Header -->
+      <div class="header">
+        <h1 class="header-title" id="pageTitle">Dashboard</h1>
+      </div>
+
+      <!-- Content -->
+      <div class="content" id="page">
+        <!-- Page content rendered here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Container -->
+  <div id="loginContainer">
+    <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 100%; max-width: 420px;">
+      <!-- Logo Section -->
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="images/logo.png" alt="DJBH Logo" style="width: 60px; height: 60px; margin: 0 auto 15px; object-fit: contain; border-radius: 12px;">
+
+        <h1 style="margin: 0 0 5px 0; font-size: 24px; color: #1e293b;">BECA-Skill Assessment Platform</h1>
+        <p style="margin: 0; color: #64748b; font-size: 14px;">DJBH Global</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" required placeholder="your@email.com" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" required placeholder="Your password" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Login</button>
+      </form>
+
+      <p style="text-align: center; color: #64748b; font-size: 12px; margin-top: 20px;">
+        BECA-Skill © 2024 | DJBH Global
+      </p>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div id="modalsContainer">
+    <!-- Assessment Modal -->
+    <div id="assessmentModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <div id="assessmentModalContent"></div>
+      </div>
+    </div>
+
+    <!-- View Assessment Modal -->
+    <div id="viewAssessmentModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+        <div id="viewAssessmentModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Question Modal -->
+    <div id="questionModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 600px;">
+        <div id="questionModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Module Modal -->
+    <div id="moduleModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 600px;">
+        <div id="moduleModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Taker Modal -->
+    <div id="takerModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 500px;">
+        <div id="takerModalContent"></div>
+      </div>
+    </div>
+
+    <!-- View Taker Modal -->
+    <div id="viewTakerModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 500px;">
+        <div id="viewTakerModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Excel Import Modal -->
+    <div id="excelImportModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+        <div id="excelImportModalContent"></div>
+      </div>
+    </div>
+
+    <!-- User/Permission Modal -->
+    <div id="userModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 500px;">
+        <div id="userModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Generic Modal -->
+    <div id="confirmModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 400px;">
+        <h2 style="margin-top: 0;" id="confirmTitle">Confirm Action</h2>
+        <p id="confirmMessage"></p>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button class="btn btn-danger" id="confirmBtn" style="flex: 1;">Confirm</button>
+          <button class="btn btn-secondary" onclick="closeModal('confirmModal')" style="flex: 1;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Files (order matters - api.js must load FIRST) -->
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/modals.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/questions.js"></script>
+  <script src="js/modules.js"></script>
+  <script src="js/assessments.js"></script>
+  <script src="js/assessment-takers.js"></script>
+  <script src="js/excel-import.js"></script>
+  <script src="js/permissions.js"></script>
+  <script src="js/users.js"></script>
+  <script src="js/send-trainees.js"></script>
+  <script src="js/results.js"></script>
+  <script src="js/students.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/taker.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Initialization -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('📱 DOM loaded, initializing app...');
+
+      // Setup login form
+      const loginForm = document.getElementById('loginForm');
+      if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          const email = document.getElementById('loginEmail').value;
+          const password = document.getElementById('loginPassword').value;
+          try {
+            await signIn(email, password);
+            setTimeout(() => {
+              document.getElementById('loginContainer').style.display = 'none';
+              document.getElementById('dashboardContainer').style.display = 'flex';
+              initializeApp();
+            }, 500);
+          } catch (error) {
+            alert('Login failed: ' + error.message);
+          }
+        });
+      }
+
+      // Setup menu navigation
+      document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', function() {
+          const page = this.getAttribute('data-page');
+          if (page === 'logout') {
+            logout();
+          } else if (page) {
+            showPage(page);
+          }
+        });
+      });
+
+      // Initialize app
+      setTimeout(() => {
+        const token = localStorage.getItem('access_token') || localStorage.getItem('token');
+        if (token) {
+          console.log('✓ Token found, showing dashboard');
+          document.getElementById('loginContainer').style.display = 'none';
+          document.getElementById('dashboardContainer').style.display = 'flex';
+          initializeApp();
+        } else {
+          console.log('ℹ No token, showing login');
+          document.getElementById('loginContainer').style.display = 'flex';
+          document.getElementById('dashboardContainer').style.display = 'none';
+        }
+      }, 500);
+    });
+  </script>
+</body>
+</html>
