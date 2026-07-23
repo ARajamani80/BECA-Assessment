@@ -432,13 +432,36 @@ async function getAssessmentTakerByToken(token) {
 async function createAssessmentTaker(data) {
   try {
     const client = await getSupabaseClient();
+
+    // Ensure email is always included
+    if (!data.email) {
+      throw new Error('Email is required for assessment taker');
+    }
+
+    // Prepare clean data with only valid fields
+    const cleanData = {
+      email: data.email,
+      full_name: data.full_name || null,
+      department: data.department || null,
+      token: data.token || null,
+      status: data.status || 'pending',
+      created_at: data.created_at || new Date().toISOString()
+    };
+
+    console.log('📤 Inserting taker data:', cleanData);
+
     const { data: result, error } = await client
       .from('assessment_takers')
-      .insert([data])
-      .select()
+      .insert([cleanData])
+      .select('*')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error:', error);
+      throw error;
+    }
+
+    console.log('✅ Taker created:', result);
     return result;
   } catch (error) {
     console.error('Error creating taker:', error);
