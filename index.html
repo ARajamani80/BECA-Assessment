@@ -15,35 +15,54 @@
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/components.css">
 
-  <!-- Critical: Initialize Supabase immediately - v2.0 -->
+  <!-- CRITICAL: Inline Supabase initialization BEFORE any other scripts -->
   <script>
+    console.log('🔧 Initializing Supabase client...');
+
     const SUPABASE_URL = 'https://fgzqgqwlyeubudnbxsmx.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnenFncXdseWV1YnVkbmJ4c214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTc5NTIsImV4cCI6MjA5NDk5Mzk1Mn0.J6lWx23ukNGihKgLtdCeoq4WOR75eSFyGYrb6_YS9q0';
 
-    let supabase = null;
-    let supabaseReady = false;
+    let supabaseClient = null;
+    let supabaseInitialized = false;
 
-    async function initSupabase() {
-      let attempts = 0;
-      while (!window.supabase && attempts < 100) {
-        await new Promise(r => setTimeout(r, 50));
-        attempts++;
-      }
-      if (window.supabase) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        supabaseReady = true;
-        console.log('✓ Supabase initialized in HEAD');
-      } else {
-        console.error('✗ Supabase library failed to load');
-      }
+    async function initSupabaseNow() {
+      return new Promise((resolve) => {
+        const checkInterval = setInterval(() => {
+          if (window.supabase) {
+            clearInterval(checkInterval);
+            try {
+              supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+              supabaseInitialized = true;
+              console.log('✅ Supabase client created successfully');
+              resolve(true);
+            } catch (err) {
+              console.error('❌ Failed to create Supabase client:', err);
+              resolve(false);
+            }
+          }
+        }, 50);
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          console.error('❌ Supabase library timeout');
+          resolve(false);
+        }, 5000);
+      });
     }
 
+    // Make getSupabaseClient globally available
     async function getSupabaseClient() {
-      if (!supabaseReady) await initSupabase();
-      return supabase;
+      if (!supabaseInitialized) {
+        await initSupabaseNow();
+      }
+      return supabaseClient;
     }
 
-    initSupabase();
+    // Start initialization immediately
+    initSupabaseNow();
+
+    console.log('✓ getSupabaseClient function defined globally');
   </script>
 </head>
 <body>
@@ -240,6 +259,8 @@
   <!-- Initialization -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      console.log('📱 DOM loaded, initializing app...');
+
       // Setup login form
       const loginForm = document.getElementById('loginForm');
       if (loginForm) {
@@ -266,7 +287,7 @@
           const page = this.getAttribute('data-page');
           if (page === 'logout') {
             logout();
-          } else {
+          } else if (page) {
             showPage(page);
           }
         });
@@ -274,12 +295,14 @@
 
       // Initialize app
       setTimeout(() => {
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem('access_token') || localStorage.getItem('token');
         if (token) {
+          console.log('✓ Token found, showing dashboard');
           document.getElementById('loginContainer').style.display = 'none';
           document.getElementById('dashboardContainer').style.display = 'flex';
           initializeApp();
         } else {
+          console.log('ℹ No token, showing login');
           document.getElementById('loginContainer').style.display = 'flex';
           document.getElementById('dashboardContainer').style.display = 'none';
         }
