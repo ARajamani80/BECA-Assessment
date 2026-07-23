@@ -232,6 +232,60 @@ function updateSendSummary() {
 }
 
 /**
+ * Send email to taker via Netlify function
+ */
+async function sendEmailToTaker(takerEmail, takerName, assessmentId, assessmentName, token) {
+  try {
+    // Get assessment details for email
+    const assessment = await getAssessment(assessmentId);
+    if (!assessment) {
+      throw new Error('Assessment not found');
+    }
+
+    // Build assessment link with token
+    const baseUrl = window.location.origin;
+    const assessmentLink = `${baseUrl}/?token=${token}`;
+
+    // Prepare email payload
+    const emailPayload = {
+      type: 'assessment_invitation',
+      to_email: takerEmail,
+      to_name: takerName || takerEmail,
+      assessment_name: assessmentName,
+      duration: assessment.duration || 60,
+      pass_score: assessment.pass_score || 70,
+      assessment_link: assessmentLink,
+      token: token,
+      assessment_id: assessmentId,
+      organization_name: 'BECA-Skill Assessment Platform'
+    };
+
+    console.log('Sending email via Netlify function:', emailPayload);
+
+    // Call Netlify function
+    const response = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(emailPayload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Email send failed (${response.status})`);
+    }
+
+    const result = await response.json();
+    console.log('Email sent successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw error;
+  }
+}
+
+/**
  * Handle send to trainees
  */
 async function handleSendToTrainees(e) {
@@ -240,18 +294,37 @@ async function handleSendToTrainees(e) {
   try {
     const assessmentId = document.getElementById('assessmentSelect').value;
     const sendEmail = document.getElementById('sendEmail').checked;
-    const emailSubject = document.getElementById('emailSubject').value;
-    const emailMessage = document.getElementById('emailMessage').value;
+    const assessmentSelect = document.getElementById('assessmentSelect');
+    const assessmentName = assessmentSelect.options[assessmentSelect.selectedIndex]?.text || 'Assessment';
 
     if (!assessmentId || selectedSendTakers.length === 0) {
       showMessage('Please select assessment and trainees', 'error');
       return;
     }
 
+    // Show progress
+    const submitBtn = document.querySelector('button[type="submit"]');
+    const originalBtnHtml = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
     let successCount = 0;
+    let emailSuccessCount = 0;
+    let emailFailureCount = 0;
+    const errors = [];
+
     for (const takerId of selectedSendTakers) {
       try {
+        // Find taker details
+        const taker = availableTakers.find(t => t.id === takerId);
+        if (!taker) {
+          errors.push(`Taker ${takerId} not found`);
+          continue;
+        }
+
         const token = generateToken(32);
+
+        // Create assessment taker assignment
         await createAssessmentTaker({
           assessment_id: assessmentId,
           trainee_id: takerId,
@@ -262,20 +335,55 @@ async function handleSendToTrainees(e) {
         });
         successCount++;
 
-        // TODO: Send email if enabled
+        // Send email if enabled
         if (sendEmail) {
-          // Email sending logic would go here
-          console.log('Email would be sent to taker:', takerId, { subject: emailSubject, message: emailMessage });
+          try {
+            await sendEmailToTaker(
+              taker.email,
+              taker.full_name || taker.email,
+              assessmentId,
+              assessmentName,
+              token
+            );
+            emailSuccessCount++;
+            console.log('Email sent to:', taker.email);
+          } catch (emailErr) {
+            emailFailureCount++;
+            errors.push(`Email failed for ${taker.email}: ${emailErr.message}`);
+            console.error('Email send failed:', emailErr);
+          }
         }
       } catch (err) {
         console.error('Error sending to taker:', err);
+        errors.push(`Error assigning to ${takerId}: ${err.message}`);
       }
     }
 
-    showMessage(`Assessment sent to ${successCount} out of ${selectedSendTakers.length} trainee(s)!`, 'success');
-    setTimeout(() => renderSendTrainees(), 1000);
+    // Build success message
+    let message = `Assessment sent to ${successCount} out of ${selectedSendTakers.length} trainee(s)`;
+    if (sendEmail) {
+      message += `. Emails: ${emailSuccessCount} sent`;
+      if (emailFailureCount > 0) {
+        message += `, ${emailFailureCount} failed`;
+      }
+    }
+    message += '.';
+
+    if (errors.length > 0) {
+      console.error('Errors during send:', errors);
+    }
+
+    showMessage(message, emailFailureCount > 0 ? 'warning' : 'success');
+    setTimeout(() => renderSendTrainees(), 1500);
   } catch (error) {
     showMessage('Error: ' + error.message, 'error');
+  } finally {
+    // Restore button
+    const submitBtn = document.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-check"></i> Send to Selected Trainees';
+    }
   }
 }
 

@@ -6,6 +6,60 @@ let takersSearchTerm = '';
 let takersStatusFilter = '';
 
 /**
+ * Send email to taker via Netlify function
+ */
+async function sendEmailToTaker(takerEmail, takerName, assessmentId, assessmentName, token) {
+  try {
+    // Get assessment details for email
+    const assessment = await getAssessment(assessmentId);
+    if (!assessment) {
+      throw new Error('Assessment not found');
+    }
+
+    // Build assessment link with token
+    const baseUrl = window.location.origin;
+    const assessmentLink = `${baseUrl}/?token=${token}`;
+
+    // Prepare email payload
+    const emailPayload = {
+      type: 'assessment_invitation',
+      to_email: takerEmail,
+      to_name: takerName || takerEmail,
+      assessment_name: assessmentName,
+      duration: assessment.duration || 60,
+      pass_score: assessment.pass_score || 70,
+      assessment_link: assessmentLink,
+      token: token,
+      assessment_id: assessmentId,
+      organization_name: 'BECA-Skill Assessment Platform'
+    };
+
+    console.log('Sending email via Netlify function:', emailPayload);
+
+    // Call Netlify function
+    const response = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(emailPayload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Email send failed (${response.status})`);
+    }
+
+    const result = await response.json();
+    console.log('Email sent successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw error;
+  }
+}
+
+/**
  * Render assessment takers management page with card UI
  */
 async function renderAssessmentTakers() {
@@ -259,6 +313,50 @@ async function openAddTakerModal() {
 }
 
 /**
+ * Send welcome email to new taker
+ */
+async function sendWelcomeEmailToTaker(takerEmail, takerName) {
+  try {
+    // Build registration/dashboard link
+    const baseUrl = window.location.origin;
+    const registrationLink = `${baseUrl}/#dashboard`;
+
+    // Prepare email payload
+    const emailPayload = {
+      type: 'welcome',
+      to_email: takerEmail,
+      to_name: takerName || takerEmail,
+      registration_link: registrationLink,
+      organization_name: 'BECA-Skill Assessment Platform'
+    };
+
+    console.log('Sending welcome email via Netlify function:', emailPayload);
+
+    // Call Netlify function
+    const response = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(emailPayload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Email send failed (${response.status})`);
+    }
+
+    const result = await response.json();
+    console.log('Welcome email sent successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+    // Don't throw - welcome email failure shouldn't block taker creation
+    return null;
+  }
+}
+
+/**
  * Handle saving new taker
  */
 async function handleSaveTaker(event) {
@@ -301,8 +399,17 @@ async function handleSaveTaker(event) {
 
     console.log('📝 Taker data prepared:', takerData);
 
-    await createAssessmentTaker(takerData);
-    showMessage('Taker added successfully!', 'success');
+    const savedTaker = await createAssessmentTaker(takerData);
+
+    // Send welcome email (optional)
+    try {
+      await sendWelcomeEmailToTaker(email, fullName || email);
+      showMessage('Taker added successfully! Welcome email sent.', 'success');
+    } catch (emailErr) {
+      console.warn('Welcome email not sent:', emailErr);
+      showMessage('Taker added successfully! (Welcome email could not be sent)', 'success');
+    }
+
     closeModal('takerModal');
     await renderAssessmentTakers();
     console.log('✅ Taker saved and view refreshed');
@@ -580,7 +687,6 @@ async function handleSendToTaker(event, takerId) {
   try {
     const assessmentId = document.getElementById('assessmentSelect').value;
     const sendEmail = document.getElementById('sendEmail').checked;
-    const message = document.getElementById('emailMessage').value;
     const taker = allAssessmentTakers.find(t => t.id === takerId);
 
     if (!assessmentId) {
@@ -588,7 +694,7 @@ async function handleSendToTaker(event, takerId) {
       return;
     }
 
-    // Log assignment (in future, this would create an assessment_submission record)
+    // Create assessment assignment
     const token = generateToken(32);
     console.log('📨 Sending assessment to taker:', {
       assessment_id: assessmentId,
@@ -598,15 +704,31 @@ async function handleSendToTaker(event, takerId) {
       assigned_by: currentUser?.id || 'system'
     });
 
-    // TODO: Send email if enabled
+    // Get assessment details
+    const assessment = await getAssessment(assessmentId);
+    const assessmentName = assessment?.title || assessment?.name || 'Assessment';
+
+    // Send email if enabled
     if (sendEmail) {
-      // Email sending would go here
-      console.log('📧 Email would be sent to:', taker.email);
-      console.log('📧 Message:', message);
+      try {
+        await sendEmailToTaker(
+          taker.email,
+          taker.full_name || taker.email,
+          assessmentId,
+          assessmentName,
+          token
+        );
+        console.log('📧 Email sent successfully to:', taker.email);
+      } catch (emailErr) {
+        console.error('📧 Email send failed:', emailErr);
+        showMessage(`Assessment sent but email failed: ${emailErr.message}`, 'warning');
+        closeModal('sendTakerModal');
+        return;
+      }
     }
 
     closeModal('sendTakerModal');
-    showMessage(`Assessment sent to ${taker.email}!`, 'success');
+    showMessage(`Assessment sent to ${taker.email}!${sendEmail ? ' Email notification sent.' : ''}`, 'success');
   } catch (error) {
     showMessage('Error: ' + error.message, 'error');
   }
