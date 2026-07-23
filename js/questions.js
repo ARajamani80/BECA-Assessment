@@ -252,6 +252,19 @@ async function openQuestionModal(questionId = null) {
         </div>
       </div>
 
+      <!-- Dataset Upload Section -->
+      <div class="form-group" style="background: #f0f7ff; padding: 15px; border-radius: 4px; border-left: 4px solid #3b82f6;">
+        <label style="font-weight: 600; color: #1e40af;"><i class="fas fa-database"></i> Upload Dataset (Optional)</label>
+        <p style="margin: 8px 0; font-size: 13px; color: #64748b;">Attach a CSV or Excel file that trainees will reference for this question.</p>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="file" id="datasetFile" accept=".csv,.xlsx,.xls,.json" style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="viewDatasetInfo()">
+            <i class="fas fa-info-circle"></i> Info
+          </button>
+        </div>
+        <div id="datasetPreview" style="margin-top: 10px; font-size: 12px; color: #64748b;"></div>
+      </div>
+
       <div style="display: flex; gap: 10px; margin-top: 20px;">
         <button type="submit" class="btn btn-success" style="flex: 1;">
           <i class="fas fa-save"></i> Save Question
@@ -403,23 +416,44 @@ async function handleQuestionSave(e) {
       questionData.allowed_file_types = fileTypes;
     }
 
+    // Handle dataset upload
+    const datasetFile = document.getElementById('datasetFile').files[0];
+    let datasetUrl = null;
+
     if (questionId) {
       // Update existing question
-      const { error } = await supabase
-        .from('questions')
-        .update(questionData)
-        .eq('id', questionId);
+      await updateQuestion(questionId, questionData);
 
-      if (error) throw error;
-      showMessage('Question updated successfully!', 'success');
+      // Upload dataset if provided
+      if (datasetFile) {
+        try {
+          datasetUrl = await uploadQuestionDataset(questionId, datasetFile);
+          await updateQuestion(questionId, { dataset_url: datasetUrl });
+          showMessage('Question and dataset updated successfully!', 'success');
+        } catch (uploadError) {
+          console.error('Dataset upload warning:', uploadError);
+          showMessage('Question updated, but dataset upload failed. Please try again.', 'warning');
+        }
+      } else {
+        showMessage('Question updated successfully!', 'success');
+      }
     } else {
       // Create new question
-      const { error } = await supabase
-        .from('questions')
-        .insert([questionData]);
+      const newQuestion = await createQuestion(questionData);
 
-      if (error) throw error;
-      showMessage('Question created successfully!', 'success');
+      // Upload dataset if provided
+      if (datasetFile && newQuestion?.id) {
+        try {
+          datasetUrl = await uploadQuestionDataset(newQuestion.id, datasetFile);
+          await updateQuestion(newQuestion.id, { dataset_url: datasetUrl });
+          showMessage('Question and dataset created successfully!', 'success');
+        } catch (uploadError) {
+          console.error('Dataset upload warning:', uploadError);
+          showMessage('Question created, but dataset upload failed. Please try again.', 'warning');
+        }
+      } else {
+        showMessage('Question created successfully!', 'success');
+      }
     }
 
     closeModal('questionModal');
@@ -427,6 +461,21 @@ async function handleQuestionSave(e) {
   } catch (error) {
     showMessage('Error: ' + error.message, 'error');
   }
+}
+
+/**
+ * View dataset info
+ */
+function viewDatasetInfo() {
+  const file = document.getElementById('datasetFile').files[0];
+  if (!file) {
+    showMessage('Please select a file first', 'info');
+    return;
+  }
+
+  const sizeKB = (file.size / 1024).toFixed(2);
+  const preview = `<strong>Selected:</strong> ${file.name} (${sizeKB} KB)`;
+  document.getElementById('datasetPreview').innerHTML = preview;
 }
 
 /**

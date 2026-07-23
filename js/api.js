@@ -511,3 +511,97 @@ async function saveAuditLog(logEntry) {
     return null;
   }
 }
+
+/**
+ * Upload question dataset to Supabase storage
+ * @param {string} questionId - Question ID
+ * @param {File} file - File to upload
+ * @returns {Promise<string>} File path in storage
+ */
+async function uploadQuestionDataset(questionId, file) {
+  try {
+    const client = await getSupabaseClient();
+
+    if (!file) {
+      throw new Error('No file provided');
+    }
+
+    // Create unique filename with timestamp
+    const timestamp = Date.now();
+    const fileName = `${timestamp}_${file.name}`;
+    const filePath = `questions/${questionId}/${fileName}`;
+
+    // Upload file to storage
+    const { data, error } = await client.storage
+      .from('assessment-files')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) throw error;
+
+    // Get public URL
+    const { data: { publicUrl } } = client.storage
+      .from('assessment-files')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error uploading dataset:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete question dataset from storage
+ * @param {string} questionId - Question ID
+ * @param {string} fileName - File name to delete
+ * @returns {Promise<void>}
+ */
+async function deleteQuestionDataset(questionId, fileName) {
+  try {
+    const client = await getSupabaseClient();
+    const filePath = `questions/${questionId}/${fileName}`;
+
+    const { error } = await client.storage
+      .from('assessment-files')
+      .remove([filePath]);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting dataset:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get public URL for question dataset
+ * @param {string} questionId - Question ID
+ * @param {string} fileName - File name
+ * @returns {string} Public URL
+ */
+function getQuestionDatasetUrl(questionId, fileName) {
+  const filePath = `questions/${questionId}/${fileName}`;
+  return `https://fgzqgqwlyeubudnbxsmx.supabase.co/storage/v1/object/public/assessment-files/${filePath}`;
+}
+
+/**
+ * Delete assessment taker
+ * @param {string} id - Taker ID
+ * @returns {Promise<void>}
+ */
+async function deleteAssessmentTaker(id) {
+  try {
+    const client = await getSupabaseClient();
+    const { error } = await client
+      .from('assessment_takers')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting taker:', error);
+    throw error;
+  }
+}

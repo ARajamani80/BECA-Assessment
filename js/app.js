@@ -30,8 +30,12 @@ function showPage(page) {
       return renderModules();
     case 'assessments':
       return renderAssessments();
+    case 'assessment-takers':
+      return renderAssessmentTakers();
     case 'users':
       return renderUsers();
+    case 'permissions':
+      return renderPermissionEditor();
     case 'results':
       return renderResults();
     case 'reports':

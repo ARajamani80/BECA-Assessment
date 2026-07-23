@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <!-- CSS Stylesheets -->
   <link rel="stylesheet" href="css/theme.css">
@@ -92,6 +93,9 @@
         </div>
         <div class="menu-item" data-page="assessments">
           <i class="fas fa-list-check"></i> Assessments
+        </div>
+        <div class="menu-item" data-page="assessment-takers">
+          <i class="fas fa-user-check"></i> Assessment Takers
         </div>
         <div class="menu-item" data-page="users">
           <i class="fas fa-users"></i> User Management
@@ -220,6 +224,13 @@
     <div id="userModal" class="modal" style="display: none;">
       <div class="modal-content" style="max-width: 500px;">
         <div id="userModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Send to Taker Modal -->
+    <div id="sendTakerModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 600px;">
+        <div id="sendTakerModalContent"></div>
       </div>
     </div>
 
