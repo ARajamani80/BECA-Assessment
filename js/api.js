@@ -277,11 +277,15 @@ async function getModules() {
     const client = await getSupabaseClient();
     const { data, error } = await client
       .from('assessment_modules')
-      .select('*')
+      .select('*, assessment_questions(*)')
       .order('name', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    // Rename the related questions to 'questions' for consistency
+    return (data || []).map(m => ({
+      ...m,
+      questions: m.assessment_questions || []
+    }));
   } catch (error) {
     console.error('Error fetching modules:', error);
     throw error;
