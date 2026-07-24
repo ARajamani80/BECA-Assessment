@@ -28,6 +28,9 @@ async function renderAssessments() {
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
         <div class="card-title" style="margin: 0;"><i class="fas fa-list-check"></i> All Assessments</div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-primary btn-sm" onclick="openCreateAssessmentModal()" title="Create new assessment">
+            <i class="fas fa-plus"></i> Create Assessment
+          </button>
           <button class="btn btn-info btn-sm" id="exportAssessmentsBtn" onclick="exportAssessmentsToExcel(allAssessments)" title="Export all assessments to Excel">
             <i class="fas fa-download"></i> Export
           </button>
