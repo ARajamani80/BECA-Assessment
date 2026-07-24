@@ -251,11 +251,39 @@ function handleFileSelect(event) {
  * Show file selected
  */
 function showFileSelected() {
-  if (!importState.file) return;
+  console.log('📄 showFileSelected() called');
+  if (!importState.file) {
+    console.warn('⚠️ No file in importState');
+    return;
+  }
 
-  document.getElementById('fileInfo').style.display = 'block';
-  document.getElementById('fileName').textContent = importState.file.name;
-  document.getElementById('uploadBtn').disabled = false;
+  console.log('✅ File found:', importState.file.name);
+
+  const fileInfoDiv = document.getElementById('fileInfo');
+  const fileNameSpan = document.getElementById('fileName');
+  const uploadBtn = document.getElementById('uploadBtn');
+
+  console.log('🔍 Elements found:', {
+    fileInfoDiv: !!fileInfoDiv,
+    fileNameSpan: !!fileNameSpan,
+    uploadBtn: !!uploadBtn
+  });
+
+  if (fileInfoDiv) {
+    fileInfoDiv.style.display = 'block';
+    console.log('✅ fileInfo div shown');
+  }
+
+  if (fileNameSpan) {
+    fileNameSpan.textContent = importState.file.name;
+    console.log('✅ fileName set to:', importState.file.name);
+  }
+
+  if (uploadBtn) {
+    uploadBtn.disabled = false;
+    console.log('✅ uploadBtn ENABLED - disabled=false');
+    console.log('   Button is now clickable!');
+  }
 }
 
 /**
