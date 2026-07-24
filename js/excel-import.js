@@ -475,6 +475,28 @@ function processQuestions(rows, mapping) {
           question.correct_answer = correctAnswer;
           question.options = JSON.stringify(['True', 'False']);
           question.list_options = JSON.stringify(['True', 'False']);
+          console.log(`📋 T/F (Q${idx + 1}): correct = ${correctAnswer}`);
+        }
+      } else if (questionType === 'ordered_list') {
+        // Ordered List: try to extract items from AllAnswers or Items column
+        if (allAnswers) {
+          let items = allAnswers.includes('\n')
+            ? allAnswers.split('\n').map(i => i.trim()).filter(i => i)
+            : allAnswers.split(/[;,]/).map(i => i.trim()).filter(i => i);
+
+          // Remove numbering if present (1. Item, 2. Item)
+          items = items.map(item => {
+            const match = item.match(/^\d+[\.\)]\s*(.+)$/);
+            return match ? match[1] : item;
+          });
+
+          if (items.length > 0) {
+            question.list_items = JSON.stringify(items);
+            console.log(`📋 Ordered List (Q${idx + 1}): ${items.length} items`);
+          }
+        }
+        if (correctAnswer) {
+          question.correct_answer = correctAnswer;
         }
       }
 

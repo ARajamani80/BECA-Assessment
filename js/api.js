@@ -337,72 +337,76 @@ async function getAllQuestions() {
 
 /**
  * Normalize question data - parse JSON fields and standardize formats
+ * Converts database format to UI format
  */
 function normalizeQuestionData(question) {
   if (!question) return question;
 
-  // Parse JSON fields if they're strings
-  if (typeof question.options === 'string') {
-    try {
-      question.options = JSON.parse(question.options);
-    } catch (e) {
-      question.options = [];
+  console.log(`🔄 Normalizing Q${question.id?.substring(0, 8)} (${question.question_type})`);
+
+  // Parse all JSON string fields
+  const jsonFields = ['options', 'list_options', 'list_items', 'keywords', 'correct_order'];
+  jsonFields.forEach(field => {
+    if (typeof question[field] === 'string' && question[field]) {
+      try {
+        question[field] = JSON.parse(question[field]);
+        console.log(`✅ Parsed ${field}:`, question[field]);
+      } catch (e) {
+        console.warn(`⚠️ Failed to parse ${field}:`, e.message);
+        question[field] = [];
+      }
+    }
+  });
+
+  // Ensure options is array of objects for MCQ/True-False/Pick List
+  if (question.question_type === 'mcq' || question.question_type === 'pick_list' || question.question_type === 'true_false') {
+    let optionsArray = question.options || question.list_options || [];
+
+    if (Array.isArray(optionsArray) && optionsArray.length > 0) {
+      // If array of strings, convert to objects
+      if (typeof optionsArray[0] === 'string') {
+        console.log(`🔄 Converting ${optionsArray.length} string options to objects`);
+        question.options = optionsArray.map((text) => ({
+          text: text,
+          correct: question.correct_answer === text
+        }));
+      } else if (typeof optionsArray[0] === 'object' && optionsArray[0].text) {
+        // Already in correct format
+        question.options = optionsArray;
+      }
+    }
+
+    // Ensure list_options also has the data
+    if (!question.list_options || question.list_options.length === 0) {
+      question.list_options = optionsArray;
     }
   }
 
-  // If options is an array of strings (from import), convert to objects
-  if (Array.isArray(question.options) && question.options.length > 0) {
-    if (typeof question.options[0] === 'string') {
-      question.options = question.options.map((text, idx) => ({
-        text: text,
-        correct: question.correct_answer === text // Mark as correct if matches correct_answer
-      }));
+  // For True/False, ensure we have both options
+  if (question.question_type === 'true_false') {
+    if (!question.options || question.options.length === 0) {
+      const correctAnswer = question.correct_answer?.toLowerCase() === 'true' ? 'true' : 'false';
+      question.options = [
+        { text: 'True', correct: correctAnswer === 'true' },
+        { text: 'False', correct: correctAnswer === 'false' }
+      ];
+      console.log(`🔄 Generated T/F options, correct: ${correctAnswer}`);
     }
   }
 
-  if (typeof question.list_options === 'string') {
-    try {
-      question.list_options = JSON.parse(question.list_options);
-    } catch (e) {
-      question.list_options = [];
+  // For Ordered List, ensure list_items is array
+  if (question.question_type === 'ordered_list') {
+    if (!question.list_items || question.list_items.length === 0) {
+      console.warn(`⚠️ Ordered list has no items for Q${question.id?.substring(0, 8)}`);
     }
   }
 
-  // If list_options exists and options is empty, use list_options
-  if ((!question.options || question.options.length === 0) && question.list_options && question.list_options.length > 0) {
-    if (typeof question.list_options[0] === 'string') {
-      question.options = question.list_options.map((text, idx) => ({
-        text: text,
-        correct: idx === 0
-      }));
-    } else {
-      question.options = question.list_options;
-    }
-  }
-
-  if (typeof question.list_items === 'string') {
-    try {
-      question.list_items = JSON.parse(question.list_items);
-    } catch (e) {
-      question.list_items = [];
-    }
-  }
-
-  if (typeof question.keywords === 'string') {
-    try {
-      question.keywords = JSON.parse(question.keywords);
-    } catch (e) {
-      question.keywords = [];
-    }
-  }
-
-  if (typeof question.correct_order === 'string') {
-    try {
-      question.correct_order = JSON.parse(question.correct_order);
-    } catch (e) {
-      question.correct_order = [];
-    }
-  }
+  console.log(`✅ Normalized:`, {
+    type: question.question_type,
+    optionCount: question.options?.length || 0,
+    listItemsCount: question.list_items?.length || 0,
+    correctAnswer: question.correct_answer
+  });
 
   return question;
 }

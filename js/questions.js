@@ -445,11 +445,17 @@ function loadMCQOptions(question) {
   let options = question?.options;
 
   // Debug logging
-  console.log('📋 loadMCQOptions - question.options:', options);
-  console.log('📋 loadMCQOptions - question.list_options:', question?.list_options);
-  console.log('📋 loadMCQOptions - question.correct_answer:', question?.correct_answer);
+  console.log('📋 loadMCQOptions - raw options:', options);
+  console.log('📋 loadMCQOptions - list_options:', question?.list_options);
+  console.log('📋 loadMCQOptions - correct_answer:', question?.correct_answer);
 
-  if (!options || options.length === 0) {
+  // Ensure options is an array
+  if (!Array.isArray(options)) {
+    options = [];
+  }
+
+  // If no options, create empty defaults
+  if (options.length === 0) {
     options = [
       { text: '', correct: true },
       { text: '', correct: false },
@@ -458,12 +464,25 @@ function loadMCQOptions(question) {
     ];
   }
 
+  // Ensure each option has correct structure
+  options = options.map((opt, idx) => {
+    if (typeof opt === 'string') {
+      return { text: opt, correct: false };
+    }
+    return opt || { text: '', correct: false };
+  });
+
+  console.log('✅ Processed options for UI:', options);
+
   options.forEach((opt, idx) => {
+    const optText = opt?.text || opt || '';
+    const isCorrect = opt?.correct || false;
+
     html += `
       <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
-        <input type="text" class="option-input" value="${opt.text}" placeholder="Option ${idx + 1}" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        <input type="text" class="option-input" value="${optText}" placeholder="Option ${idx + 1}" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
         <label style="margin: 0; display: flex; align-items: center; gap: 5px;">
-          <input type="radio" name="correctOption" value="${idx}" ${opt.correct ? 'checked' : ''}>
+          <input type="radio" name="correctOption" value="${idx}" ${isCorrect ? 'checked' : ''}>
           Correct
         </label>
         <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">
@@ -533,7 +552,24 @@ function addPickListItem() {
  */
 function loadOrderedListItems(question) {
   let html = '';
-  const items = question?.list_items || ['', '', '', ''];
+  let items = question?.list_items;
+
+  console.log('📋 loadOrderedListItems - raw list_items:', items);
+
+  // Ensure items is array
+  if (!Array.isArray(items) || items.length === 0) {
+    console.warn('⚠️ No list_items found, using empty defaults');
+    items = ['', '', '', ''];
+  }
+
+  // Ensure each item is a string
+  items = items.map(item => {
+    if (typeof item === 'string') return item;
+    if (typeof item === 'object' && item?.text) return item.text;
+    return '';
+  });
+
+  console.log('✅ Processed items for UI:', items);
 
   items.forEach((item, idx) => {
     html += `
