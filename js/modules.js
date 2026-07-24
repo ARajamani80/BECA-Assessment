@@ -284,50 +284,42 @@ async function handleModuleSave(e) {
   e.preventDefault();
 
   try {
+    console.log('📝 Saving module...');
     const name = document.getElementById('moduleName').value;
     const description = document.getElementById('moduleDescription').value;
+    const assessmentId = document.getElementById('assessmentSelect')?.value;
 
-    // Get selected questions
-    const selectedQuestionIds = Array.from(document.querySelectorAll('.module-question-checkbox:checked'))
-      .map(cb => cb.value);
-
-    if (selectedQuestionIds.length === 0) {
-      showMessage('Please select at least one question', 'error');
+    if (!name || !assessmentId) {
+      showMessage('Please fill in all required fields', 'error');
       return;
     }
 
-    // Get question objects
-    const selectedQuestions = allQuestions.filter(q => selectedQuestionIds.includes(q.id));
-
+    // Module data (only database fields)
     const moduleData = {
       name: name,
-      description: description,
-      questions: selectedQuestions,
-      total_points: selectedQuestions.reduce((sum, q) => sum + (q.points || 0), 0)
+      description: description || '',
+      assessment_id: assessmentId,
+      order_index: 0
     };
 
+    console.log('📤 Module data to save:', moduleData);
+
     if (currentModuleEdit) {
-      // Update existing module
-      const { error } = await supabase
-        .from('modules')
-        .update(moduleData)
-        .eq('id', currentModuleEdit);
-
-      if (error) throw error;
-      showMessage('Module updated successfully!', 'success');
+      // Update existing module using API
+      console.log('🔄 Updating module:', currentModuleEdit);
+      await updateModule(currentModuleEdit, moduleData);
+      showMessage('✅ Module updated successfully!', 'success');
     } else {
-      // Create new module
-      const { error } = await supabase
-        .from('modules')
-        .insert([moduleData]);
-
-      if (error) throw error;
-      showMessage('Module created successfully!', 'success');
+      // Create new module using API
+      console.log('✨ Creating new module');
+      await createModule(moduleData);
+      showMessage('✅ Module created successfully!', 'success');
     }
 
     closeModal('moduleModal');
     await renderModules();
   } catch (error) {
+    console.error('❌ Error saving module:', error);
     showMessage('Error: ' + error.message, 'error');
   }
 }
