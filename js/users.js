@@ -516,6 +516,167 @@ async function savePermissionChanges() {
 }
 
 /**
+ * View Audit Log
+ */
+async function viewAuditLog() {
+  try {
+    console.log('📋 Opening Audit Log modal...');
+
+    let html = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">Audit Log</h2>
+        <button onclick="closeModal('userModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+      </div>
+
+      <div style="background: #f0f4ff; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+        <p style="margin: 0; font-size: 13px; color: var(--text-secondary);">
+          <i class="fas fa-info-circle"></i> All user actions and administrative changes
+        </p>
+      </div>
+    `;
+
+    if (auditLog.length === 0) {
+      html += '<div style="text-align: center; padding: 40px; color: #999;">No audit log entries yet</div>';
+    } else {
+      html += '<div style="max-height: 500px; overflow-y: auto;">';
+      html += '<table class="table" style="font-size: 12px;">';
+      html += `
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Action</th>
+            <th>Performed By</th>
+            <th>Target</th>
+          </tr>
+        </thead>
+        <tbody>
+      `;
+
+      auditLog.slice(0, 50).forEach(log => {
+        const time = new Date(log.timestamp).toLocaleString();
+        html += `
+          <tr>
+            <td>${time}</td>
+            <td><strong>${log.action}</strong></td>
+            <td>${log.performedByEmail}</td>
+            <td>${log.targetUserEmail || '—'}</td>
+          </tr>
+        `;
+      });
+
+      if (auditLog.length > 50) {
+        html += `
+          <tr style="background: #f3f4f6;">
+            <td colspan="4" style="text-align: center; font-size: 11px; color: #666;">
+              ... and ${auditLog.length - 50} more entries
+            </td>
+          </tr>
+        `;
+      }
+
+      html += '</tbody></table></div>';
+    }
+
+    html += `
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('userModal')">Close</button>
+      </div>
+    `;
+
+    document.getElementById('userModalContent').innerHTML = html;
+    showModal('userModal');
+
+  } catch (error) {
+    console.error('Error opening audit log:', error);
+    showMessage('Error: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Open Role Permissions Modal
+ */
+async function openRolePermissionsModal() {
+  try {
+    console.log('📋 Opening Role Permissions modal...');
+
+    const rolePermissions = {
+      viewer: ['view_assessments'],
+      user: ['view_assessments', 'take_assessments', 'view_own_results'],
+      trainer: ['view_assessments', 'take_assessments', 'create_questions', 'edit_questions', 'create_modules', 'create_assessments', 'view_results', 'grade_submissions'],
+      admin: ['view_assessments', 'take_assessments', 'create_questions', 'edit_questions', 'delete_questions', 'create_modules', 'edit_modules', 'create_assessments', 'edit_assessments', 'view_results', 'grade_submissions', 'manage_users'],
+      superadmin: ['*'] // All permissions
+    };
+
+    let html = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">Role Permissions Summary</h2>
+        <button onclick="closeModal('userModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+      </div>
+
+      <div style="background: #f0f4ff; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+        <p style="margin: 0; font-size: 13px; color: var(--text-secondary);">
+          <i class="fas fa-info-circle"></i> Overview of permissions assigned to each user role
+        </p>
+      </div>
+
+      <div style="overflow-x: auto;">
+    `;
+
+    for (const [role, perms] of Object.entries(rolePermissions)) {
+      const roleColor = {
+        viewer: '#6b7280',
+        user: '#3b82f6',
+        trainer: '#f59e0b',
+        admin: '#ef4444',
+        superadmin: '#8b5cf6'
+      }[role];
+
+      let permsList = '';
+      if (perms[0] === '*') {
+        permsList = '<span style="background: #8b5cf6; color: white; padding: 4px 8px; border-radius: 3px; font-size: 11px;">All Permissions</span>';
+      } else {
+        permsList = perms.map(p =>
+          `<span style="background: #e5e7eb; padding: 3px 6px; border-radius: 3px; font-size: 11px; margin: 2px;">${p.replace(/_/g, ' ').toUpperCase()}</span>`
+        ).join(' ');
+      }
+
+      html += `
+        <div style="background: white; padding: 15px; margin-bottom: 10px; border-left: 4px solid ${roleColor}; border-radius: 4px;">
+          <div style="font-weight: bold; color: ${roleColor}; margin-bottom: 8px; text-transform: capitalize;">${role}</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+            ${permsList}
+          </div>
+        </div>
+      `;
+    }
+
+    html += `
+      </div>
+
+      <div style="background: #f9fafb; padding: 15px; border-radius: 4px; margin-top: 20px;">
+        <p style="margin: 0; font-size: 12px; color: var(--text-secondary);">
+          <strong>Note:</strong> Super Admin role has all permissions and cannot be modified. To adjust role permissions, use the Permission Editor button.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="closeModal('userModal')">Close</button>
+        <button class="btn btn-primary" onclick="openPermissionEditor()">
+          <i class="fas fa-edit"></i> Edit Permissions
+        </button>
+      </div>
+    `;
+
+    document.getElementById('userModalContent').innerHTML = html;
+    showModal('userModal');
+
+  } catch (error) {
+    console.error('Error opening role permissions:', error);
+    showMessage('Error: ' + error.message, 'error');
+  }
+}
+
+/**
  * Refresh users list
  */
 async function refreshUsersList() {
