@@ -57,8 +57,8 @@ async function openExcelImportModal() {
           </div>
 
           <div style="display: flex; gap: 10px; justify-content: flex-end;">
-            <button class="btn btn-secondary" onclick="closeModal('excelImportModal')">Cancel</button>
-            <button class="btn btn-primary" id="uploadBtn" onclick="processExcelFile()" disabled>
+            <button class="btn btn-secondary" id="cancelBtn1">Cancel</button>
+            <button class="btn btn-primary" id="uploadBtn" disabled>
               <i class="fas fa-arrow-right"></i> Next: Preview
             </button>
           </div>
@@ -73,9 +73,9 @@ async function openExcelImportModal() {
           </div>
 
           <div style="display: flex; gap: 10px; justify-content: flex-end;">
-            <button class="btn btn-secondary" onclick="resetImport()">← Back</button>
-            <button class="btn btn-secondary" onclick="closeModal('excelImportModal')">Cancel</button>
-            <button class="btn btn-success" id="confirmBtn" onclick="confirmAndImport()">
+            <button class="btn btn-secondary" id="backBtn">← Back</button>
+            <button class="btn btn-secondary" id="cancelBtn2">Cancel</button>
+            <button class="btn btn-success" id="confirmBtn">
               <i class="fas fa-check"></i> Confirm & Import
             </button>
           </div>
@@ -112,6 +112,75 @@ async function openExcelImportModal() {
 
     document.getElementById('excelImportModalContent').innerHTML = modalContent;
     showModal('excelImportModal');
+
+    // Attach event listeners after modal is shown
+    setTimeout(() => {
+      console.log('📌 Attaching event listeners to import modal buttons');
+
+      const uploadBtn = document.getElementById('uploadBtn');
+      const cancelBtn1 = document.getElementById('cancelBtn1');
+      const confirmBtn = document.getElementById('confirmBtn');
+
+      if (uploadBtn) {
+        uploadBtn.addEventListener('click', (e) => {
+          console.log('🔘 Upload/Next button clicked');
+          e.preventDefault();
+          processExcelFile();
+        });
+        console.log('✅ Upload button listener attached');
+      } else {
+        console.warn('⚠️ Upload button not found');
+      }
+
+      if (cancelBtn1) {
+        cancelBtn1.addEventListener('click', (e) => {
+          console.log('🔘 Cancel button clicked (Step 1)');
+          e.preventDefault();
+          closeModal('excelImportModal');
+          resetImport();
+        });
+        console.log('✅ Cancel button 1 listener attached');
+      }
+
+      const cancelBtn2 = document.getElementById('cancelBtn2');
+      if (cancelBtn2) {
+        cancelBtn2.addEventListener('click', (e) => {
+          console.log('🔘 Cancel button clicked (Step 2)');
+          e.preventDefault();
+          closeModal('excelImportModal');
+          resetImport();
+        });
+        console.log('✅ Cancel button 2 listener attached');
+      }
+
+      const backBtn = document.getElementById('backBtn');
+      if (backBtn) {
+        backBtn.addEventListener('click', (e) => {
+          console.log('🔘 Back button clicked');
+          e.preventDefault();
+          resetImport();
+        });
+        console.log('✅ Back button listener attached');
+      }
+
+      if (confirmBtn) {
+        confirmBtn.addEventListener('click', (e) => {
+          console.log('🔘 Confirm button clicked');
+          e.preventDefault();
+          confirmAndImport();
+        });
+        console.log('✅ Confirm button listener attached');
+      }
+
+      // Drop zone listeners
+      const dropZone = document.getElementById('dropZone');
+      if (dropZone) {
+        dropZone.addEventListener('click', () => {
+          document.getElementById('excelFileInput').click();
+        });
+      }
+
+    }, 100);
 
   } catch (error) {
     console.error('Error opening import modal:', error);
