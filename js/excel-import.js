@@ -225,6 +225,7 @@ function autoDetectColumnMapping(rows) {
   const headers = Object.keys(firstRow);
 
   console.log('🔍 Excel headers found:', headers);
+  console.log('📊 First row sample:', firstRow);
 
   // Map common header variations
   const mapping = {};
@@ -233,36 +234,48 @@ function autoDetectColumnMapping(rows) {
 
     if (lower.includes('question') && lower.includes('text')) {
       mapping.question_text = header;
-    } else if (lower.includes('type')) {
+    } else if (lower === 'type' || lower === 'questiontype') {
       mapping.question_type = header;
-    } else if (lower.includes('answer') && !lower.includes('all')) {
+    } else if ((lower.includes('answer') && !lower.includes('all')) || lower === 'correct answer') {
       mapping.correct_answer = header;
-    } else if (lower.includes('all') && lower.includes('answer')) {
+    } else if ((lower.includes('all') && lower.includes('answer')) || lower === 'allanswers') {
       mapping.all_options = header;
-    } else if (lower.includes('difficulty') || lower.includes('skill')) {
+    } else if (lower.includes('difficulty') || lower.includes('skill') || lower === 'skilllevel') {
       mapping.difficulty = header;
-    } else if (lower.includes('category')) {
+    } else if (lower.includes('category') || lower === 'questioncategory') {
       mapping.category = header;
-    } else if (lower.includes('tag') && !lower.includes('training')) {
+    } else if (lower.includes('tag') && !lower.includes('training') || lower === 'categorytags') {
       mapping.tags = header;
-    } else if (lower.includes('name') && !lower.includes('question')) {
+    } else if ((lower.includes('name') && !lower.includes('question')) || lower === 'questionname') {
       mapping.question_name = header;
-    } else if (lower.includes('summary')) {
+    } else if (lower.includes('summary') || lower === 'questionsummary') {
       mapping.question_summary = header;
-    } else if (lower.includes('coaching')) {
+    } else if (lower.includes('coaching') || lower === 'coachingtext') {
       mapping.coaching_notes = header;
     } else if (lower.includes('learning')) {
       mapping.learning_resources = header;
-    } else if (lower.includes('files') && lower.includes('related')) {
+    } else if ((lower.includes('files') && lower.includes('related')) || lower === 'relatedfiles') {
       mapping.dataset_files = header;
-    } else if (lower.includes('training')) {
+    } else if (lower.includes('training') || lower === 'trainingtags') {
       mapping.training_tags = header;
-    } else if (lower.includes('author')) {
+    } else if (lower === 'author') {
       mapping.author = header;
     }
   });
 
   console.log('📋 Column mapping detected:', mapping);
+
+  // Verify critical fields are mapped
+  if (!mapping.question_text) {
+    console.warn('⚠️ Warning: question_text not mapped. Available headers:', headers);
+  }
+  if (!mapping.question_type) {
+    console.warn('⚠️ Warning: question_type not mapped. Available headers:', headers);
+  }
+  if (!mapping.correct_answer) {
+    console.warn('⚠️ Warning: correct_answer not mapped. Available headers:', headers);
+  }
+
   return mapping;
 }
 
@@ -439,6 +452,11 @@ async function confirmAndImport() {
     showStep('importStep3');
     console.log(`🚀 Starting import of ${importState.processedQuestions.length} questions...`);
 
+    // Log first question for debugging
+    if (importState.processedQuestions.length > 0) {
+      console.log('📄 First question sample:', importState.processedQuestions[0]);
+    }
+
     let imported = 0;
     const total = importState.processedQuestions.length;
 
@@ -446,10 +464,18 @@ async function confirmAndImport() {
       const question = importState.processedQuestions[i];
 
       try {
-        await createQuestion(question);
+        console.log(`📝 Importing question ${i + 1}/${total}:`, {
+          text: question.question_text?.substring(0, 50) || '(empty)',
+          type: question.question_type,
+          answer: question.correct_answer
+        });
+
+        const result = await createQuestion(question);
+        console.log(`✅ Question ${i + 1} imported successfully:`, result?.id);
         imported++;
       } catch (error) {
-        console.warn(`⚠️ Failed to import question ${i + 1}:`, error);
+        console.error(`❌ Failed to import question ${i + 1}:`, error);
+        console.log('Question data:', question);
         // Continue with next question even if one fails
       }
 
