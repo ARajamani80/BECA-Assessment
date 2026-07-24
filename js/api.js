@@ -336,17 +336,47 @@ async function getAllQuestions() {
 }
 
 /**
- * Normalize question data - parse JSON fields
+ * Normalize question data - parse JSON fields and standardize formats
  */
 function normalizeQuestionData(question) {
   if (!question) return question;
 
   // Parse JSON fields if they're strings
+  if (typeof question.options === 'string') {
+    try {
+      question.options = JSON.parse(question.options);
+    } catch (e) {
+      question.options = [];
+    }
+  }
+
+  // If options is an array of strings (from import), convert to objects
+  if (Array.isArray(question.options) && question.options.length > 0) {
+    if (typeof question.options[0] === 'string') {
+      question.options = question.options.map((text, idx) => ({
+        text: text,
+        correct: idx === 0 // First option is correct by default
+      }));
+    }
+  }
+
   if (typeof question.list_options === 'string') {
     try {
       question.list_options = JSON.parse(question.list_options);
     } catch (e) {
       question.list_options = [];
+    }
+  }
+
+  // If list_options exists and options is empty, use list_options
+  if ((!question.options || question.options.length === 0) && question.list_options && question.list_options.length > 0) {
+    if (typeof question.list_options[0] === 'string') {
+      question.options = question.list_options.map((text, idx) => ({
+        text: text,
+        correct: idx === 0
+      }));
+    } else {
+      question.options = question.list_options;
     }
   }
 

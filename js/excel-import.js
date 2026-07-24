@@ -371,10 +371,19 @@ function processQuestions(rows, mapping) {
       if (qType.includes('choice') || qType.includes('mcq') || qType.includes('pick')) {
         let options = [];
 
-        // Method 1: AllAnswers column (semicolon-separated)
-        const allAnswersCol = Object.keys(row).find(h => h.toLowerCase().includes('allanswers'));
+        // Method 1: AllAnswers column (semicolon or comma-separated)
+        const allAnswersCol = Object.keys(row).find(h => {
+          const lower = h.toLowerCase();
+          return lower.includes('allanswer') || lower === 'all answers' || lower === 'all_answers';
+        });
+
         if (allAnswersCol && row[allAnswersCol]) {
-          options = row[allAnswersCol].toString().split(';').map(o => o.trim()).filter(o => o);
+          const allAnswersStr = row[allAnswersCol].toString().trim();
+          // Try semicolon first, then comma
+          options = allAnswersStr.includes(';')
+            ? allAnswersStr.split(';').map(o => o.trim()).filter(o => o)
+            : allAnswersStr.split(',').map(o => o.trim()).filter(o => o);
+          console.log(`📋 MCQ - Using '${allAnswersCol}' column (Q${idx + 1}):`, options);
         } else {
           // Method 2: Individual Option 1, Option 2, etc. columns
           for (let i = 1; i <= 10; i++) {
@@ -383,11 +392,15 @@ function processQuestions(rows, mapping) {
               options.push(row[optionCol].toString().trim());
             }
           }
+          if (options.length > 0) {
+            console.log(`📋 MCQ - Using individual Option columns (Q${idx + 1}):`, options);
+          }
         }
 
         if (options.length > 0) {
+          // Store in BOTH options and list_options for compatibility
+          question.options = JSON.stringify(options);
           question.list_options = JSON.stringify(options);
-          console.log(`📋 Options for ${qType} (Q${idx + 1}):`, options);
         }
       }
 
@@ -398,8 +411,10 @@ function processQuestions(rows, mapping) {
 
         if (trueOptCol && falseOptCol) {
           const options = [row[trueOptCol]?.toString() || 'True', row[falseOptCol]?.toString() || 'False'];
+          // Store in BOTH options and list_options for compatibility
+          question.options = JSON.stringify(options);
           question.list_options = JSON.stringify(options);
-          console.log(`📋 T/F options (Q${idx + 1}):`, options);
+          console.log(`📋 T/F Options (Q${idx + 1}):`, options);
         }
       }
 
