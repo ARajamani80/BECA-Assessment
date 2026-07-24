@@ -250,6 +250,17 @@ async function importQuestions(questions) {
         console.log(`✅ Q${i + 1} imported successfully`);
       } catch (error) {
         failed++;
+
+        // Log detailed error info
+        console.error(`❌ Question ${i + 1} failed:`);
+        console.error('Error message:', error.message);
+        console.error('Question data:', questions[i]);
+
+        // Check for field length issues
+        if (error.message && error.message.includes('character varying')) {
+          console.error('⚠️ Field length exceeded - check category, skill_level, author, tags fields');
+        }
+
         console.warn(`⚠️ Question ${i + 1} failed:`, error.message);
       }
     }
@@ -373,9 +384,16 @@ function processQuestions(rows, mapping) {
         // Pick List: parse AllAnswers by newline into options
         if (allAnswers) {
           // Split by newline first (preferred), then by semicolon/comma
-          let options = allAnswers.includes('\n')
+          let rawOptions = allAnswers.includes('\n')
             ? allAnswers.split('\n').map(o => o.trim()).filter(o => o)
             : allAnswers.split(/[;,]/).map(o => o.trim()).filter(o => o);
+
+          // Extract option text (remove A), B), etc. if present)
+          let options = rawOptions.map(opt => {
+            // Check if starts with letter+) like "A) option text"
+            const match = opt.match(/^[A-Z]\)\s*(.+)$/);
+            return match ? match[1] : opt;
+          });
 
           if (options.length > 0) {
             question.options = JSON.stringify(options);
@@ -388,19 +406,48 @@ function processQuestions(rows, mapping) {
           question.correct_answer = correctAnswer;
         }
       } else if (questionType === 'mcq') {
-        // MCQ: parse AllAnswers same as Pick List
+        // MCQ: parse AllAnswers with proper format handling
         if (allAnswers) {
-          let options = allAnswers.includes('\n')
+          // Split by newline first
+          let rawOptions = allAnswers.includes('\n')
             ? allAnswers.split('\n').map(o => o.trim()).filter(o => o)
             : allAnswers.split(/[;,]/).map(o => o.trim()).filter(o => o);
+
+          // Extract option text and find correct index
+          let options = [];
+          let correctIndex = -1;
+
+          rawOptions.forEach((opt, idx) => {
+            // Check if starts with letter+) like "A) option text"
+            const match = opt.match(/^([A-Z])\)\s*(.+)$/);
+            if (match) {
+              const letter = match[1];
+              const text = match[2];
+              options.push(text);
+
+              // Check if this option is the correct answer
+              if (correctAnswer && correctAnswer.toUpperCase().includes(letter)) {
+                correctIndex = idx;
+              }
+            } else {
+              options.push(opt);
+            }
+          });
 
           if (options.length > 0) {
             question.options = JSON.stringify(options);
             question.list_options = JSON.stringify(options);
-            console.log(`📋 MCQ (Q${idx + 1}): ${options.length} options`);
+
+            // Set correct_answer to the option index or text
+            if (correctIndex >= 0) {
+              question.correct_answer = options[correctIndex];
+            } else if (correctAnswer) {
+              question.correct_answer = correctAnswer;
+            }
+
+            console.log(`📋 MCQ (Q${idx + 1}): ${options.length} options, correct: ${correctIndex >= 0 ? options[correctIndex] : 'unknown'}`);
           }
-        }
-        if (correctAnswer) {
+        } else if (correctAnswer) {
           question.correct_answer = correctAnswer;
         }
       } else if (questionType === 'true_false') {

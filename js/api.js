@@ -355,7 +355,7 @@ function normalizeQuestionData(question) {
     if (typeof question.options[0] === 'string') {
       question.options = question.options.map((text, idx) => ({
         text: text,
-        correct: idx === 0 // First option is correct by default
+        correct: question.correct_answer === text // Mark as correct if matches correct_answer
       }));
     }
   }
