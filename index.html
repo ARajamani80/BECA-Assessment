@@ -44,12 +44,12 @@
           }
         }, 50);
 
-        // Timeout after 10 seconds (increased for slower connections)
+        // Timeout after 30 seconds (increased for slower connections)
         setTimeout(() => {
           clearInterval(checkInterval);
           console.error('❌ Supabase library timeout');
           resolve(false);
-        }, 10000);
+        }, 30000);
       });
     }
 
