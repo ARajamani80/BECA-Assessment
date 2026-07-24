@@ -12,11 +12,29 @@ let importState = {
 };
 
 /**
+ * Debug function - call from console to test
+ */
+function debugImportModal() {
+  console.log('🔍 DEBUGGING IMPORT MODAL');
+  const uploadBtn = document.getElementById('uploadBtn');
+  console.log('uploadBtn element:', uploadBtn);
+  if (uploadBtn) {
+    console.log('uploadBtn classes:', uploadBtn.className);
+    console.log('uploadBtn onclick:', uploadBtn.onclick);
+    console.log('Triggering click...');
+    uploadBtn.click();
+  } else {
+    console.error('uploadBtn NOT FOUND');
+  }
+}
+
+/**
  * Open Excel import modal for questions
  */
 async function openExcelImportModal() {
   try {
     console.log('📂 Opening Excel import modal...');
+    console.log('🔍 Modal container exists?', !!document.getElementById('excelImportModalContent'));
 
     const modalContent = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -116,21 +134,32 @@ async function openExcelImportModal() {
     // Attach event listeners after modal is shown
     setTimeout(() => {
       console.log('📌 Attaching event listeners to import modal buttons');
+      console.log('🔍 Current DOM state:', {
+        modalContent: !!document.getElementById('excelImportModalContent'),
+        uploadBtn: !!document.getElementById('uploadBtn'),
+        cancelBtn1: !!document.getElementById('cancelBtn1'),
+        confirmBtn: !!document.getElementById('confirmBtn')
+      });
 
       const uploadBtn = document.getElementById('uploadBtn');
-      const cancelBtn1 = document.getElementById('cancelBtn1');
-      const confirmBtn = document.getElementById('confirmBtn');
+      console.log('📍 uploadBtn element:', uploadBtn);
 
       if (uploadBtn) {
-        uploadBtn.addEventListener('click', (e) => {
-          console.log('🔘 Upload/Next button clicked');
+        console.log('🔧 Adding click listener to uploadBtn');
+        uploadBtn.addEventListener('click', function(e) {
+          console.log('🔘 ⭐ Upload/Next button CLICKED! ⭐');
           e.preventDefault();
+          e.stopPropagation();
           processExcelFile();
         });
-        console.log('✅ Upload button listener attached');
+        console.log('✅ Upload button listener attached successfully');
       } else {
-        console.warn('⚠️ Upload button not found');
+        console.error('❌ CRITICAL: Upload button NOT found in DOM!');
+        console.log('📋 All elements in excelImportModalContent:', document.getElementById('excelImportModalContent')?.innerHTML);
       }
+
+      const cancelBtn1 = document.getElementById('cancelBtn1');
+      const confirmBtn = document.getElementById('confirmBtn');
 
       if (cancelBtn1) {
         cancelBtn1.addEventListener('click', (e) => {
