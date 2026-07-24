@@ -158,7 +158,7 @@ async function getAssessmentModules(assessmentId) {
       .from('assessment_modules')
       .select('*')
       .eq('assessment_id', assessmentId)
-      .order('order', { ascending: true });
+      .order('order_index', { ascending: true });
 
     if (error) throw error;
     return data || [];
@@ -265,8 +265,7 @@ async function getAssessmentQuestions(moduleId) {
     const { data, error } = await client
       .from('assessment_questions')
       .select('*')
-      .eq('module_id', moduleId)
-      .order('order', { ascending: true });
+      .eq('module_id', moduleId);
 
     if (error) throw error;
     return data || [];
