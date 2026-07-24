@@ -286,6 +286,51 @@ function processQuestions(rows, mapping) {
         points: row['Points'] || row['points'] || 5
       };
 
+      // Extract MCQ/Pick List options
+      if (question.question_type.toLowerCase().includes('choice') ||
+          question.question_type.toLowerCase().includes('mcq') ||
+          question.question_type.toLowerCase().includes('pick')) {
+
+        // Try to get all options from AllAnswers column or separate Option columns
+        let options = [];
+
+        // Check for AllAnswers column (semicolon-separated)
+        const allAnswersCol = Object.keys(row).find(h => h.toLowerCase().includes('allanswers'));
+        if (allAnswersCol && row[allAnswersCol]) {
+          options = row[allAnswersCol].toString().split(';').map(o => o.trim()).filter(o => o);
+        } else {
+          // Look for Option 1, Option 2, etc. columns
+          for (let i = 1; i <= 10; i++) {
+            const optionCol = Object.keys(row).find(h => h.toLowerCase() === `option ${i}`);
+            if (optionCol && row[optionCol]) {
+              options.push(row[optionCol].toString().trim());
+            }
+          }
+        }
+
+        if (options.length > 0) {
+          question.all_options = options;
+          question.list_options = JSON.stringify(options);
+          console.log(`📋 MCQ options extracted for question ${idx + 1}:`, options);
+        }
+      }
+
+      // Extract Ordered List items
+      if (question.question_type.toLowerCase().includes('ordered') ||
+          question.question_type.toLowerCase().includes('ranking')) {
+
+        let items = [];
+        const listItemsCol = Object.keys(row).find(h => h.toLowerCase().includes('items'));
+        if (listItemsCol && row[listItemsCol]) {
+          items = row[listItemsCol].toString().split(';').map(o => o.trim()).filter(o => o);
+        }
+
+        if (items.length > 0) {
+          question.list_items = JSON.stringify(items);
+          console.log(`📋 Ordered list items extracted for question ${idx + 1}:`, items);
+        }
+      }
+
       const validationErrors = [];
       if (!question.question_text) validationErrors.push('Missing question text');
       if (!question.question_type) validationErrors.push('Missing type');
@@ -294,14 +339,21 @@ function processQuestions(rows, mapping) {
       // Normalize type
       const typeMap = {
         'true or false': 'true_false',
+        'truefal': 'true_false',
+        'true/false': 'true_false',
         'multiple choice': 'mcq',
+        'mcq': 'mcq',
         'pick list': 'pick_list',
+        'picklist': 'pick_list',
+        'dropdown': 'pick_list',
         'ordered list': 'ordered_list',
+        'ranking': 'ordered_list',
         'short answer': 'short_answer',
         'free text': 'free_text',
+        'file upload': 'free_text',
         'essay': 'essay'
       };
-      question.question_type = typeMap[question.question_type] || question.question_type;
+      question.question_type = typeMap[question.question_type.toLowerCase()] || question.question_type;
 
       const validTypes = ['true_false', 'mcq', 'pick_list', 'ordered_list', 'short_answer', 'free_text', 'essay'];
       if (!validTypes.includes(question.question_type)) {
