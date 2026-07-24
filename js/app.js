@@ -44,6 +44,8 @@ function showPage(page) {
       return renderStudents();
     case 'send-trainees':
       return renderSendTrainees();
+    case 'grading':
+      return initializeGradingPage();
     default:
       return renderDashboard();
   }

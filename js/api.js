@@ -1743,6 +1743,104 @@ async function saveDraftSubmission(draftData) {
 }
 
 /**
+ * Get submission with full details for grading
+ * @param {string} submissionId - Submission ID
+ * @returns {Promise<object>} Submission with answers and assessment details
+ */
+async function getSubmissionDetails(submissionId) {
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_submissions')
+      .select(`
+        *,
+        assessments:assessment_id (
+          id,
+          title,
+          description,
+          duration,
+          passing_score
+        ),
+        assessment_takers:taker_id (
+          id,
+          email,
+          full_name,
+          department
+        )
+      `)
+      .eq('id', submissionId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching submission details:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update submission with grades and feedback
+ * @param {string} submissionId - Submission ID
+ * @param {object} gradeData - Grade data {score, pass_fail, grading_notes, grader_id}
+ * @returns {Promise<object>} Updated submission
+ */
+async function updateSubmissionGrade(submissionId, gradeData) {
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_submissions')
+      .update({
+        score: gradeData.score,
+        pass_fail: gradeData.pass_fail,
+        grading_notes: gradeData.grading_notes,
+        grader_id: gradeData.grader_id,
+        graded_at: new Date().toISOString(),
+        status: 'graded'
+      })
+      .eq('id', submissionId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating submission grade:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all submissions for an assessment with taker details
+ * @param {string} assessmentId - Assessment ID
+ * @returns {Promise<array>} Submissions with taker info
+ */
+async function getAssessmentSubmissionsWithDetails(assessmentId) {
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client
+      .from('assessment_submissions')
+      .select(`
+        *,
+        assessment_takers:taker_id (
+          id,
+          email,
+          full_name,
+          department
+        )
+      `)
+      .eq('assessment_id', assessmentId)
+      .order('submitted_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching submissions with details:', error);
+    throw error;
+  }
+}
+
+/**
  * Export submissions to Excel
  * @param {array} submissionsData - Submissions array
  * @returns {void}
