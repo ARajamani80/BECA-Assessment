@@ -280,7 +280,6 @@ async function handleAssessmentSave(e) {
       title: title,
       description: description,
       duration: duration,
-      time_limit_minutes: duration,
       passing_score: passingScore,
       modules: selectedModules,
       questions: allQuestions,
