@@ -202,11 +202,18 @@ async function openCreateModuleModal() {
     const assessmentOptions = assessments.map(a => `<option value="${a.id}">${a.title}</option>`).join('');
 
     // Ensure questions are loaded
+    console.log('🔍 Current allQuestions:', allQuestions?.length || 0);
     if (!allQuestions || allQuestions.length === 0) {
-      console.log('📥 Loading questions...');
-      allQuestions = await getAllQuestions();
-      console.log('✅ Loaded', allQuestions.length, 'questions');
+      console.log('📥 Loading questions from API...');
+      try {
+        allQuestions = await getAllQuestions();
+        console.log('✅ Loaded', allQuestions?.length || 0, 'questions');
+      } catch (err) {
+        console.error('❌ Failed to load questions:', err);
+        allQuestions = [];
+      }
     }
+    console.log('📋 Questions available:', allQuestions?.length || 0);
 
     document.getElementById('moduleModalContent').innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
