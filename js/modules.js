@@ -582,13 +582,15 @@ async function deleteAllModules() {
     const { error } = await client
       .from('assessment_modules')
       .delete()
-      .gt('id', ''); // Delete all rows
+      .neq('id', null); // Delete all rows (match all since no ID is null)
 
     if (error) throw error;
     showMessage('✅ All modules deleted successfully!', 'success');
     await renderModules();
   } catch (error) {
     showMessage('❌ Error: ' + error.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
   }
 }
 

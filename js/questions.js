@@ -894,13 +894,15 @@ async function deleteAllQuestions() {
     const { error } = await client
       .from('assessment_questions')
       .delete()
-      .gt('id', ''); // Delete all rows
+      .neq('id', null); // Delete all rows (match all since no ID is null)
 
     if (error) throw error;
     showMessage('✅ All questions deleted successfully!', 'success');
     await renderQuestions();
   } catch (error) {
     showMessage('❌ Error: ' + error.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
   }
 }
 
