@@ -316,6 +316,8 @@ async function handleModuleSave(e) {
 
     console.log('📤 Module data to save:', moduleData);
 
+    let createdModuleId = currentModuleEdit;
+
     if (currentModuleEdit) {
       // Update existing module using API
       console.log('🔄 Updating module:', currentModuleEdit);
@@ -324,8 +326,21 @@ async function handleModuleSave(e) {
     } else {
       // Create new module using API
       console.log('✨ Creating new module');
-      await createModule(moduleData);
-      showMessage('✅ Module created successfully!', 'success');
+      const newModule = await createModule(moduleData);
+      createdModuleId = newModule.id;
+      console.log('✅ Module created with ID:', createdModuleId);
+    }
+
+    // Link selected questions to this module
+    const selectedQuestionIds = Array.from(document.querySelectorAll('.module-question-checkbox:checked'))
+      .map(cb => cb.value);
+
+    if (selectedQuestionIds.length > 0) {
+      console.log('🔗 Linking', selectedQuestionIds.length, 'questions to module');
+      for (const questionId of selectedQuestionIds) {
+        await updateQuestion(questionId, { module_id: createdModuleId });
+      }
+      console.log('✅ All questions linked to module');
     }
 
     closeModal('moduleModal');
