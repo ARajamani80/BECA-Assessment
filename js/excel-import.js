@@ -135,9 +135,17 @@ function handleFileDrop(event) {
  * Handle file selection
  */
 function handleFileSelect(event) {
+  console.log('📁 File select event triggered');
   if (event.target.files.length > 0) {
     importState.file = event.target.files[0];
+    console.log('✅ File selected:', {
+      name: importState.file.name,
+      size: importState.file.size,
+      type: importState.file.type
+    });
     showFileSelected();
+  } else {
+    console.warn('⚠️ No files selected');
   }
 }
 
@@ -158,19 +166,40 @@ function showFileSelected() {
 async function processExcelFile() {
   try {
     if (!importState.file) {
-      showMessage('Please select a file first', 'error');
+      showMessage('❌ Please select a file first', 'error');
+      console.warn('⚠️ No file in importState');
       return;
     }
 
     console.log('📂 Processing Excel file:', importState.file.name);
-    showMessage('Parsing Excel file...', 'info');
+    showMessage('⏳ Parsing Excel file...', 'info');
+
+    // Check if XLSX is available
+    if (typeof XLSX === 'undefined') {
+      console.error('❌ XLSX library not loaded!');
+      showMessage('❌ Excel library not loaded. Try refreshing the page.', 'error');
+      return;
+    }
+
+    console.log('✅ XLSX library available');
 
     // Read file using XLSX library
     const reader = new FileReader();
+
+    reader.onerror = function(error) {
+      console.error('❌ FileReader error:', error);
+      showMessage('❌ Error reading file: ' + error.message, 'error');
+    };
+
     reader.onload = async function(e) {
       try {
+        console.log('✅ File loaded, size:', e.target.result.byteLength, 'bytes');
+
         const data = new Uint8Array(e.target.result);
+        console.log('📖 Parsing with XLSX...');
+
         const workbook = XLSX.read(data, { type: 'array' });
+        console.log('✅ Workbook parsed, sheets:', workbook.SheetNames);
 
         // Get first sheet
         const sheetName = workbook.SheetNames[0];
@@ -178,6 +207,11 @@ async function processExcelFile() {
         const rawRows = XLSX.utils.sheet_to_json(sheet);
 
         console.log(`📊 Read ${rawRows.length} rows from sheet: ${sheetName}`);
+
+        if (rawRows.length === 0) {
+          showMessage('❌ No data found in Excel file', 'error');
+          return;
+        }
 
         // Auto-detect column mapping
         importState.rawData = rawRows;
@@ -187,7 +221,8 @@ async function processExcelFile() {
         const processed = processQuestions(rawRows, mapping);
 
         if (processed.valid.length === 0) {
-          showMessage('No valid questions found in file', 'error');
+          showMessage(`❌ No valid questions found. ${processed.errors.length} errors.`, 'error');
+          console.error('Validation errors:', processed.errors);
           return;
         }
 
@@ -199,19 +234,20 @@ async function processExcelFile() {
         // Show preview
         showStep('importStep2');
         renderPreview();
-        showMessage(`Ready to import ${processed.valid.length} questions`, 'success');
+        showMessage(`✅ Ready to import ${processed.valid.length} questions`, 'success');
 
       } catch (error) {
-        console.error('Error parsing file:', error);
-        showMessage('Error parsing Excel file: ' + error.message, 'error');
+        console.error('❌ Error parsing file:', error);
+        console.error('Stack:', error.stack);
+        showMessage('❌ Error parsing Excel file: ' + error.message, 'error');
       }
     };
 
     reader.readAsArrayBuffer(importState.file);
 
   } catch (error) {
-    console.error('Error processing file:', error);
-    showMessage('Error: ' + error.message, 'error');
+    console.error('❌ Error processing file:', error);
+    showMessage('❌ Error: ' + error.message, 'error');
   }
 }
 
