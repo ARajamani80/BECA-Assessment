@@ -8,8 +8,7 @@ let importState = {
   rawData: [],
   processedQuestions: [],
   validationErrors: [],
-  currentStep: 'upload',
-  assessmentId: null
+  currentStep: 'upload'
 };
 
 /**
@@ -30,48 +29,6 @@ async function openExcelImportModal() {
       document.body.appendChild(fileInput);
     }
 
-    // Ensure assessments are loaded
-    if (!window.allAssessments || window.allAssessments.length === 0) {
-      console.log('📋 Loading assessments...');
-      try {
-        window.allAssessments = await getAssessments();
-        console.log('✅ Assessments loaded:', window.allAssessments.length);
-      } catch (error) {
-        console.error('❌ Error loading assessments:', error);
-        window.allAssessments = [];
-      }
-    }
-
-    console.log('📊 Available assessments:', window.allAssessments?.length || 0);
-
-    // Create modal content
-    const assessmentOptions = (window.allAssessments && window.allAssessments.length > 0)
-      ? window.allAssessments.map(a =>
-          `<option value="${a.id}">${a.title}</option>`
-        ).join('')
-      : '';
-
-    // Show warning if no assessments
-    let assessmentHtml = `
-      <h3>1. Select Assessment</h3>
-      <select id="importAssessmentSelect" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px;">
-        <option value="">-- Select an assessment --</option>
-        ${assessmentOptions}
-      </select>
-      <p style="color: #666; font-size: 12px; margin: 5px 0;">Questions will be added to this assessment</p>
-    `;
-
-    if (!assessmentOptions) {
-      assessmentHtml = `
-        <h3>⚠️ No Assessments Found</h3>
-        <div style="background: #fef3c7; padding: 12px; border-radius: 4px; border-left: 4px solid #f59e0b; margin-bottom: 15px;">
-          <p style="margin: 0; color: #92400e; font-size: 14px;">
-            Please create an assessment first before importing questions.
-          </p>
-        </div>
-      `;
-    }
-
     const modalContent = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin: 0;">📊 Import Questions from Excel</h2>
@@ -80,7 +37,10 @@ async function openExcelImportModal() {
 
       <div id="importStep1" style="display: block;">
         <div style="background: #f0f4f8; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          ${assessmentHtml}
+          <h3>📁 Select Excel File</h3>
+          <p style="color: #666; font-size: 13px; margin: 10px 0;">
+            Questions will be imported to the Question Bank as standalone items
+          </p>
 
           <h3 style="margin-top: 20px;">2. Select Excel File</h3>
           <p style="color: #666; font-size: 13px; margin: 10px 0;">
@@ -189,20 +149,6 @@ async function startImport() {
   try {
     console.log('🔘 startImport() called');
 
-    // Validate assessment selection
-    const assessmentSelect = document.getElementById('importAssessmentSelect');
-    console.log('Assessment select element:', assessmentSelect);
-    console.log('Assessment value:', assessmentSelect?.value);
-
-    if (!assessmentSelect || !assessmentSelect.value) {
-      const msg = '❌ Please select an assessment first';
-      console.error(msg);
-      showMessage(msg, 'error');
-      return;
-    }
-    importState.assessmentId = assessmentSelect.value;
-    console.log('✅ Assessment selected:', importState.assessmentId);
-
     if (!importState.file) {
       const msg = '❌ No file selected. Please choose an Excel file.';
       console.error(msg);
@@ -210,7 +156,7 @@ async function startImport() {
       return;
     }
 
-    console.log('🚀 Starting import of', importState.file.name, 'to assessment:', importState.assessmentId);
+    console.log('🚀 Starting import of', importState.file.name, 'to Question Bank');
 
     // Show progress
     document.getElementById('importStep1').style.display = 'none';
@@ -292,16 +238,11 @@ async function importQuestions(questions) {
       document.getElementById('progressText').textContent = `Importing ${i + 1}/${total}...`;
 
       try {
-        // Add assessment_id to question before inserting
-        const questionToInsert = {
-          ...questions[i],
-          assessment_id: importState.assessmentId
-        };
-
+        // Insert question without assessment_id (standalone in Question Bank)
         const client = await getSupabaseClient();
         const { error } = await client
           .from('assessment_questions')
-          .insert([questionToInsert])
+          .insert([questions[i]])
           .select();
 
         if (error) throw error;
