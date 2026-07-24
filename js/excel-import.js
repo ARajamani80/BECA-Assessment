@@ -1,6 +1,6 @@
 // ============================================================================
-// EXCEL IMPORT MODULE - Bulk Question Import
-// Supports importing up to 500 questions from Excel template
+// EXCEL IMPORT MODULE - Bulk Question Import (SIMPLIFIED)
+// Direct file input approach - no complex modal
 // ============================================================================
 
 let importState = {
@@ -8,35 +8,175 @@ let importState = {
   rawData: [],
   processedQuestions: [],
   validationErrors: [],
-  currentStep: 'upload' // upload → preview → confirm → processing → complete
+  currentStep: 'upload'
 };
 
 /**
- * Debug function - call from console to test
+ * Open Excel import - Direct file picker
  */
-function debugImportModal() {
-  console.log('🔍 DEBUGGING IMPORT MODAL');
-  const uploadBtn = document.getElementById('uploadBtn');
-  console.log('uploadBtn element:', uploadBtn);
-  if (uploadBtn) {
-    console.log('uploadBtn classes:', uploadBtn.className);
-    console.log('uploadBtn onclick:', uploadBtn.onclick);
-    console.log('Triggering click...');
-    uploadBtn.click();
-  } else {
-    console.error('uploadBtn NOT FOUND');
+async function openExcelImportModal() {
+  try {
+    console.log('📂 Opening Excel file picker...');
+
+    // Create hidden file input
+    let fileInput = document.getElementById('excelImportFileInput');
+    if (!fileInput) {
+      fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.id = 'excelImportFileInput';
+      fileInput.accept = '.xlsx,.xls';
+      fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+    }
+
+    // Handle file selection
+    fileInput.onchange = async function(e) {
+      const file = e.target.files[0];
+      if (!file) {
+        console.warn('⚠️ No file selected');
+        return;
+      }
+
+      console.log('✅ File selected:', file.name);
+      await processExcelFile(file);
+    };
+
+    // Trigger file picker
+    fileInput.click();
+
+  } catch (error) {
+    console.error('❌ Error opening import:', error);
+    showMessage('Error: ' + error.message, 'error');
   }
 }
 
 /**
- * Open Excel import modal for questions
+ * Process Excel file (simplified - direct processing)
  */
-async function openExcelImportModal() {
+async function processExcelFile(file) {
   try {
-    console.log('📂 Opening Excel import modal...');
-    console.log('🔍 Modal container exists?', !!document.getElementById('excelImportModalContent'));
+    if (!file) {
+      showMessage('❌ No file provided', 'error');
+      return;
+    }
 
-    const modalContent = `
+    console.log('📂 Processing file:', file.name);
+    showMessage('⏳ Reading Excel file...', 'info');
+
+    if (typeof XLSX === 'undefined') {
+      console.error('❌ XLSX not loaded');
+      showMessage('❌ Excel library not available', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onerror = () => {
+      console.error('❌ File read error');
+      showMessage('❌ Error reading file', 'error');
+    };
+
+    reader.onload = async (e) => {
+      try {
+        console.log('✅ File loaded');
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rawRows = XLSX.utils.sheet_to_json(sheet);
+
+        console.log(`📊 Found ${rawRows.length} rows`);
+
+        if (rawRows.length === 0) {
+          showMessage('❌ No data in file', 'error');
+          return;
+        }
+
+        // Process questions
+        const mapping = autoDetectColumnMapping(rawRows);
+        const processed = processQuestions(rawRows, mapping);
+
+        if (processed.valid.length === 0) {
+          showMessage(`❌ No valid questions found`, 'error');
+          return;
+        }
+
+        importState.processedQuestions = processed.valid;
+        importState.validationErrors = processed.errors;
+
+        console.log(`✅ Ready to import ${processed.valid.length} questions`);
+
+        // Confirm before import
+        if (!confirm(`Import ${processed.valid.length} questions?\n\n${processed.errors.length} questions will be skipped due to errors.`)) {
+          return;
+        }
+
+        // Import now
+        await importNow(processed.valid);
+
+      } catch (error) {
+        console.error('❌ Error processing file:', error);
+        showMessage('❌ Error: ' + error.message, 'error');
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+
+  } catch (error) {
+    console.error('❌ Error in processExcelFile:', error);
+    showMessage('❌ Error: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Import questions directly (no modal)
+ */
+async function importNow(questions) {
+  try {
+    console.log(`🚀 Importing ${questions.length} questions...`);
+    showMessage(`⏳ Importing ${questions.length} questions...`, 'info');
+
+    let imported = 0;
+
+    for (let i = 0; i < questions.length; i++) {
+      const question = questions[i];
+
+      try {
+        const client = await getSupabaseClient();
+        const { data, error } = await client
+          .from('assessment_questions')
+          .insert([question])
+          .select()
+          .single();
+
+        if (error) throw error;
+        imported++;
+        console.log(`✅ Question ${i + 1}/${questions.length} imported`);
+      } catch (error) {
+        console.warn(`⚠️ Failed to import question ${i + 1}:`, error);
+      }
+    }
+
+    console.log(`✅ COMPLETE: ${imported}/${questions.length} imported`);
+    showMessage(`✅ Imported ${imported}/${questions.length} questions!`, 'success');
+
+    // Refresh list
+    setTimeout(() => {
+      renderQuestions();
+    }, 500);
+
+  } catch (error) {
+    console.error('❌ Error importing:', error);
+    showMessage('❌ Error: ' + error.message, 'error');
+  }
+}
+
+// ============================================================================
+// LEGACY CODE - KEEPING FOR REFERENCE (NOT USED)
+// ============================================================================
+/*
+async function openExcelImportModalOLD() {
+  const modalContent = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin: 0;">📊 Bulk Import Questions from Excel</h2>
         <button onclick="closeModal('excelImportModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
