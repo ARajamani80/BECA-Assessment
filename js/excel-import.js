@@ -286,20 +286,19 @@ function processQuestions(rows, mapping) {
         points: row['Points'] || row['points'] || 5
       };
 
-      // Extract MCQ/Pick List options
-      if (question.question_type.toLowerCase().includes('choice') ||
-          question.question_type.toLowerCase().includes('mcq') ||
-          question.question_type.toLowerCase().includes('pick')) {
+      // Extract type-specific fields from Excel
+      const qType = question.question_type.toLowerCase();
 
-        // Try to get all options from AllAnswers column or separate Option columns
+      // MCQ / Multiple Choice - Extract all options
+      if (qType.includes('choice') || qType === 'mcq' || qType === 'pick_list') {
         let options = [];
 
-        // Check for AllAnswers column (semicolon-separated)
+        // Method 1: AllAnswers column (semicolon-separated)
         const allAnswersCol = Object.keys(row).find(h => h.toLowerCase().includes('allanswers'));
         if (allAnswersCol && row[allAnswersCol]) {
           options = row[allAnswersCol].toString().split(';').map(o => o.trim()).filter(o => o);
         } else {
-          // Look for Option 1, Option 2, etc. columns
+          // Method 2: Individual Option 1, Option 2, etc. columns
           for (let i = 1; i <= 10; i++) {
             const optionCol = Object.keys(row).find(h => h.toLowerCase() === `option ${i}`);
             if (optionCol && row[optionCol]) {
@@ -311,23 +310,79 @@ function processQuestions(rows, mapping) {
         if (options.length > 0) {
           question.all_options = options;
           question.list_options = JSON.stringify(options);
-          console.log(`📋 MCQ options extracted for question ${idx + 1}:`, options);
+          console.log(`📋 Options for ${qType} (Q${idx + 1}):`, options);
         }
       }
 
-      // Extract Ordered List items
-      if (question.question_type.toLowerCase().includes('ordered') ||
-          question.question_type.toLowerCase().includes('ranking')) {
+      // True/False - Extract both options if available
+      if (qType === 'true_false' || qType.includes('true') || qType.includes('false')) {
+        const trueOptCol = Object.keys(row).find(h => h.toLowerCase().includes('true option'));
+        const falseOptCol = Object.keys(row).find(h => h.toLowerCase().includes('false option'));
 
+        if (trueOptCol && falseOptCol) {
+          const options = [row[trueOptCol]?.toString() || 'True', row[falseOptCol]?.toString() || 'False'];
+          question.all_options = options;
+          question.list_options = JSON.stringify(options);
+          console.log(`📋 T/F options (Q${idx + 1}):`, options);
+        }
+      }
+
+      // Ordered List - Extract items
+      if (qType.includes('ordered') || qType.includes('ranking')) {
         let items = [];
+
+        // Method 1: ListItems column (semicolon-separated)
         const listItemsCol = Object.keys(row).find(h => h.toLowerCase().includes('items'));
         if (listItemsCol && row[listItemsCol]) {
-          items = row[listItemsCol].toString().split(';').map(o => o.trim()).filter(o => o);
+          items = row[listItemsCol].toString().split(';').map(i => i.trim()).filter(i => i);
+        } else {
+          // Method 2: Item 1, Item 2, etc. columns
+          for (let i = 1; i <= 10; i++) {
+            const itemCol = Object.keys(row).find(h => h.toLowerCase() === `item ${i}`);
+            if (itemCol && row[itemCol]) {
+              items.push(row[itemCol].toString().trim());
+            }
+          }
         }
 
         if (items.length > 0) {
           question.list_items = JSON.stringify(items);
-          console.log(`📋 Ordered list items extracted for question ${idx + 1}:`, items);
+          console.log(`📋 Ordered list items (Q${idx + 1}):`, items);
+        }
+      }
+
+      // Free Text / Short Answer - Extract keywords
+      if (qType.includes('short') || qType.includes('free') || qType.includes('text')) {
+        const keywordsCol = Object.keys(row).find(h => h.toLowerCase().includes('keyword'));
+        if (keywordsCol && row[keywordsCol]) {
+          const keywords = row[keywordsCol].toString().split(';').map(k => k.trim()).filter(k => k);
+          if (keywords.length > 0) {
+            question.keywords = JSON.stringify(keywords);
+            console.log(`📋 Keywords for short answer (Q${idx + 1}):`, keywords);
+          }
+        }
+
+        // Also extract min/max word limits if available
+        const minWordsCol = Object.keys(row).find(h => h.toLowerCase().includes('min word'));
+        const maxWordsCol = Object.keys(row).find(h => h.toLowerCase().includes('max word'));
+        if (minWordsCol && row[minWordsCol]) question.min_words = parseInt(row[minWordsCol]) || null;
+        if (maxWordsCol && row[maxWordsCol]) question.max_words = parseInt(row[maxWordsCol]) || null;
+      }
+
+      // Essay - Extract word limits
+      if (qType.includes('essay')) {
+        const minWordsCol = Object.keys(row).find(h => h.toLowerCase().includes('min word'));
+        const maxWordsCol = Object.keys(row).find(h => h.toLowerCase().includes('max word'));
+        if (minWordsCol && row[minWordsCol]) question.min_words = parseInt(row[minWordsCol]) || null;
+        if (maxWordsCol && row[maxWordsCol]) question.max_words = parseInt(row[maxWordsCol]) || null;
+
+        const keywordsCol = Object.keys(row).find(h => h.toLowerCase().includes('keyword'));
+        if (keywordsCol && row[keywordsCol]) {
+          const keywords = row[keywordsCol].toString().split(';').map(k => k.trim()).filter(k => k);
+          if (keywords.length > 0) {
+            question.keywords = JSON.stringify(keywords);
+            console.log(`📋 Essay keywords (Q${idx + 1}):`, keywords);
+          }
         }
       }
 
