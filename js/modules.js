@@ -196,9 +196,17 @@ async function openCreateModuleModal() {
     console.log('📚 openCreateModuleModal() called');
     currentModuleEdit = null;
 
-    // Load assessments first
+    // Load assessments and questions first
+    console.log('📥 Loading assessments and questions...');
     const assessments = await getAssessments();
     const assessmentOptions = assessments.map(a => `<option value="${a.id}">${a.title}</option>`).join('');
+
+    // Ensure questions are loaded
+    if (!allQuestions || allQuestions.length === 0) {
+      console.log('📥 Loading questions...');
+      allQuestions = await getAllQuestions();
+      console.log('✅ Loaded', allQuestions.length, 'questions');
+    }
 
     document.getElementById('moduleModalContent').innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
