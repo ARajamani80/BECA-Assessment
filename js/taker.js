@@ -63,20 +63,35 @@ async function initializeAssessmentTaker() {
  */
 async function loadAssessmentForTaker() {
   try {
-    console.log('Loading assessment for token:', assessmentState.token);
+    console.log('🔍 Step 1: Loading assessment for token:', assessmentState.token);
 
     // Get taker record by token
-    const takerData = await getAssessmentTakerByToken(assessmentState.token);
+    let takerData;
+    try {
+      takerData = await getAssessmentTakerByToken(assessmentState.token);
+      console.log('✅ Step 1 passed - Taker found:', takerData);
+    } catch (e) {
+      console.error('❌ Step 1 failed - Error finding taker:', e);
+      throw new Error(`Token lookup failed: ${e.message}`);
+    }
 
     if (!takerData) {
       throw new Error('Invalid or expired access token');
     }
 
-    console.log('Taker found:', takerData);
     assessmentState.taker = takerData;
 
     // Get assessment details
-    const assessment = await getAssessment(takerData.assessment_id);
+    console.log('🔍 Step 2: Loading assessment ID:', takerData.assessment_id);
+    let assessment;
+    try {
+      assessment = await getAssessment(takerData.assessment_id);
+      console.log('✅ Step 2 passed - Assessment found:', assessment);
+    } catch (e) {
+      console.error('❌ Step 2 failed - Error loading assessment:', e);
+      throw new Error(`Assessment lookup failed: ${e.message}`);
+    }
+
     if (!assessment) {
       throw new Error('Assessment not found');
     }
@@ -85,18 +100,31 @@ async function loadAssessmentForTaker() {
     console.log('Assessment loaded:', assessment.title);
 
     // Get assessment questions (all modules and their questions)
-    const modules = await getAssessmentModules(assessment.id);
-    console.log('Modules loaded:', modules.length);
+    console.log('🔍 Step 3: Loading modules for assessment:', assessment.id);
+    let modules;
+    try {
+      modules = await getAssessmentModules(assessment.id);
+      console.log('✅ Step 3 passed - Modules loaded:', modules.length);
+    } catch (e) {
+      console.error('❌ Step 3 failed - Error loading modules:', e);
+      throw new Error(`Module lookup failed: ${e.message}`);
+    }
 
     // Fetch all questions for the assessment
+    console.log('🔍 Step 4: Loading questions from', modules.length, 'modules');
     let allQuestions = [];
-    for (const module of modules) {
-      const moduleQuestions = await getAssessmentQuestions(module.id);
-      allQuestions = allQuestions.concat(moduleQuestions);
+    try {
+      for (const module of modules) {
+        const moduleQuestions = await getAssessmentQuestions(module.id);
+        allQuestions = allQuestions.concat(moduleQuestions);
+      }
+      console.log('✅ Step 4 passed - Total questions loaded:', allQuestions.length);
+    } catch (e) {
+      console.error('❌ Step 4 failed - Error loading questions:', e);
+      throw new Error(`Question lookup failed: ${e.message}`);
     }
 
     assessmentState.questions = allQuestions;
-    console.log('Total questions loaded:', allQuestions.length);
 
     // Load any existing answers from localStorage
     loadAnswersFromLocalStorage();
@@ -113,7 +141,7 @@ async function loadAssessmentForTaker() {
     // Setup unsaved changes warning
     setupUnloadWarning();
   } catch (error) {
-    console.error('Error loading assessment:', error);
+    console.error('🔴 FATAL ERROR loading assessment:', error);
     throw error;
   }
 }
