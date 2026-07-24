@@ -442,12 +442,21 @@ async function openQuestionModal(questionId = null) {
  */
 function loadMCQOptions(question) {
   let html = '';
-  const options = question?.options || [
-    { text: '', correct: true },
-    { text: '', correct: false },
-    { text: '', correct: false },
-    { text: '', correct: false }
-  ];
+  let options = question?.options;
+
+  // Debug logging
+  console.log('📋 loadMCQOptions - question.options:', options);
+  console.log('📋 loadMCQOptions - question.list_options:', question?.list_options);
+  console.log('📋 loadMCQOptions - question.correct_answer:', question?.correct_answer);
+
+  if (!options || options.length === 0) {
+    options = [
+      { text: '', correct: true },
+      { text: '', correct: false },
+      { text: '', correct: false },
+      { text: '', correct: false }
+    ];
+  }
 
   options.forEach((opt, idx) => {
     html += `

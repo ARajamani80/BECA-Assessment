@@ -408,10 +408,27 @@ function processQuestions(rows, mapping) {
       } else if (questionType === 'mcq') {
         // MCQ: parse AllAnswers with proper format handling
         if (allAnswers) {
-          // Split by newline first
-          let rawOptions = allAnswers.includes('\n')
-            ? allAnswers.split('\n').map(o => o.trim()).filter(o => o)
-            : allAnswers.split(/[;,]/).map(o => o.trim()).filter(o => o);
+          console.log(`📋 MCQ (Q${idx + 1}) - Raw AllAnswers:`, allAnswers.substring(0, 100));
+
+          let rawOptions = [];
+
+          // Try different split methods
+          if (allAnswers.includes('\n')) {
+            // Split by newline
+            rawOptions = allAnswers.split('\n').map(o => o.trim()).filter(o => o);
+          } else if (allAnswers.includes('\r\n')) {
+            // Split by CRLF
+            rawOptions = allAnswers.split('\r\n').map(o => o.trim()).filter(o => o);
+          } else if (allAnswers.includes(';')) {
+            // Split by semicolon
+            rawOptions = allAnswers.split(';').map(o => o.trim()).filter(o => o);
+          } else if (allAnswers.includes(',')) {
+            // Split by comma (but be careful with "A), B)" format)
+            rawOptions = allAnswers.split(/,(?![^)]*\))/).map(o => o.trim()).filter(o => o);
+          } else {
+            // No clear delimiter - might be space separated with A) B) C) format
+            rawOptions = [allAnswers];
+          }
 
           // Extract option text and find correct index
           let options = [];
@@ -422,15 +439,15 @@ function processQuestions(rows, mapping) {
             const match = opt.match(/^([A-Z])\)\s*(.+)$/);
             if (match) {
               const letter = match[1];
-              const text = match[2];
+              const text = match[2].trim();
               options.push(text);
 
               // Check if this option is the correct answer
               if (correctAnswer && correctAnswer.toUpperCase().includes(letter)) {
                 correctIndex = idx;
               }
-            } else {
-              options.push(opt);
+            } else if (opt.trim()) {
+              options.push(opt.trim());
             }
           });
 
@@ -438,14 +455,16 @@ function processQuestions(rows, mapping) {
             question.options = JSON.stringify(options);
             question.list_options = JSON.stringify(options);
 
-            // Set correct_answer to the option index or text
+            // Set correct_answer to the option text
             if (correctIndex >= 0) {
               question.correct_answer = options[correctIndex];
             } else if (correctAnswer) {
               question.correct_answer = correctAnswer;
             }
 
-            console.log(`📋 MCQ (Q${idx + 1}): ${options.length} options, correct: ${correctIndex >= 0 ? options[correctIndex] : 'unknown'}`);
+            console.log(`✅ MCQ (Q${idx + 1}): ${options.length} options - ${options.join(' | ')}`);
+          } else {
+            console.warn(`⚠️ MCQ (Q${idx + 1}): No options extracted`);
           }
         } else if (correctAnswer) {
           question.correct_answer = correctAnswer;
