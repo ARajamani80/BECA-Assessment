@@ -1320,7 +1320,7 @@ function exportQuestionsToExcel(questionsData) {
       'Show Explanation': 'Yes'
     }));
     const wsTF = XLSX.utils.json_to_sheet(tfData);
-    XLSX.utils.book_append_sheet(wb, wsTF, 'T/F');
+    XLSX.utils.book_append_sheet(wb, wsTF, 'TrueFalse');
   }
 
   // Create PL sheet
@@ -1341,7 +1341,7 @@ function exportQuestionsToExcel(questionsData) {
       'Time Limit (seconds)': q.time_limit_seconds || ''
     }));
     const wsPL = XLSX.utils.json_to_sheet(plData);
-    XLSX.utils.book_append_sheet(wb, wsPL, 'PL');
+    XLSX.utils.book_append_sheet(wb, wsPL, 'PickList');
   }
 
   // Create FT sheet
@@ -1363,7 +1363,7 @@ function exportQuestionsToExcel(questionsData) {
       'Instructions': q.file_upload_instructions || ''
     }));
     const wsFT = XLSX.utils.json_to_sheet(ftData);
-    XLSX.utils.book_append_sheet(wb, wsFT, 'FT');
+    XLSX.utils.book_append_sheet(wb, wsFT, 'FreeText');
   }
 
   // Create OL sheet
@@ -1384,7 +1384,7 @@ function exportQuestionsToExcel(questionsData) {
       'Time Limit (seconds)': q.time_limit_seconds || ''
     }));
     const wsOL = XLSX.utils.json_to_sheet(olData);
-    XLSX.utils.book_append_sheet(wb, wsOL, 'OL');
+    XLSX.utils.book_append_sheet(wb, wsOL, 'OrderedList');
   }
 
   // Create SA sheet
@@ -1406,7 +1406,7 @@ function exportQuestionsToExcel(questionsData) {
       'Time Limit (seconds)': q.time_limit_seconds || ''
     }));
     const wsSA = XLSX.utils.json_to_sheet(saData);
-    XLSX.utils.book_append_sheet(wb, wsSA, 'SA');
+    XLSX.utils.book_append_sheet(wb, wsSA, 'ShortAnswer');
   }
 
   // Create EA sheet
@@ -1428,7 +1428,7 @@ function exportQuestionsToExcel(questionsData) {
       'Time Limit (seconds)': q.time_limit_seconds || ''
     }));
     const wsEA = XLSX.utils.json_to_sheet(eaData);
-    XLSX.utils.book_append_sheet(wb, wsEA, 'EA');
+    XLSX.utils.book_append_sheet(wb, wsEA, 'Essay');
   }
 
   // Create ALL QUESTIONS summary sheet
