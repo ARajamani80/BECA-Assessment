@@ -191,10 +191,14 @@ function displayModulesTable() {
 /**
  * Open create module modal
  */
-function openCreateModuleModal() {
+async function openCreateModuleModal() {
   try {
     console.log('📚 openCreateModuleModal() called');
     currentModuleEdit = null;
+
+    // Load assessments first
+    const assessments = await getAssessments();
+    const assessmentOptions = assessments.map(a => `<option value="${a.id}">${a.title}</option>`).join('');
 
     document.getElementById('moduleModalContent').innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -203,6 +207,14 @@ function openCreateModuleModal() {
       </div>
 
       <form id="moduleForm" onsubmit="handleModuleSave(event)">
+        <div class="form-group">
+          <label><span style="color: #dc2626;">*</span> Select Assessment</label>
+          <select id="assessmentSelect" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+            <option value="">-- Choose Assessment --</option>
+            ${assessmentOptions}
+          </select>
+        </div>
+
         <div class="form-group">
           <label><span style="color: #dc2626;">*</span> Module Name</label>
           <input type="text" id="moduleName" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
