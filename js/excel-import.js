@@ -283,7 +283,7 @@ async function importQuestions(questions) {
 }
 
 /**
- * Auto-detect column mapping - more flexible for various Excel formats
+ * Auto-detect column mapping from Excel headers
  */
 function autoDetectColumnMapping(rows) {
   if (rows.length === 0) return {};
@@ -295,58 +295,31 @@ function autoDetectColumnMapping(rows) {
   headers.forEach(header => {
     const lower = header.toLowerCase().trim();
 
-    // Question text - try multiple variations
-    if (!mapping.question_text) {
-      if ((lower.includes('question') && (lower.includes('text') || lower.includes('prompt'))) ||
-          lower === 'question' || lower === 'q' || lower.includes('question_text')) {
-        mapping.question_text = header;
-      }
-    }
-
-    // Question type
-    if (!mapping.question_type) {
-      if (lower.includes('type') || lower.includes('question_type') || lower === 'qtype') {
-        mapping.question_type = header;
-      }
-    }
-
-    // Correct answer
-    if (!mapping.correct_answer) {
-      if ((lower.includes('answer') && !lower.includes('all') && !lower.includes('option') && !lower.includes('true') && !lower.includes('false')) ||
-          lower === 'answer' || lower === 'correct') {
-        mapping.correct_answer = header;
-      }
-    }
-
-    // Difficulty
-    if (!mapping.difficulty) {
-      if (lower.includes('difficulty') || lower.includes('level') || lower.includes('skill')) {
-        mapping.difficulty = header;
-      }
-    }
-
-    // Category
-    if (!mapping.category) {
-      if (lower.includes('category') || lower === 'topic') {
-        mapping.category = header;
-      }
-    }
-
-    // Tags
-    if (!mapping.tags) {
-      if (lower.includes('tag') || lower.includes('keyword')) {
-        mapping.tags = header;
-      }
-    }
+    // Map all available columns
+    if (lower.includes('question') && lower.includes('text')) mapping.question_text = header;
+    else if (lower === 'type' || lower === 'question type' || lower.includes('question_type')) mapping.question_type = header;
+    else if (lower === 'answer' || lower === 'correct answer') mapping.correct_answer = header;
+    else if (lower.includes('allanswer')) mapping.all_answers = header;
+    else if (lower === 'skillevel' || lower.includes('skill')) mapping.skill_level = header;
+    else if (lower.includes('category') || lower === 'questioncategory') mapping.category = header;
+    else if (lower.includes('tag') && !lower.includes('training')) mapping.tags = header;
+    else if (lower.includes('trainingtag') || lower.includes('training tag')) mapping.training_tags = header;
+    else if (lower.includes('file') && lower.includes('related')) mapping.dataset_files = header;
+    else if (lower.includes('coaching') && lower.includes('text')) mapping.coaching_notes = header;
+    else if (lower.includes('coaching') && lower.includes('file')) mapping.coaching_files = header;
+    else if (lower.includes('learning') && (lower.includes('text') || lower.includes('link'))) mapping.learning_resources = header;
+    else if (lower.includes('learning') && lower.includes('file')) mapping.learning_files = header;
+    else if (lower === 'author') mapping.author = header;
+    else if (lower === 'questionname' || lower.includes('question name')) mapping.question_name = header;
+    else if (lower === 'questionsummary' || lower.includes('question summary')) mapping.question_summary = header;
   });
 
-  console.log('📋 Auto-detected column mapping:', mapping);
-  console.log('📋 Available headers:', headers);
+  console.log('📋 Column mapping:', mapping);
   return mapping;
 }
 
 /**
- * Process and validate questions
+ * Process and validate questions with proper field mapping
  */
 function processQuestions(rows, mapping) {
   const valid = [];
@@ -354,169 +327,107 @@ function processQuestions(rows, mapping) {
 
   rows.forEach((row, idx) => {
     try {
+      // Get values from mapped columns
+      const questionText = row[mapping.question_text] || '';
+      const typeRaw = (row[mapping.question_type] || '').trim();
+      const correctAnswer = row[mapping.correct_answer] || '';
+      const allAnswers = row[mapping.all_answers] || '';
+
+      // Normalize type (trim spaces, convert to lowercase)
+      let questionType = typeRaw.toLowerCase().trim();
+
+      // Map type values
+      if (questionType.includes('free')) questionType = 'free_text';
+      else if (questionType.includes('pick')) questionType = 'pick_list';
+      else if (questionType.includes('choice') || questionType === 'mcq') questionType = 'mcq';
+      else if (questionType.includes('true') && questionType.includes('false')) questionType = 'true_false';
+      else if (questionType.includes('order') || questionType.includes('rank')) questionType = 'ordered_list';
+      else if (questionType.includes('short')) questionType = 'short_answer';
+      else if (questionType.includes('essay')) questionType = 'essay';
+
       const question = {
-        question_text: row[mapping.question_text] || '',
-        question_type: (row[mapping.question_type] || '').toLowerCase().trim(),
-        correct_answer: row[mapping.correct_answer] || '',
-        difficulty: row[mapping.difficulty] || null,
+        question_text: questionText,
+        question_type: questionType,
         category: row[mapping.category] || null,
-        tags: row[mapping.tags] || null
+        skill_level: row[mapping.skill_level] || null,
+        tags: row[mapping.tags] || null,
+        training_tags: row[mapping.training_tags] || null,
+        question_name: row[mapping.question_name] || null,
+        question_summary: row[mapping.question_summary] || null,
+        coaching_notes: row[mapping.coaching_notes] || null,
+        coaching_files: row[mapping.coaching_files] || null,
+        learning_resources: row[mapping.learning_resources] || null,
+        learning_files: row[mapping.learning_files] || null,
+        author: row[mapping.author] || null
       };
 
-      // Extract type-specific fields from Excel
-      // Note: question.question_type is still unnormalized at this point
-      const qType = question.question_type.toLowerCase().trim();
+      // Parse type-specific fields
+      if (questionType === 'free_text' || questionType === 'short_answer') {
+        // Free text: use Answer as expected_answer
+        question.expected_answer = correctAnswer;
+        // Also add as keywords
+        if (correctAnswer) {
+          question.keywords = JSON.stringify([correctAnswer]);
+        }
+      } else if (questionType === 'pick_list') {
+        // Pick List: parse AllAnswers by newline into options
+        if (allAnswers) {
+          // Split by newline first (preferred), then by semicolon/comma
+          let options = allAnswers.includes('\n')
+            ? allAnswers.split('\n').map(o => o.trim()).filter(o => o)
+            : allAnswers.split(/[;,]/).map(o => o.trim()).filter(o => o);
 
-      // MCQ / Multiple Choice - Extract all options
-      if (qType.includes('choice') || qType.includes('mcq') || qType.includes('pick')) {
-        let options = [];
-
-        // Method 1: AllAnswers column (semicolon or comma-separated)
-        const allAnswersCol = Object.keys(row).find(h => {
-          const lower = h.toLowerCase();
-          return lower.includes('allanswer') || lower === 'all answers' || lower === 'all_answers';
-        });
-
-        if (allAnswersCol && row[allAnswersCol]) {
-          const allAnswersStr = row[allAnswersCol].toString().trim();
-          // Try semicolon first, then comma
-          options = allAnswersStr.includes(';')
-            ? allAnswersStr.split(';').map(o => o.trim()).filter(o => o)
-            : allAnswersStr.split(',').map(o => o.trim()).filter(o => o);
-          console.log(`📋 MCQ - Using '${allAnswersCol}' column (Q${idx + 1}):`, options);
-        } else {
-          // Method 2: Individual Option 1, Option 2, etc. columns
-          for (let i = 1; i <= 10; i++) {
-            const optionCol = Object.keys(row).find(h => h.toLowerCase() === `option ${i}`);
-            if (optionCol && row[optionCol]) {
-              options.push(row[optionCol].toString().trim());
-            }
-          }
           if (options.length > 0) {
-            console.log(`📋 MCQ - Using individual Option columns (Q${idx + 1}):`, options);
+            question.options = JSON.stringify(options);
+            question.list_options = JSON.stringify(options);
+            console.log(`📋 Pick List (Q${idx + 1}): ${options.length} options`);
           }
         }
-
-        if (options.length > 0) {
-          // Store in BOTH options and list_options for compatibility
-          question.options = JSON.stringify(options);
-          question.list_options = JSON.stringify(options);
+        // Correct answer identifies which option(s) are correct
+        if (correctAnswer) {
+          question.correct_answer = correctAnswer;
         }
-      }
+      } else if (questionType === 'mcq') {
+        // MCQ: parse AllAnswers same as Pick List
+        if (allAnswers) {
+          let options = allAnswers.includes('\n')
+            ? allAnswers.split('\n').map(o => o.trim()).filter(o => o)
+            : allAnswers.split(/[;,]/).map(o => o.trim()).filter(o => o);
 
-      // True/False - Extract both options if available
-      if (qType.includes('true') || qType.includes('false')) {
-        const trueOptCol = Object.keys(row).find(h => h.toLowerCase().includes('true option'));
-        const falseOptCol = Object.keys(row).find(h => h.toLowerCase().includes('false option'));
-
-        if (trueOptCol && falseOptCol) {
-          const options = [row[trueOptCol]?.toString() || 'True', row[falseOptCol]?.toString() || 'False'];
-          // Store in BOTH options and list_options for compatibility
-          question.options = JSON.stringify(options);
-          question.list_options = JSON.stringify(options);
-          console.log(`📋 T/F Options (Q${idx + 1}):`, options);
-        }
-      }
-
-      // Ordered List - Extract items
-      if (qType.includes('order') || qType.includes('rank')) {
-        let items = [];
-
-        // Method 1: ListItems column (semicolon-separated)
-        const listItemsCol = Object.keys(row).find(h => h.toLowerCase().includes('items'));
-        if (listItemsCol && row[listItemsCol]) {
-          items = row[listItemsCol].toString().split(';').map(i => i.trim()).filter(i => i);
-        } else {
-          // Method 2: Item 1, Item 2, etc. columns
-          for (let i = 1; i <= 10; i++) {
-            const itemCol = Object.keys(row).find(h => h.toLowerCase() === `item ${i}`);
-            if (itemCol && row[itemCol]) {
-              items.push(row[itemCol].toString().trim());
-            }
+          if (options.length > 0) {
+            question.options = JSON.stringify(options);
+            question.list_options = JSON.stringify(options);
+            console.log(`📋 MCQ (Q${idx + 1}): ${options.length} options`);
           }
         }
-
-        if (items.length > 0) {
-          question.list_items = JSON.stringify(items);
-          console.log(`📋 Ordered list items (Q${idx + 1}):`, items);
+        if (correctAnswer) {
+          question.correct_answer = correctAnswer;
+        }
+      } else if (questionType === 'true_false') {
+        // True/False: Answer specifies correct option
+        if (correctAnswer) {
+          question.correct_answer = correctAnswer;
+          question.options = JSON.stringify(['True', 'False']);
+          question.list_options = JSON.stringify(['True', 'False']);
         }
       }
 
-      // Free Text / Short Answer - Extract keywords
-      if (qType.includes('short') || qType.includes('free') || qType.includes('text')) {
-        const keywordsCol = Object.keys(row).find(h => h.toLowerCase().includes('keyword'));
-        if (keywordsCol && row[keywordsCol]) {
-          const keywords = row[keywordsCol].toString().split(';').map(k => k.trim()).filter(k => k);
-          if (keywords.length > 0) {
-            question.keywords = JSON.stringify(keywords);
-            console.log(`📋 Keywords for short answer (Q${idx + 1}):`, keywords);
-          }
-        }
-
-        // Also extract min/max word limits if available
-        const minWordsCol = Object.keys(row).find(h => h.toLowerCase().includes('min word'));
-        const maxWordsCol = Object.keys(row).find(h => h.toLowerCase().includes('max word'));
-        if (minWordsCol && row[minWordsCol]) question.min_words = parseInt(row[minWordsCol]) || null;
-        if (maxWordsCol && row[maxWordsCol]) question.max_words = parseInt(row[maxWordsCol]) || null;
-      }
-
-      // Essay - Extract word limits and keywords
-      if (qType.includes('essay') || qType.includes('paragraph')) {
-        const minWordsCol = Object.keys(row).find(h => h.toLowerCase().includes('min word'));
-        const maxWordsCol = Object.keys(row).find(h => h.toLowerCase().includes('max word'));
-        if (minWordsCol && row[minWordsCol]) question.min_words = parseInt(row[minWordsCol]) || null;
-        if (maxWordsCol && row[maxWordsCol]) question.max_words = parseInt(row[maxWordsCol]) || null;
-
-        const keywordsCol = Object.keys(row).find(h => h.toLowerCase().includes('keyword'));
-        if (keywordsCol && row[keywordsCol]) {
-          const keywords = row[keywordsCol].toString().split(';').map(k => k.trim()).filter(k => k);
-          if (keywords.length > 0) {
-            question.keywords = JSON.stringify(keywords);
-            console.log(`📋 Essay keywords (Q${idx + 1}):`, keywords);
-          }
-        }
-      }
-
-      // Dataset files - Extract file references if provided
-      const datasetFilesCol = Object.keys(row).find(h => h.toLowerCase().includes('dataset'));
-      if (datasetFilesCol && row[datasetFilesCol]) {
-        const files = row[datasetFilesCol].toString().split(';').map(f => f.trim()).filter(f => f);
+      // Parse dataset files (comma-separated)
+      if (mapping.dataset_files && row[mapping.dataset_files]) {
+        const files = row[mapping.dataset_files]
+          .toString()
+          .split(',')
+          .map(f => f.trim())
+          .filter(f => f);
         if (files.length > 0) {
           question.dataset_files = JSON.stringify(files);
-          console.log(`📋 Dataset files for Q${idx + 1}:`, files);
         }
       }
 
+      // Validation
       const validationErrors = [];
       if (!question.question_text) validationErrors.push('Missing question text');
       if (!question.question_type) validationErrors.push('Missing type');
-
-      // Don't require correct_answer for all types - some store answers differently
-      // MCQ/Pick List need list_options, Ordered List needs list_items, etc.
-
-      // Normalize type - more flexible matching
-      let normalizedType = question.question_type.toLowerCase().trim();
-      let matchedType = null;
-
-      if (normalizedType.includes('true') && normalizedType.includes('false')) {
-        matchedType = 'true_false';
-      } else if (normalizedType.includes('choice') || normalizedType === 'mcq') {
-        matchedType = 'mcq';
-      } else if (normalizedType.includes('pick') || normalizedType === 'dropdown') {
-        matchedType = 'pick_list';
-      } else if (normalizedType.includes('order') || normalizedType.includes('rank')) {
-        matchedType = 'ordered_list';
-      } else if (normalizedType.includes('short')) {
-        matchedType = 'short_answer';
-      } else if (normalizedType.includes('free') || normalizedType.includes('text')) {
-        matchedType = 'free_text';
-      } else if (normalizedType.includes('essay')) {
-        matchedType = 'essay';
-      }
-
-      if (matchedType) {
-        question.question_type = matchedType;
-      }
 
       const validTypes = ['true_false', 'mcq', 'pick_list', 'ordered_list', 'short_answer', 'free_text', 'essay'];
       if (!validTypes.includes(question.question_type)) {
@@ -535,7 +446,7 @@ function processQuestions(rows, mapping) {
     } catch (err) {
       errors.push({
         row: idx + 2,
-        question: '(Error)',
+        question: '(Error parsing row)',
         issues: [err.message]
       });
     }
