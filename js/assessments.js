@@ -284,11 +284,11 @@ async function handleAssessmentSave(e) {
       description: description,
       duration: duration,
       passing_score: passingScore,
-      modules: selectedModules,
-      questions: allQuestions,
-      total_points: totalPoints,
       status: 'draft'
     };
+
+    // Note: modules, questions, and total_points are NOT database fields
+    // They are calculated/related data - don't send them to update
 
     if (currentAssessmentEdit) {
       // Update existing assessment
