@@ -326,11 +326,55 @@ async function getAllQuestions() {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+
+    // Normalize JSON fields for all questions
+    return (data || []).map(q => normalizeQuestionData(q));
   } catch (error) {
     console.error('Error fetching questions:', error);
     throw error;
   }
+}
+
+/**
+ * Normalize question data - parse JSON fields
+ */
+function normalizeQuestionData(question) {
+  if (!question) return question;
+
+  // Parse JSON fields if they're strings
+  if (typeof question.list_options === 'string') {
+    try {
+      question.list_options = JSON.parse(question.list_options);
+    } catch (e) {
+      question.list_options = [];
+    }
+  }
+
+  if (typeof question.list_items === 'string') {
+    try {
+      question.list_items = JSON.parse(question.list_items);
+    } catch (e) {
+      question.list_items = [];
+    }
+  }
+
+  if (typeof question.keywords === 'string') {
+    try {
+      question.keywords = JSON.parse(question.keywords);
+    } catch (e) {
+      question.keywords = [];
+    }
+  }
+
+  if (typeof question.correct_order === 'string') {
+    try {
+      question.correct_order = JSON.parse(question.correct_order);
+    } catch (e) {
+      question.correct_order = [];
+    }
+  }
+
+  return question;
 }
 
 /**

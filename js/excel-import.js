@@ -8,7 +8,8 @@ let importState = {
   rawData: [],
   processedQuestions: [],
   validationErrors: [],
-  currentStep: 'upload'
+  currentStep: 'upload',
+  assessmentId: null
 };
 
 /**
@@ -30,6 +31,10 @@ function openExcelImportModal() {
     }
 
     // Create modal content
+    const assessmentOptions = window.allAssessments ? window.allAssessments.map(a =>
+      `<option value="${a.id}">${a.title}</option>`
+    ).join('') : '';
+
     const modalContent = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin: 0;">📊 Import Questions from Excel</h2>
@@ -38,7 +43,14 @@ function openExcelImportModal() {
 
       <div id="importStep1" style="display: block;">
         <div style="background: #f0f4f8; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          <h3>Select Excel File</h3>
+          <h3>1. Select Assessment</h3>
+          <select id="importAssessmentSelect" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px;">
+            <option value="">-- Select an assessment --</option>
+            ${assessmentOptions}
+          </select>
+          <p style="color: #666; font-size: 12px; margin: 5px 0;">Questions will be added to this assessment</p>
+
+          <h3 style="margin-top: 20px;">2. Select Excel File</h3>
           <p style="color: #666; font-size: 13px; margin: 10px 0;">
             Use the BECA-Question-Import-Template.xlsx with 19 columns
           </p>
@@ -114,12 +126,20 @@ function openExcelImportModal() {
  */
 async function startImport() {
   try {
+    // Validate assessment selection
+    const assessmentSelect = document.getElementById('importAssessmentSelect');
+    if (!assessmentSelect || !assessmentSelect.value) {
+      showMessage('❌ Please select an assessment first', 'error');
+      return;
+    }
+    importState.assessmentId = assessmentSelect.value;
+
     if (!importState.file) {
       showMessage('❌ No file selected', 'error');
       return;
     }
 
-    console.log('🚀 Starting import of', importState.file.name);
+    console.log('🚀 Starting import of', importState.file.name, 'to assessment:', importState.assessmentId);
 
     // Show progress
     document.getElementById('importStep1').style.display = 'none';
@@ -191,6 +211,7 @@ async function startImport() {
 async function importQuestions(questions) {
   try {
     let imported = 0;
+    let failed = 0;
     const total = questions.length;
 
     for (let i = 0; i < total; i++) {
@@ -200,16 +221,24 @@ async function importQuestions(questions) {
       document.getElementById('progressText').textContent = `Importing ${i + 1}/${total}...`;
 
       try {
+        // Add assessment_id to question before inserting
+        const questionToInsert = {
+          ...questions[i],
+          assessment_id: importState.assessmentId
+        };
+
         const client = await getSupabaseClient();
         const { error } = await client
           .from('assessment_questions')
-          .insert([questions[i]])
+          .insert([questionToInsert])
           .select();
 
         if (error) throw error;
         imported++;
+        console.log(`✅ Q${i + 1} imported successfully`);
       } catch (error) {
-        console.warn(`⚠️ Question ${i + 1} failed:`, error);
+        failed++;
+        console.warn(`⚠️ Question ${i + 1} failed:`, error.message);
       }
     }
 
@@ -219,15 +248,21 @@ async function importQuestions(questions) {
 
     const summary = `
       <div><strong style="color: #059669;">✅ ${imported} questions imported successfully</strong></div>
-      ${importState.validationErrors.length > 0 ? `<div style="color: #d97706; margin-top: 10px;">⚠️ ${importState.validationErrors.length} questions skipped (validation errors)</div>` : ''}
-      <div style="margin-top: 15px; padding: 10px; background: #f3f4f6; border-radius: 4px;">
-        Questions are now available in Question Bank and ready to use!
+      ${failed > 0 ? `<div style="color: #dc2626; margin-top: 10px;">❌ ${failed} questions failed</div>` : ''}
+      ${importState.validationErrors.length > 0 ? `<div style="color: #d97706; margin-top: 5px;">⚠️ ${importState.validationErrors.length} questions skipped (validation errors)</div>` : ''}
+      <div style="margin-top: 15px; padding: 10px; background: #f3f4f6; border-radius: 4px; font-size: 13px;">
+        <div>Total processed: ${total}</div>
+        <div>Success rate: ${Math.round((imported / total) * 100)}%</div>
       </div>
     `;
     document.getElementById('resultSummary').innerHTML = summary;
 
-    console.log(`✅ IMPORT COMPLETE: ${imported}/${total} questions`);
-    showMessage(`✅ Imported ${imported} questions!`, 'success');
+    console.log(`✅ IMPORT COMPLETE: ${imported}/${total} questions imported, ${failed} failed`);
+    if (imported > 0) {
+      showMessage(`✅ Imported ${imported}/${total} questions!`, 'success');
+    } else {
+      showMessage(`❌ Failed to import any questions. Check the browser console for details.`, 'error');
+    }
 
   } catch (error) {
     console.error('Error importing:', error);
@@ -236,7 +271,7 @@ async function importQuestions(questions) {
 }
 
 /**
- * Auto-detect column mapping
+ * Auto-detect column mapping - more flexible for various Excel formats
  */
 function autoDetectColumnMapping(rows) {
   if (rows.length === 0) return {};
@@ -248,22 +283,53 @@ function autoDetectColumnMapping(rows) {
   headers.forEach(header => {
     const lower = header.toLowerCase().trim();
 
-    if (lower.includes('question') && lower.includes('text')) {
-      mapping.question_text = header;
-    } else if (lower.includes('type')) {
-      mapping.question_type = header;
-    } else if (lower.includes('answer') && !lower.includes('all')) {
-      mapping.correct_answer = header;
-    } else if (lower.includes('difficulty') || lower.includes('skill')) {
-      mapping.difficulty = header;
-    } else if (lower.includes('category')) {
-      mapping.category = header;
-    } else if (lower.includes('tag')) {
-      mapping.tags = header;
+    // Question text - try multiple variations
+    if (!mapping.question_text) {
+      if ((lower.includes('question') && (lower.includes('text') || lower.includes('prompt'))) ||
+          lower === 'question' || lower === 'q' || lower.includes('question_text')) {
+        mapping.question_text = header;
+      }
+    }
+
+    // Question type
+    if (!mapping.question_type) {
+      if (lower.includes('type') || lower.includes('question_type') || lower === 'qtype') {
+        mapping.question_type = header;
+      }
+    }
+
+    // Correct answer
+    if (!mapping.correct_answer) {
+      if ((lower.includes('answer') && !lower.includes('all') && !lower.includes('option') && !lower.includes('true') && !lower.includes('false')) ||
+          lower === 'answer' || lower === 'correct') {
+        mapping.correct_answer = header;
+      }
+    }
+
+    // Difficulty
+    if (!mapping.difficulty) {
+      if (lower.includes('difficulty') || lower.includes('level') || lower.includes('skill')) {
+        mapping.difficulty = header;
+      }
+    }
+
+    // Category
+    if (!mapping.category) {
+      if (lower.includes('category') || lower === 'topic') {
+        mapping.category = header;
+      }
+    }
+
+    // Tags
+    if (!mapping.tags) {
+      if (lower.includes('tag') || lower.includes('keyword')) {
+        mapping.tags = header;
+      }
     }
   });
 
-  console.log('📋 Column mapping:', mapping);
+  console.log('📋 Auto-detected column mapping:', mapping);
+  console.log('📋 Available headers:', headers);
   return mapping;
 }
 
@@ -282,15 +348,15 @@ function processQuestions(rows, mapping) {
         correct_answer: row[mapping.correct_answer] || '',
         difficulty: row[mapping.difficulty] || null,
         category: row[mapping.category] || null,
-        tags: row[mapping.tags] || null,
-        points: row['Points'] || row['points'] || 5
+        tags: row[mapping.tags] || null
       };
 
       // Extract type-specific fields from Excel
-      const qType = question.question_type.toLowerCase();
+      // Note: question.question_type is still unnormalized at this point
+      const qType = question.question_type.toLowerCase().trim();
 
       // MCQ / Multiple Choice - Extract all options
-      if (qType.includes('choice') || qType === 'mcq' || qType === 'pick_list') {
+      if (qType.includes('choice') || qType.includes('mcq') || qType.includes('pick')) {
         let options = [];
 
         // Method 1: AllAnswers column (semicolon-separated)
@@ -308,27 +374,25 @@ function processQuestions(rows, mapping) {
         }
 
         if (options.length > 0) {
-          question.all_options = options;
           question.list_options = JSON.stringify(options);
           console.log(`📋 Options for ${qType} (Q${idx + 1}):`, options);
         }
       }
 
       // True/False - Extract both options if available
-      if (qType === 'true_false' || qType.includes('true') || qType.includes('false')) {
+      if (qType.includes('true') || qType.includes('false')) {
         const trueOptCol = Object.keys(row).find(h => h.toLowerCase().includes('true option'));
         const falseOptCol = Object.keys(row).find(h => h.toLowerCase().includes('false option'));
 
         if (trueOptCol && falseOptCol) {
           const options = [row[trueOptCol]?.toString() || 'True', row[falseOptCol]?.toString() || 'False'];
-          question.all_options = options;
           question.list_options = JSON.stringify(options);
           console.log(`📋 T/F options (Q${idx + 1}):`, options);
         }
       }
 
       // Ordered List - Extract items
-      if (qType.includes('ordered') || qType.includes('ranking')) {
+      if (qType.includes('order') || qType.includes('rank')) {
         let items = [];
 
         // Method 1: ListItems column (semicolon-separated)
@@ -369,8 +433,8 @@ function processQuestions(rows, mapping) {
         if (maxWordsCol && row[maxWordsCol]) question.max_words = parseInt(row[maxWordsCol]) || null;
       }
 
-      // Essay - Extract word limits
-      if (qType.includes('essay')) {
+      // Essay - Extract word limits and keywords
+      if (qType.includes('essay') || qType.includes('paragraph')) {
         const minWordsCol = Object.keys(row).find(h => h.toLowerCase().includes('min word'));
         const maxWordsCol = Object.keys(row).find(h => h.toLowerCase().includes('max word'));
         if (minWordsCol && row[minWordsCol]) question.min_words = parseInt(row[minWordsCol]) || null;
@@ -386,29 +450,46 @@ function processQuestions(rows, mapping) {
         }
       }
 
+      // Dataset files - Extract file references if provided
+      const datasetFilesCol = Object.keys(row).find(h => h.toLowerCase().includes('dataset'));
+      if (datasetFilesCol && row[datasetFilesCol]) {
+        const files = row[datasetFilesCol].toString().split(';').map(f => f.trim()).filter(f => f);
+        if (files.length > 0) {
+          question.dataset_files = JSON.stringify(files);
+          console.log(`📋 Dataset files for Q${idx + 1}:`, files);
+        }
+      }
+
       const validationErrors = [];
       if (!question.question_text) validationErrors.push('Missing question text');
       if (!question.question_type) validationErrors.push('Missing type');
-      if (!question.correct_answer) validationErrors.push('Missing answer');
 
-      // Normalize type
-      const typeMap = {
-        'true or false': 'true_false',
-        'truefal': 'true_false',
-        'true/false': 'true_false',
-        'multiple choice': 'mcq',
-        'mcq': 'mcq',
-        'pick list': 'pick_list',
-        'picklist': 'pick_list',
-        'dropdown': 'pick_list',
-        'ordered list': 'ordered_list',
-        'ranking': 'ordered_list',
-        'short answer': 'short_answer',
-        'free text': 'free_text',
-        'file upload': 'free_text',
-        'essay': 'essay'
-      };
-      question.question_type = typeMap[question.question_type.toLowerCase()] || question.question_type;
+      // Don't require correct_answer for all types - some store answers differently
+      // MCQ/Pick List need list_options, Ordered List needs list_items, etc.
+
+      // Normalize type - more flexible matching
+      let normalizedType = question.question_type.toLowerCase().trim();
+      let matchedType = null;
+
+      if (normalizedType.includes('true') && normalizedType.includes('false')) {
+        matchedType = 'true_false';
+      } else if (normalizedType.includes('choice') || normalizedType === 'mcq') {
+        matchedType = 'mcq';
+      } else if (normalizedType.includes('pick') || normalizedType === 'dropdown') {
+        matchedType = 'pick_list';
+      } else if (normalizedType.includes('order') || normalizedType.includes('rank')) {
+        matchedType = 'ordered_list';
+      } else if (normalizedType.includes('short')) {
+        matchedType = 'short_answer';
+      } else if (normalizedType.includes('free') || normalizedType.includes('text')) {
+        matchedType = 'free_text';
+      } else if (normalizedType.includes('essay')) {
+        matchedType = 'essay';
+      }
+
+      if (matchedType) {
+        question.question_type = matchedType;
+      }
 
       const validTypes = ['true_false', 'mcq', 'pick_list', 'ordered_list', 'short_answer', 'free_text', 'essay'];
       if (!validTypes.includes(question.question_type)) {

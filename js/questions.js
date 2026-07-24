@@ -290,15 +290,22 @@ async function openQuestionModal(questionId = null) {
             <label style="display: block; margin-bottom: 8px;"><input type="checkbox" name="fileType" value="pdf"> PDF Documents</label>
             <label style="display: block; margin-bottom: 8px;"><input type="checkbox" name="fileType" value="doc"> Word (.doc, .docx)</label>
             <label style="display: block; margin-bottom: 8px;"><input type="checkbox" name="fileType" value="image"> Images (JPG, PNG, GIF)</label>
+            <label style="display: block; margin-bottom: 8px;"><input type="checkbox" name="fileType" value="autodesk"> Autodesk Files (.dwg, .rvt, .rfa)</label>
             <label style="display: block;"><input type="checkbox" name="fileType" value="other"> Other Formats</label>
           </div>
           <div class="form-group">
             <label>Max File Size (MB)</label>
-            <input type="number" id="maxFileSize" value="50" min="1" max="100" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <input type="number" id="maxFileSize" value="50" min="1" max="500" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
           </div>
           <div class="form-group">
             <label>Instructions (Optional)</label>
             <textarea id="fileInstructions" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 60px;" placeholder="Provide instructions for file upload..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>📁 Upload Dataset Files (Optional)</label>
+            <p style="font-size: 12px; color: #666; margin: 5px 0;">Upload reference files that trainees will need. Save the question first to enable file uploads.</p>
+            <input type="file" id="datasetFiles" multiple style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <p style="font-size: 11px; color: #999; margin-top: 5px;">Supported: PDF, DOC, XLS, IMG, .dwg, .rvt, .rfa and other formats</p>
           </div>
         </div>
 
@@ -755,23 +762,27 @@ async function handleQuestionSave(e) {
       console.log('✅ Essay criteria collected');
     }
 
-    // Handle dataset upload
-    const datasetFile = document.getElementById('datasetFile').files[0];
-    let datasetUrl = null;
+    // Handle dataset file uploads (multiple files supported)
+    const datasetFilesInput = document.getElementById('datasetFiles');
+    const datasetFiles = datasetFilesInput ? Array.from(datasetFilesInput.files) : [];
+    const uploadedFileUrls = [];
 
     if (questionId) {
       // Update existing question
       await updateQuestion(questionId, questionData);
 
-      // Upload dataset if provided
-      if (datasetFile) {
+      // Upload datasets if provided
+      if (datasetFiles.length > 0) {
         try {
-          datasetUrl = await uploadQuestionDataset(questionId, datasetFile);
-          await updateQuestion(questionId, { dataset_url: datasetUrl });
-          showMessage('Question and dataset updated successfully!', 'success');
+          for (let file of datasetFiles) {
+            const fileUrl = await uploadQuestionDataset(questionId, file);
+            uploadedFileUrls.push(fileUrl);
+          }
+          await updateQuestion(questionId, { dataset_files: JSON.stringify(uploadedFileUrls) });
+          showMessage(`Question and ${datasetFiles.length} dataset file(s) updated successfully!`, 'success');
         } catch (uploadError) {
           console.error('Dataset upload warning:', uploadError);
-          showMessage('Question updated, but dataset upload failed. Please try again.', 'warning');
+          showMessage('Question updated, but some dataset uploads failed. Please try again.', 'warning');
         }
       } else {
         showMessage('Question updated successfully!', 'success');
@@ -780,15 +791,18 @@ async function handleQuestionSave(e) {
       // Create new question
       const newQuestion = await createQuestion(questionData);
 
-      // Upload dataset if provided
-      if (datasetFile && newQuestion?.id) {
+      // Upload datasets if provided
+      if (datasetFiles.length > 0 && newQuestion?.id) {
         try {
-          datasetUrl = await uploadQuestionDataset(newQuestion.id, datasetFile);
-          await updateQuestion(newQuestion.id, { dataset_url: datasetUrl });
-          showMessage('Question and dataset created successfully!', 'success');
+          for (let file of datasetFiles) {
+            const fileUrl = await uploadQuestionDataset(newQuestion.id, file);
+            uploadedFileUrls.push(fileUrl);
+          }
+          await updateQuestion(newQuestion.id, { dataset_files: JSON.stringify(uploadedFileUrls) });
+          showMessage(`Question and ${datasetFiles.length} dataset file(s) created successfully!`, 'success');
         } catch (uploadError) {
           console.error('Dataset upload warning:', uploadError);
-          showMessage('Question created, but dataset upload failed. Please try again.', 'warning');
+          showMessage('Question created, but some dataset uploads failed. Please try again.', 'warning');
         }
       } else {
         showMessage('Question created successfully!', 'success');
