@@ -470,12 +470,23 @@ async function confirmAndImport() {
           answer: question.correct_answer
         });
 
-        const result = await createQuestion(question);
-        console.log(`✅ Question ${i + 1} imported successfully:`, result?.id);
+        // Direct API call without retry wrapper
+        const client = await getSupabaseClient();
+        const { data, error } = await client
+          .from('assessment_questions')
+          .insert([question])
+          .select()
+          .single();
+
+        if (error) {
+          throw new Error(`Database error: ${error.message}`);
+        }
+
+        console.log(`✅ Question ${i + 1} imported successfully:`, data?.id);
         imported++;
       } catch (error) {
         console.error(`❌ Failed to import question ${i + 1}:`, error);
-        console.log('Question data:', question);
+        console.log('Question data that failed:', question);
         // Continue with next question even if one fails
       }
 
@@ -550,10 +561,21 @@ function resetImport() {
 /**
  * Close and refresh
  */
-function closeImportAndRefresh() {
-  closeModal('excelImportModal');
-  resetImport();
-  renderQuestions(); // Refresh question list
+async function closeImportAndRefresh() {
+  try {
+    closeModal('excelImportModal');
+    resetImport();
+
+    // Wait a moment for modal to close, then refresh
+    setTimeout(async () => {
+      console.log('🔄 Refreshing questions list...');
+      await renderQuestions();
+      showMessage('✅ Questions list refreshed!', 'success');
+    }, 500);
+  } catch (error) {
+    console.error('Error closing import:', error);
+    showMessage('Error: ' + error.message, 'error');
+  }
 }
 
 /**
