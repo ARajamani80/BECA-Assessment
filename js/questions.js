@@ -225,6 +225,23 @@ async function openQuestionModal(questionId = null) {
           <textarea id="questionText" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: Arial; resize: vertical; min-height: 80px;">${question?.question_text || ''}</textarea>
         </div>
 
+        <!-- Question Image -->
+        <div class="form-group">
+          <label>📷 Question Image (Optional)</label>
+          <p style="font-size: 12px; color: #666; margin: 5px 0;">Upload an image to display below the question text</p>
+          <input type="file" id="questionImageFile" accept="image/*" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;">
+
+          ${question?.question_image_url ? `
+            <div style="margin: 10px 0;">
+              <p style="font-size: 12px; color: #666; margin: 5px 0;">📸 Current Image:</p>
+              <img src="${question.question_image_url}" alt="Question image" style="max-width: 100%; max-height: 300px; border: 1px solid #ddd; border-radius: 4px;">
+              <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestionImage()" style="margin-top: 10px;">
+                <i class="fas fa-trash"></i> Remove Image
+              </button>
+            </div>
+          ` : ''}
+        </div>
+
         <div class="form-group">
           <label><span style="color: #dc2626;">*</span> Question Type</label>
           <select id="questionType" onchange="updateQuestionTypeFields()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
@@ -762,6 +779,10 @@ async function handleQuestionSave(e) {
       console.log('✅ Essay criteria collected');
     }
 
+    // Handle question image upload
+    const questionImageInput = document.getElementById('questionImageFile');
+    const questionImageFile = questionImageInput ? questionImageInput.files[0] : null;
+
     // Handle dataset file uploads (multiple files supported)
     const datasetFilesInput = document.getElementById('datasetFiles');
     const datasetFiles = datasetFilesInput ? Array.from(datasetFilesInput.files) : [];
@@ -770,6 +791,18 @@ async function handleQuestionSave(e) {
     if (questionId) {
       // Update existing question
       await updateQuestion(questionId, questionData);
+
+      // Upload question image if provided
+      if (questionImageFile) {
+        try {
+          const imageUrl = await uploadQuestionImage(questionId, questionImageFile);
+          await updateQuestion(questionId, { question_image_url: imageUrl });
+          console.log('✅ Question image uploaded:', imageUrl);
+        } catch (uploadError) {
+          console.warn('⚠️ Image upload failed:', uploadError);
+          showMessage('Question updated, but image upload failed.', 'warning');
+        }
+      }
 
       // Upload datasets if provided
       if (datasetFiles.length > 0) {
@@ -790,6 +823,17 @@ async function handleQuestionSave(e) {
     } else {
       // Create new question
       const newQuestion = await createQuestion(questionData);
+
+      // Upload question image if provided
+      if (questionImageFile && newQuestion?.id) {
+        try {
+          const imageUrl = await uploadQuestionImage(newQuestion.id, questionImageFile);
+          await updateQuestion(newQuestion.id, { question_image_url: imageUrl });
+          console.log('✅ Question image uploaded:', imageUrl);
+        } catch (uploadError) {
+          console.warn('⚠️ Image upload failed:', uploadError);
+        }
+      }
 
       // Upload datasets if provided
       if (datasetFiles.length > 0 && newQuestion?.id) {
@@ -814,6 +858,29 @@ async function handleQuestionSave(e) {
   } catch (error) {
     console.error('🔴 Error saving question:', error);
     showMessage('Error: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Remove question image
+ */
+async function removeQuestionImage() {
+  const questionId = document.getElementById('questionModal').dataset.questionId;
+  if (!questionId) {
+    showMessage('Cannot remove image - question not found', 'error');
+    return;
+  }
+
+  if (confirm('Are you sure you want to remove the question image?')) {
+    try {
+      await updateQuestion(questionId, { question_image_url: null });
+      showMessage('Image removed successfully!', 'success');
+      // Refresh the modal to show the change
+      await editQuestion(questionId);
+    } catch (error) {
+      console.error('Error removing image:', error);
+      showMessage('Error removing image', 'error');
+    }
   }
 }
 

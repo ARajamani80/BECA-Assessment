@@ -659,6 +659,74 @@ async function saveAuditLog(logEntry) {
 }
 
 /**
+ * Upload question image to Supabase storage
+ * @param {string} questionId - Question ID
+ * @param {File} file - Image file to upload
+ * @returns {Promise<string>} Public URL of the image
+ */
+async function uploadQuestionImage(questionId, file) {
+  try {
+    const client = await getSupabaseClient();
+
+    if (!file) {
+      throw new Error('No file provided');
+    }
+
+    // Validate image file
+    if (!file.type.startsWith('image/')) {
+      throw new Error('File must be an image');
+    }
+
+    // Create unique filename with timestamp
+    const timestamp = Date.now();
+    const fileName = `${timestamp}_${file.name}`;
+    const filePath = `question-images/${questionId}/${fileName}`;
+
+    // Upload file to storage
+    const { data, error } = await client.storage
+      .from('assessment-files')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) throw error;
+
+    // Get public URL
+    const { data: { publicUrl } } = client.storage
+      .from('assessment-files')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete question image from storage
+ * @param {string} questionId - Question ID
+ * @param {string} fileName - File name to delete
+ * @returns {Promise<void>}
+ */
+async function deleteQuestionImage(questionId, fileName) {
+  try {
+    const client = await getSupabaseClient();
+    const filePath = `question-images/${questionId}/${fileName}`;
+
+    const { error } = await client.storage
+      .from('assessment-files')
+      .remove([filePath]);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    throw error;
+  }
+}
+
+/**
  * Upload question dataset to Supabase storage
  * @param {string} questionId - Question ID
  * @param {File} file - File to upload
