@@ -15,7 +15,7 @@ let importState = {
 /**
  * Open Excel import modal
  */
-function openExcelImportModal() {
+async function openExcelImportModal() {
   try {
     console.log('📂 Opening Excel import modal...');
 
@@ -30,10 +30,41 @@ function openExcelImportModal() {
       document.body.appendChild(fileInput);
     }
 
+    // Ensure assessments are loaded
+    if (!window.allAssessments || window.allAssessments.length === 0) {
+      console.log('📋 Loading assessments...');
+      window.allAssessments = await getAllAssessments();
+    }
+
+    console.log('📊 Available assessments:', window.allAssessments?.length || 0);
+
     // Create modal content
-    const assessmentOptions = window.allAssessments ? window.allAssessments.map(a =>
-      `<option value="${a.id}">${a.title}</option>`
-    ).join('') : '';
+    const assessmentOptions = (window.allAssessments && window.allAssessments.length > 0)
+      ? window.allAssessments.map(a =>
+          `<option value="${a.id}">${a.title}</option>`
+        ).join('')
+      : '';
+
+    // Show warning if no assessments
+    let assessmentHtml = `
+      <h3>1. Select Assessment</h3>
+      <select id="importAssessmentSelect" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px;">
+        <option value="">-- Select an assessment --</option>
+        ${assessmentOptions}
+      </select>
+      <p style="color: #666; font-size: 12px; margin: 5px 0;">Questions will be added to this assessment</p>
+    `;
+
+    if (!assessmentOptions) {
+      assessmentHtml = `
+        <h3>⚠️ No Assessments Found</h3>
+        <div style="background: #fef3c7; padding: 12px; border-radius: 4px; border-left: 4px solid #f59e0b; margin-bottom: 15px;">
+          <p style="margin: 0; color: #92400e; font-size: 14px;">
+            Please create an assessment first before importing questions.
+          </p>
+        </div>
+      `;
+    }
 
     const modalContent = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -43,12 +74,7 @@ function openExcelImportModal() {
 
       <div id="importStep1" style="display: block;">
         <div style="background: #f0f4f8; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          <h3>1. Select Assessment</h3>
-          <select id="importAssessmentSelect" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px;">
-            <option value="">-- Select an assessment --</option>
-            ${assessmentOptions}
-          </select>
-          <p style="color: #666; font-size: 12px; margin: 5px 0;">Questions will be added to this assessment</p>
+          ${assessmentHtml}
 
           <h3 style="margin-top: 20px;">2. Select Excel File</h3>
           <p style="color: #666; font-size: 13px; margin: 10px 0;">
@@ -102,18 +128,47 @@ function openExcelImportModal() {
     document.getElementById('excelImportModalContent').innerHTML = modalContent;
     showModal('excelImportModal');
 
-    // File selection handler
-    fileInput.onchange = function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        console.log('✅ File selected:', file.name, 'Size:', file.size);
-        importState.file = file;
-        document.getElementById('fileDisplay').textContent = file.name;
-        document.getElementById('fileName').textContent = file.name;
-        document.getElementById('fileInfo').style.display = 'block';
-        document.getElementById('importStartBtn').disabled = false;
+    // Attach event listeners after modal is rendered
+    setTimeout(() => {
+      // File selection handler
+      fileInput.onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          console.log('✅ File selected:', file.name, 'Size:', file.size);
+          importState.file = file;
+          document.getElementById('fileDisplay').textContent = file.name;
+          document.getElementById('fileName').textContent = file.name;
+          document.getElementById('fileInfo').style.display = 'block';
+          document.getElementById('importStartBtn').disabled = false;
+        }
+      };
+
+      // Attach button click handlers with addEventListener
+      const importBtn = document.getElementById('importStartBtn');
+      if (importBtn) {
+        // Remove old listeners by replacing
+        const newBtn = importBtn.cloneNode(true);
+        importBtn.parentNode.replaceChild(newBtn, importBtn);
+
+        // Add new listener
+        document.getElementById('importStartBtn').addEventListener('click', async (e) => {
+          e.preventDefault();
+          console.log('🔘 Import button clicked');
+          await startImport();
+        });
       }
-    };
+
+      const cancelBtn = document.querySelector('button[onclick="closeModal(\'excelImportModal\')"]');
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          closeModal('excelImportModal');
+        });
+      }
+
+      console.log('✅ Modal event handlers attached');
+    }, 100);
+
 
   } catch (error) {
     console.error('Error opening modal:', error);
@@ -126,16 +181,26 @@ function openExcelImportModal() {
  */
 async function startImport() {
   try {
+    console.log('🔘 startImport() called');
+
     // Validate assessment selection
     const assessmentSelect = document.getElementById('importAssessmentSelect');
+    console.log('Assessment select element:', assessmentSelect);
+    console.log('Assessment value:', assessmentSelect?.value);
+
     if (!assessmentSelect || !assessmentSelect.value) {
-      showMessage('❌ Please select an assessment first', 'error');
+      const msg = '❌ Please select an assessment first';
+      console.error(msg);
+      showMessage(msg, 'error');
       return;
     }
     importState.assessmentId = assessmentSelect.value;
+    console.log('✅ Assessment selected:', importState.assessmentId);
 
     if (!importState.file) {
-      showMessage('❌ No file selected', 'error');
+      const msg = '❌ No file selected. Please choose an Excel file.';
+      console.error(msg);
+      showMessage(msg, 'error');
       return;
     }
 
