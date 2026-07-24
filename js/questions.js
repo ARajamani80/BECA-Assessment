@@ -907,11 +907,16 @@ async function deleteAllQuestions() {
 }
 
 /**
- * Download question import template
+ * Download question import template as Excel
  */
 function downloadQuestionTemplate() {
   try {
-    // Create a simple CSV template for questions
+    if (typeof XLSX === 'undefined') {
+      showMessage('❌ Excel library not loaded. Try refreshing the page.', 'error');
+      return;
+    }
+
+    // Column headers matching the 19-column format
     const headers = [
       'QuestionID',
       'QuestionName',
@@ -934,31 +939,155 @@ function downloadQuestionTemplate() {
       'UsedInTests'
     ];
 
-    // Create CSV content
-    let csv = headers.join(',') + '\n';
+    // Example data rows
+    const examples = [
+      [
+        '1001',
+        'ACAD-Basic-01',
+        'Basic AutoCAD Question',
+        'What is AutoCAD?',
+        'True or false',
+        'Yes',
+        'Yes;No',
+        'Basic',
+        'Basics',
+        'autocad;basics',
+        'training',
+        'sample.dwg',
+        'See PDF for coaching',
+        'coaching.pdf',
+        'https://example.com',
+        'learning.pdf',
+        'Author Name',
+        'Module 1',
+        'Test 1'
+      ],
+      [
+        '1002',
+        'ACAD-MCQ-01',
+        'Multiple Choice Question',
+        'Which command creates a line?',
+        'Multiple choice',
+        'LINE',
+        'LINE;CIRCLE;ARC;RECTANGLE',
+        'Intermediate',
+        'Drawing',
+        'commands;lines',
+        'training',
+        'sample.dwg',
+        'Multiple choice tips',
+        'coaching.pdf',
+        'https://example.com',
+        'learning.pdf',
+        'Author Name',
+        'Module 1',
+        'Test 1'
+      ],
+      [
+        '1003',
+        'ACAD-Essay-01',
+        'Essay Question',
+        'Explain the importance of layers',
+        'Essay',
+        'Important for organization',
+        '',
+        'Advanced',
+        'Layers',
+        'organization;layers',
+        'training',
+        '',
+        'Essay tips',
+        'coaching.pdf',
+        'https://example.com',
+        'learning.pdf',
+        'Author Name',
+        'Module 2',
+        'Test 2'
+      ]
+    ];
 
-    // Add 3 example rows
-    csv += '1001,ACAD-Basic-01,Basic AutoCAD Question,What is AutoCAD?,True or false,Yes,Yes;No,Basic,Basics,autocad;basics,training,sample.dwg,See PDF for coaching,coaching.pdf,https://example.com,learning.pdf,Author Name,Module 1,Test 1\n';
-    csv += '1002,ACAD-MCQ-01,Multiple Choice Question,Which command creates a line?,Multiple choice,LINE,LINE;CIRCLE;ARC;RECTANGLE,Intermediate,Drawing,commands;lines,training,sample.dwg,Multiple choice tips,coaching.pdf,https://example.com,learning.pdf,Author Name,Module 1,Test 1\n';
-    csv += '1003,ACAD-Essay-01,Essay Question,Explain the importance of layers,Essay,Important for organization,,,Advanced,Layers,organization;layers,training,,Essay tips,coaching.pdf,https://example.com,learning.pdf,Author Name,Module 2,Test 2\n';
+    // Add empty rows for user to fill
+    for (let i = 0; i < 47; i++) {
+      examples.push(Array(19).fill(''));
+    }
 
-    // Download as CSV
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
+    // Create workbook
+    const wb = XLSX.utils.book_new();
 
-    link.setAttribute('href', url);
-    link.setAttribute('download', `BECA-Question-Template-${new Date().getTime()}.csv`);
-    link.style.visibility = 'hidden';
+    // Template sheet with data
+    const templateData = [headers, ...examples];
+    const ws = XLSX.utils.aoa_to_sheet(templateData);
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 12 },  // QuestionID
+      { wch: 20 },  // QuestionName
+      { wch: 20 },  // QuestionSummary
+      { wch: 40 },  // QuestionText
+      { wch: 18 },  // Type
+      { wch: 20 },  // Answer
+      { wch: 30 },  // AllAnswers
+      { wch: 15 },  // SkillLevel
+      { wch: 20 },  // QuestionCategory
+      { wch: 25 },  // CategoryTags
+      { wch: 20 },  // TrainingTags
+      { wch: 25 },  // RelatedFiles
+      { wch: 25 },  // CoachingText
+      { wch: 20 },  // CoachingFiles
+      { wch: 25 },  // LearningText/Links
+      { wch: 20 },  // LearningFiles
+      { wch: 15 },  // Author
+      { wch: 30 },  // UsedInModules
+      { wch: 30 }   // UsedInTests
+    ];
 
-    showMessage('✅ Template downloaded successfully!', 'success');
+    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+
+    // Create instructions sheet
+    const instructions = [
+      ['BECA-ASSESSMENT QUESTION IMPORT TEMPLATE'],
+      [''],
+      ['INSTRUCTIONS:'],
+      ['1. Copy your questions from your existing Excel file'],
+      ['2. Paste into rows starting from row 4 (after examples)'],
+      ['3. Fill in all required columns: QuestionText, Type, Answer'],
+      ['4. Optional columns: SkillLevel, Category, Tags, etc.'],
+      ['5. In BECA-Assessment: Question Bank → Import Excel'],
+      ['6. Upload this file → Review → Confirm → Done!'],
+      [''],
+      ['REQUIRED COLUMNS:'],
+      ['• QuestionText - The actual question'],
+      ['• Type - True or false, Multiple choice, Pick List, Ordered List, Short Answer, Free text, Essay'],
+      ['• Answer - Correct answer'],
+      [''],
+      ['OPTIONAL COLUMNS:'],
+      ['• QuestionID - Unique identifier'],
+      ['• QuestionName - Short name'],
+      ['• QuestionSummary - Brief description'],
+      ['• AllAnswers - For MCQ/Pick List (semicolon-separated)'],
+      ['• SkillLevel - Basic, Intermediate, Advanced'],
+      ['• QuestionCategory - Topic/category'],
+      ['• CategoryTags - Tags (semicolon-separated)'],
+      ['• TrainingTags - Internal training tags'],
+      ['• RelatedFiles - Dataset files (.dwg, .rvt, etc.)'],
+      ['• CoachingText - Tips for instructors'],
+      ['• CoachingFiles - Coaching material files'],
+      ['• LearningText/Links - Learning resource links'],
+      ['• LearningFiles - Learning material files'],
+      ['• Author - Question creator']
+    ];
+
+    const ws_inst = XLSX.utils.aoa_to_sheet(instructions);
+    ws_inst['!cols'] = [{ wch: 60 }];
+    XLSX.utils.book_append_sheet(wb, ws_inst, 'Instructions');
+
+    // Download Excel file
+    XLSX.writeFile(wb, `BECA-Question-Template-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    showMessage('✅ Excel template downloaded successfully!', 'success');
   } catch (error) {
     console.error('Error downloading template:', error);
-    showMessage('Error downloading template: ' + error.message, 'error');
+    showMessage('❌ Error downloading template: ' + error.message, 'error');
   }
 }
 
