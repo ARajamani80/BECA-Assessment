@@ -339,8 +339,14 @@
         });
       });
 
-      // Initialize app
+      // Initialize app (delayed to ensure all scripts load)
       setTimeout(() => {
+        if (typeof initializeApp !== 'function') {
+          console.warn('⚠ initializeApp not yet loaded, retrying...');
+          setTimeout(arguments.callee, 100);
+          return;
+        }
+
         // First check if this is assessment taker mode (URL token parameter)
         const urlParams = new URLSearchParams(window.location.search);
         const takerToken = urlParams.get('token');
@@ -370,7 +376,7 @@
           document.getElementById('dashboardContainer').style.display = 'none';
           document.getElementById('takerContainer').style.display = 'none';
         }
-      }, 500);
+      }, 1000);
     });
   </script>
 </body>

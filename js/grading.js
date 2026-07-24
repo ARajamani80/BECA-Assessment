@@ -4,8 +4,7 @@
 // Handles viewing submissions, grading answers, and assigning scores
 
 let submissionsData = [];
-let currentPage = 1;
-let submissionsPerPage = 10;
+let gradingSubmissionsPerPage = 10;
 let filterStatus = 'all'; // all, submitted, graded, in_progress
 let currentGradingSubmission = null;
 let gradingState = {
