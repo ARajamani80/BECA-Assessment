@@ -884,25 +884,52 @@ async function deleteAllQuestions() {
     return;
   }
 
+  let btn = null;
+  let originalHtml = '';
+
   try {
-    const btn = document.querySelector('[onclick="deleteAllQuestions()"]');
-    const originalHtml = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+    btn = document.querySelector('[onclick="deleteAllQuestions()"]');
+    if (btn) {
+      originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+    }
+
+    console.log('🗑️ Deleting all questions...');
+    console.log('📊 Total questions to delete:', questionsData.length);
 
     const client = await getSupabaseClient();
-    const { error } = await client
-      .from('assessment_questions')
-      .delete()
-      .neq('id', null); // Delete all rows (match all since no ID is null)
 
-    if (error) throw error;
-    showMessage('✅ All questions deleted successfully!', 'success');
+    // Delete all questions one by one for better error handling
+    let deleted = 0;
+    for (const question of questionsData) {
+      try {
+        const { error } = await client
+          .from('assessment_questions')
+          .delete()
+          .eq('id', question.id);
+
+        if (error) {
+          console.warn(`⚠️ Failed to delete question ${question.id}:`, error);
+        } else {
+          deleted++;
+        }
+      } catch (err) {
+        console.warn(`⚠️ Error deleting question ${question.id}:`, err);
+      }
+    }
+
+    console.log(`✅ Deleted ${deleted}/${questionsData.length} questions`);
+    showMessage(`✅ Deleted ${deleted} question(s) successfully!`, 'success');
     await renderQuestions();
   } catch (error) {
+    console.error('❌ Error deleting questions:', error);
     showMessage('❌ Error: ' + error.message, 'error');
-    btn.disabled = false;
-    btn.innerHTML = originalHtml;
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
   }
 }
 

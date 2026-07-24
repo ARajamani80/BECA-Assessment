@@ -572,25 +572,52 @@ async function deleteAllModules() {
     return;
   }
 
+  let btn = null;
+  let originalHtml = '';
+
   try {
-    const btn = document.querySelector('[onclick="deleteAllModules()"]');
-    const originalHtml = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+    btn = document.querySelector('[onclick="deleteAllModules()"]');
+    if (btn) {
+      originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+    }
+
+    console.log('🗑️ Deleting all modules...');
+    console.log('📊 Total modules to delete:', allModules.length);
 
     const client = await getSupabaseClient();
-    const { error } = await client
-      .from('assessment_modules')
-      .delete()
-      .neq('id', null); // Delete all rows (match all since no ID is null)
 
-    if (error) throw error;
-    showMessage('✅ All modules deleted successfully!', 'success');
+    // Delete all modules one by one for better error handling
+    let deleted = 0;
+    for (const module of allModules) {
+      try {
+        const { error } = await client
+          .from('assessment_modules')
+          .delete()
+          .eq('id', module.id);
+
+        if (error) {
+          console.warn(`⚠️ Failed to delete module ${module.id}:`, error);
+        } else {
+          deleted++;
+        }
+      } catch (err) {
+        console.warn(`⚠️ Error deleting module ${module.id}:`, err);
+      }
+    }
+
+    console.log(`✅ Deleted ${deleted}/${allModules.length} modules`);
+    showMessage(`✅ Deleted ${deleted} module(s) successfully!`, 'success');
     await renderModules();
   } catch (error) {
+    console.error('❌ Error deleting modules:', error);
     showMessage('❌ Error: ' + error.message, 'error');
-    btn.disabled = false;
-    btn.innerHTML = originalHtml;
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
   }
 }
 
