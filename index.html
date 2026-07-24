@@ -5,10 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BECA Assessment Platform</title>
 
-  <!-- External Libraries -->
+  <!-- External Libraries - Multiple CDN Fallbacks -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Try unpkg CDN as fallback if jsdelivr is slow -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <!-- Supabase JS - Try cdnjs first, then unpkg fallback -->
+  <script>
+    console.log('📡 Attempting to load Supabase library from cdnjs...');
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase.js/2.38.0/supabase.umd.min.js"
+          onload="console.log('✅ Supabase loaded from cdnjs')"
+          onerror="console.warn('⚠️ cdnjs failed, trying unpkg...')"></script>
+  <script>
+    // Fallback: Try unpkg if cdnjs fails
+    if (!window.supabase) {
+      console.log('📡 cdnjs failed, loading from unpkg...');
+      var script = document.createElement('script');
+      script.src = 'https://unpkg.com/@supabase/supabase-js@2/dist/main.umd.min.js';
+      script.onload = function() { console.log('✅ Supabase loaded from unpkg'); };
+      script.onerror = function() { console.error('❌ All CDN attempts failed'); };
+      document.head.appendChild(script);
+    }
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
@@ -30,9 +48,17 @@
 
     async function initSupabaseNow() {
       return new Promise((resolve) => {
+        console.log('🔍 Checking for window.supabase...');
+        const startTime = Date.now();
+        let attempts = 0;
+
         const checkInterval = setInterval(() => {
+          attempts++;
+          const elapsed = Date.now() - startTime;
+
           if (window.supabase) {
             clearInterval(checkInterval);
+            console.log(`✅ Supabase library loaded in ${elapsed}ms after ${attempts} attempts`);
             try {
               supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
               supabaseInitialized = true;
@@ -42,15 +68,18 @@
               console.error('❌ Failed to create Supabase client:', err);
               resolve(false);
             }
+          } else if (attempts % 20 === 0) {
+            console.log(`⏳ Still waiting for Supabase... (${elapsed}ms)`);
           }
         }, 50);
 
-        // Timeout after 60 seconds (increased for slow CDN)
+        // Timeout after 90 seconds (extended for very slow CDN)
         setTimeout(() => {
           clearInterval(checkInterval);
-          console.error('❌ Supabase library timeout');
+          console.error('❌ Supabase library timeout after 90 seconds');
+          console.error('⚠️ Possible causes: Network blocked, CDN down, or very slow connection');
           resolve(false);
-        }, 60000);
+        }, 90000);
       });
     }
 
