@@ -494,7 +494,8 @@ async function savePermissionChanges() {
     });
 
     // Save to database (API call)
-    const { error } = await supabase
+    const client = await getSupabaseClient();
+    const { error } = await client
       .from('role_permissions')
       .upsert(
         Object.entries(permissions).map(([role, perms]) => ({
@@ -507,11 +508,11 @@ async function savePermissionChanges() {
 
     if (error) throw error;
 
-    showMessage('Permissions saved successfully!', 'success');
+    showMessage('✅ Permissions saved successfully!', 'success');
     closeModal('permissionEditorModal');
     renderUsers();
   } catch (error) {
-    showMessage('Error saving permissions: ' + error.message, 'error');
+    showMessage('❌ Error saving permissions: ' + error.message, 'error');
   }
 }
 

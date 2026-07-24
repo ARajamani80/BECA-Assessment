@@ -38,6 +38,9 @@ async function renderModules() {
             <button class="btn btn-secondary btn-sm" id="refreshModulesBtn" onclick="refreshModuleBank()" title="Refresh modules list">
               <i class="fas fa-redo"></i> Refresh
             </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteAllModules()" title="Delete all modules">
+              <i class="fas fa-trash-alt"></i> Delete All
+            </button>
           </div>
         </div>
 
@@ -543,16 +546,49 @@ function deleteModuleConfirm(moduleId) {
  */
 async function deleteModule(moduleId) {
   try {
-    const { error } = await supabase
-      .from('modules')
+    const client = await getSupabaseClient();
+    const { error } = await client
+      .from('assessment_modules')
       .delete()
       .eq('id', moduleId);
 
     if (error) throw error;
-    showMessage('Module deleted successfully!', 'success');
+    showMessage('✅ Module deleted successfully!', 'success');
     await renderModules();
   } catch (error) {
-    showMessage('Error deleting module: ' + error.message, 'error');
+    showMessage('❌ Error deleting module: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Delete all modules with confirmation
+ */
+async function deleteAllModules() {
+  if (!confirm('⚠️ DELETE ALL MODULES?\n\nThis action cannot be undone. All modules will be permanently deleted.')) {
+    return;
+  }
+
+  if (!confirm('🚨 Final confirmation: Delete ALL modules? This will affect all assessments.')) {
+    return;
+  }
+
+  try {
+    const btn = document.querySelector('[onclick="deleteAllModules()"]');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+    const client = await getSupabaseClient();
+    const { error } = await client
+      .from('assessment_modules')
+      .delete()
+      .gt('id', ''); // Delete all rows
+
+    if (error) throw error;
+    showMessage('✅ All modules deleted successfully!', 'success');
+    await renderModules();
+  } catch (error) {
+    showMessage('❌ Error: ' + error.message, 'error');
   }
 }
 

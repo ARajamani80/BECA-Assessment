@@ -41,6 +41,9 @@ async function renderQuestions() {
             <button class="btn btn-secondary btn-sm" id="refreshQuestionsBtn" onclick="refreshQuestionBank()" title="Refresh questions list">
               <i class="fas fa-redo"></i> Refresh
             </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteAllQuestions()" title="Delete all questions">
+              <i class="fas fa-trash-alt"></i> Delete All
+            </button>
           </div>
         </div>
 
@@ -855,16 +858,105 @@ function deleteQuestionConfirm(questionId) {
  */
 async function deleteQuestion(questionId) {
   try {
-    const { error } = await supabase
-      .from('questions')
+    const client = await getSupabaseClient();
+    const { error } = await client
+      .from('assessment_questions')
       .delete()
       .eq('id', questionId);
 
     if (error) throw error;
-    showMessage('Question deleted successfully!', 'success');
+    showMessage('✅ Question deleted successfully!', 'success');
     await renderQuestions();
   } catch (error) {
-    showMessage('Error deleting question: ' + error.message, 'error');
+    showMessage('❌ Error deleting question: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Delete all questions with confirmation
+ */
+async function deleteAllQuestions() {
+  if (!confirm('⚠️ DELETE ALL QUESTIONS?\n\nThis action cannot be undone. All questions will be permanently deleted.')) {
+    return;
+  }
+
+  if (!confirm('🚨 Final confirmation: Delete ALL questions? This will affect all modules and assessments.')) {
+    return;
+  }
+
+  try {
+    const btn = document.querySelector('[onclick="deleteAllQuestions()"]');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+    const client = await getSupabaseClient();
+    const { error } = await client
+      .from('assessment_questions')
+      .delete()
+      .gt('id', ''); // Delete all rows
+
+    if (error) throw error;
+    showMessage('✅ All questions deleted successfully!', 'success');
+    await renderQuestions();
+  } catch (error) {
+    showMessage('❌ Error: ' + error.message, 'error');
+  }
+}
+
+/**
+ * Download question import template
+ */
+function downloadQuestionTemplate() {
+  try {
+    // Create a simple CSV template for questions
+    const headers = [
+      'QuestionID',
+      'QuestionName',
+      'QuestionSummary',
+      'QuestionText',
+      'Type',
+      'Answer',
+      'AllAnswers',
+      'SkillLevel',
+      'QuestionCategory',
+      'CategoryTags',
+      'TrainingTags',
+      'RelatedFiles',
+      'CoachingText',
+      'CoachingFiles',
+      'LearningText/Links',
+      'LearningFiles',
+      'Author',
+      'UsedInModules',
+      'UsedInTests'
+    ];
+
+    // Create CSV content
+    let csv = headers.join(',') + '\n';
+
+    // Add 3 example rows
+    csv += '1001,ACAD-Basic-01,Basic AutoCAD Question,What is AutoCAD?,True or false,Yes,Yes;No,Basic,Basics,autocad;basics,training,sample.dwg,See PDF for coaching,coaching.pdf,https://example.com,learning.pdf,Author Name,Module 1,Test 1\n';
+    csv += '1002,ACAD-MCQ-01,Multiple Choice Question,Which command creates a line?,Multiple choice,LINE,LINE;CIRCLE;ARC;RECTANGLE,Intermediate,Drawing,commands;lines,training,sample.dwg,Multiple choice tips,coaching.pdf,https://example.com,learning.pdf,Author Name,Module 1,Test 1\n';
+    csv += '1003,ACAD-Essay-01,Essay Question,Explain the importance of layers,Essay,Important for organization,,,Advanced,Layers,organization;layers,training,,Essay tips,coaching.pdf,https://example.com,learning.pdf,Author Name,Module 2,Test 2\n';
+
+    // Download as CSV
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `BECA-Question-Template-${new Date().getTime()}.csv`);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showMessage('✅ Template downloaded successfully!', 'success');
+  } catch (error) {
+    console.error('Error downloading template:', error);
+    showMessage('Error downloading template: ' + error.message, 'error');
   }
 }
 
