@@ -37,6 +37,36 @@ if (typeof getSupabaseClient !== 'function') {
   initSupabase();
 }
 
+/**
+ * Retry wrapper for API calls with exponential backoff
+ * @param {Function} fn - Function to retry
+ * @param {number} maxRetries - Max retry attempts (default 3)
+ * @param {number} delay - Initial delay in ms (default 1000)
+ * @returns {Promise} Result of function call
+ */
+async function withRetry(fn, maxRetries = 3, delay = 1000) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 API Call Attempt ${attempt}/${maxRetries}`);
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      console.warn(`⚠ Attempt ${attempt} failed:`, error.message);
+
+      if (attempt < maxRetries) {
+        const waitTime = delay * Math.pow(2, attempt - 1); // Exponential backoff
+        console.log(`⏳ Retrying in ${waitTime}ms...`);
+        await new Promise(r => setTimeout(r, waitTime));
+      }
+    }
+  }
+
+  console.error(`❌ All ${maxRetries} attempts failed`);
+  throw lastError;
+}
+
 
 /**
  * Get assessments
@@ -169,25 +199,27 @@ async function getAssessmentModules(assessmentId) {
 }
 
 /**
- * Create module
+ * Create module (with retry logic)
  * @param {object} data - Module data
  * @returns {Promise<object>} Created module
  */
 async function createModule(data) {
-  try {
-    const client = await getSupabaseClient();
-    const { data: result, error } = await client
-      .from('assessment_modules')
-      .insert([data])
-      .select()
-      .single();
+  return withRetry(async () => {
+    try {
+      const client = await getSupabaseClient();
+      const { data: result, error } = await client
+        .from('assessment_modules')
+        .insert([data])
+        .select()
+        .single();
 
-    if (error) throw error;
-    return result;
-  } catch (error) {
-    console.error('Error creating module:', error);
-    throw error;
-  }
+      if (error) throw error;
+      return result;
+    } catch (error) {
+      console.error('Error creating module:', error);
+      throw error;
+    }
+  }, 3, 1000);
 }
 
 /**
@@ -197,21 +229,23 @@ async function createModule(data) {
  * @returns {Promise<object>} Updated module
  */
 async function updateModule(id, data) {
-  try {
-    const client = await getSupabaseClient();
-    const { data: result, error } = await client
-      .from('assessment_modules')
-      .update(data)
-      .eq('id', id)
-      .select()
-      .single();
+  return withRetry(async () => {
+    try {
+      const client = await getSupabaseClient();
+      const { data: result, error } = await client
+        .from('assessment_modules')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
 
-    if (error) throw error;
-    return result;
-  } catch (error) {
-    console.error('Error updating module:', error);
-    throw error;
-  }
+      if (error) throw error;
+      return result;
+    } catch (error) {
+      console.error('Error updating module:', error);
+      throw error;
+    }
+  }, 3, 1000);
 }
 
 /**
@@ -301,20 +335,22 @@ async function getAllQuestions() {
  * @returns {Promise<object>} Created question
  */
 async function createQuestion(data) {
-  try {
-    const client = await getSupabaseClient();
-    const { data: result, error } = await client
-      .from('assessment_questions')
-      .insert([data])
-      .select()
-      .single();
+  return withRetry(async () => {
+    try {
+      const client = await getSupabaseClient();
+      const { data: result, error } = await client
+        .from('assessment_questions')
+        .insert([data])
+        .select()
+        .single();
 
-    if (error) throw error;
-    return result;
-  } catch (error) {
-    console.error('Error creating question:', error);
-    throw error;
-  }
+      if (error) throw error;
+      return result;
+    } catch (error) {
+      console.error('Error creating question:', error);
+      throw error;
+    }
+  }, 3, 1000);
 }
 
 /**
@@ -324,21 +360,23 @@ async function createQuestion(data) {
  * @returns {Promise<object>} Updated question
  */
 async function updateQuestion(id, data) {
-  try {
-    const client = await getSupabaseClient();
-    const { data: result, error } = await client
-      .from('assessment_questions')
-      .update(data)
-      .eq('id', id)
-      .select()
-      .single();
+  return withRetry(async () => {
+    try {
+      const client = await getSupabaseClient();
+      const { data: result, error } = await client
+        .from('assessment_questions')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
 
-    if (error) throw error;
-    return result;
-  } catch (error) {
-    console.error('Error updating question:', error);
-    throw error;
-  }
+      if (error) throw error;
+      return result;
+    } catch (error) {
+      console.error('Error updating question:', error);
+      throw error;
+    }
+  }, 3, 1000);
 }
 
 /**
