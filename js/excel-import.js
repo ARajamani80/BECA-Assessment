@@ -33,7 +33,13 @@ async function openExcelImportModal() {
     // Ensure assessments are loaded
     if (!window.allAssessments || window.allAssessments.length === 0) {
       console.log('📋 Loading assessments...');
-      window.allAssessments = await getAllAssessments();
+      try {
+        window.allAssessments = await getAssessments();
+        console.log('✅ Assessments loaded:', window.allAssessments.length);
+      } catch (error) {
+        console.error('❌ Error loading assessments:', error);
+        window.allAssessments = [];
+      }
     }
 
     console.log('📊 Available assessments:', window.allAssessments?.length || 0);
