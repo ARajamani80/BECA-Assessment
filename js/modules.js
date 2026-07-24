@@ -347,15 +347,29 @@ async function handleModuleSave(e) {
     }
 
     // Link selected questions to this module
-    const selectedQuestionIds = Array.from(document.querySelectorAll('.module-question-checkbox:checked'))
+    console.log('🔍 Looking for checkboxes...');
+    const allCheckboxes = document.querySelectorAll('.module-question-checkbox');
+    console.log('📊 Total checkboxes found:', allCheckboxes.length);
+
+    allCheckboxes.forEach((cb, i) => {
+      console.log(`  Checkbox ${i}: value=${cb.value}, checked=${cb.checked}`);
+    });
+
+    const selectedQuestionIds = Array.from(allCheckboxes)
+      .filter(cb => cb.checked)
       .map(cb => cb.value);
+
+    console.log('✅ Selected question IDs:', selectedQuestionIds);
 
     if (selectedQuestionIds.length > 0) {
       console.log('🔗 Linking', selectedQuestionIds.length, 'questions to module');
       for (const questionId of selectedQuestionIds) {
+        console.log(`  → Updating question ${questionId} with module_id: ${createdModuleId}`);
         await updateQuestion(questionId, { module_id: createdModuleId });
       }
       console.log('✅ All questions linked to module');
+    } else {
+      console.log('⚠️ No questions selected for this module');
     }
 
     closeModal('moduleModal');
