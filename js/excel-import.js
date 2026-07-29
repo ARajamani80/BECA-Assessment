@@ -381,131 +381,105 @@ function processQuestions(rows, mapping) {
           question.keywords = JSON.stringify([correctAnswer]);
         }
       } else if (questionType === 'pick_list') {
-        // Pick List: parse AllAnswers by newline into options
+        // Pick List: parse AllAnswers (space-separated values)
         if (allAnswers) {
-          // Split by newline first (preferred), then by semicolon/comma
-          let rawOptions = allAnswers.includes('\n')
-            ? allAnswers.split('\n').map(o => o.trim()).filter(o => o)
-            : allAnswers.split(/[;,]/).map(o => o.trim()).filter(o => o);
+          let options = allAnswers.split(/\s+/).filter(o => o.trim());
 
-          // Extract option text (remove A), B), etc. if present)
-          let options = rawOptions.map(opt => {
-            // Check if starts with letter+) like "A) option text"
-            const match = opt.match(/^[A-Z]\)\s*(.+)$/);
-            return match ? match[1] : opt;
-          });
+          console.log(`📋 Pick List (Q${idx + 1}) - AllAnswers: "${allAnswers.substring(0, 50)}..."`);
+          console.log(`   Options: ${options.length} items -`, options);
 
           if (options.length > 0) {
-            question.options = JSON.stringify(options);
-            question.list_options = JSON.stringify(options);
-            console.log(`📋 Pick List (Q${idx + 1}): ${options.length} options`);
-          }
-        }
-        // Correct answer identifies which option(s) are correct
-        if (correctAnswer) {
-          question.correct_answer = correctAnswer;
-        }
-      } else if (questionType === 'mcq') {
-        // MCQ: parse AllAnswers with proper format handling
-        if (allAnswers) {
-          console.log(`📋 MCQ (Q${idx + 1}) - Raw AllAnswers:`, JSON.stringify(allAnswers.substring(0, 100)));
-          console.log(`   Length: ${allAnswers.length}, Contains newline: ${allAnswers.includes('\n')}`);
-
-          let rawOptions = [];
-
-          // Try different split methods
-          if (allAnswers.includes('\n')) {
-            console.log(`   → Splitting by newline`);
-            rawOptions = allAnswers.split('\n').map(o => o.trim()).filter(o => o);
-          } else if (allAnswers.includes('\r\n')) {
-            console.log(`   → Splitting by CRLF`);
-            rawOptions = allAnswers.split('\r\n').map(o => o.trim()).filter(o => o);
-          } else if (allAnswers.includes(';')) {
-            console.log(`   → Splitting by semicolon`);
-            rawOptions = allAnswers.split(';').map(o => o.trim()).filter(o => o);
-          } else if (allAnswers.includes(',')) {
-            console.log(`   → Splitting by comma`);
-            rawOptions = allAnswers.split(/,(?![^)]*\))/).map(o => o.trim()).filter(o => o);
-          } else {
-            console.log(`   → Using as single item`);
-            rawOptions = [allAnswers];
-          }
-
-          console.log(`   Raw options after split: ${rawOptions.length} items`, rawOptions);
-
-          // Extract option text and find correct index
-          let options = [];
-          let correctIndex = -1;
-
-          rawOptions.forEach((opt, idx) => {
-            // Check if starts with letter+) like "A) option text"
-            const match = opt.match(/^([A-Z])\)\s*(.+)$/);
-            if (match) {
-              const letter = match[1];
-              const text = match[2].trim();
-              options.push(text);
-
-              // Check if this option is the correct answer
-              if (correctAnswer && correctAnswer.toUpperCase().includes(letter)) {
-                correctIndex = idx;
-              }
-            } else if (opt.trim()) {
-              options.push(opt.trim());
-            }
-          });
-
-          if (options.length > 0) {
-            console.log(`   Options array before stringify:`, options);
             const optionsJson = JSON.stringify(options);
-            console.log(`   Options after stringify:`, optionsJson);
-
             question.options = optionsJson;
             question.list_options = optionsJson;
 
-            console.log(`   Stored in question.options:`, question.options);
+            // Find correct answer - match the value in the Answer column
+            if (correctAnswer && correctAnswer.trim()) {
+              const correctValue = correctAnswer.toString().trim();
+              const correctIndex = options.findIndex(opt => opt.toString() === correctValue);
 
-            // Set correct_answer to the option text
-            if (correctIndex >= 0) {
-              question.correct_answer = options[correctIndex];
-            } else if (correctAnswer) {
-              question.correct_answer = correctAnswer;
+              if (correctIndex >= 0) {
+                question.correct_answer = options[correctIndex];
+                console.log(`   ✅ Correct: "${options[correctIndex]}" (index ${correctIndex})`);
+              } else {
+                question.correct_answer = correctValue;
+              }
+            }
+
+            console.log(`✅ Pick List (Q${idx + 1}): ${options.length} options`);
+          }
+        }
+      } else if (questionType === 'mcq') {
+        // MCQ: parse AllAnswers (space-separated values like "1 2 3 4 5")
+        if (allAnswers) {
+          console.log(`📋 MCQ (Q${idx + 1}) - AllAnswers: "${allAnswers}", Answer: "${correctAnswer}"`);
+
+          // Split by spaces to get individual options
+          let options = allAnswers.split(/\s+/).filter(o => o.trim());
+
+          console.log(`   Options (space-split): ${options.length} items -`, options);
+
+          if (options.length > 0) {
+            const optionsJson = JSON.stringify(options);
+            question.options = optionsJson;
+            question.list_options = optionsJson;
+
+            // Find correct answer - match the value in the Answer column
+            if (correctAnswer && correctAnswer.trim()) {
+              const correctValue = correctAnswer.toString().trim();
+              const correctIndex = options.findIndex(opt => opt.toString() === correctValue);
+
+              if (correctIndex >= 0) {
+                question.correct_answer = options[correctIndex];
+                console.log(`   ✅ Correct answer: "${options[correctIndex]}" (index ${correctIndex})`);
+              } else {
+                question.correct_answer = correctValue;
+                console.log(`   ⚠️ Answer "${correctValue}" not found in options, storing as-is`);
+              }
             }
 
             console.log(`✅ MCQ (Q${idx + 1}): ${options.length} options - ${options.join(' | ')}`);
           } else {
-            console.warn(`⚠️ MCQ (Q${idx + 1}): No options extracted`);
+            console.warn(`⚠️ MCQ (Q${idx + 1}): No options extracted from AllAnswers`);
           }
         } else if (correctAnswer) {
           question.correct_answer = correctAnswer;
         }
       } else if (questionType === 'true_false') {
-        // True/False: Answer specifies correct option
+        // True/False: Create True/False options and mark correct one
+        question.options = JSON.stringify(['True', 'False']);
+        question.list_options = JSON.stringify(['True', 'False']);
+
         if (correctAnswer) {
-          question.correct_answer = correctAnswer;
-          question.options = JSON.stringify(['True', 'False']);
-          question.list_options = JSON.stringify(['True', 'False']);
-          console.log(`📋 T/F (Q${idx + 1}): correct = ${correctAnswer}`);
+          const answer = correctAnswer.toString().trim().toLowerCase();
+          if (answer === 'true' || answer === 't' || answer === '1') {
+            question.correct_answer = 'True';
+          } else if (answer === 'false' || answer === 'f' || answer === '0') {
+            question.correct_answer = 'False';
+          } else {
+            question.correct_answer = correctAnswer;
+          }
+          console.log(`📋 T/F (Q${idx + 1}): correct = ${question.correct_answer}`);
         }
       } else if (questionType === 'ordered_list') {
-        // Ordered List: try to extract items from AllAnswers or Items column
+        // Ordered List: parse AllAnswers as space-separated items
         if (allAnswers) {
-          let items = allAnswers.includes('\n')
-            ? allAnswers.split('\n').map(i => i.trim()).filter(i => i)
-            : allAnswers.split(/[;,]/).map(i => i.trim()).filter(i => i);
+          let items = allAnswers.split(/\s+/).filter(i => i.trim());
 
-          // Remove numbering if present (1. Item, 2. Item)
-          items = items.map(item => {
-            const match = item.match(/^\d+[\.\)]\s*(.+)$/);
-            return match ? match[1] : item;
-          });
+          console.log(`📋 Ordered List (Q${idx + 1}) - AllAnswers: "${allAnswers}", Answer: "${correctAnswer}"`);
+          console.log(`   Items: ${items.length} -`, items);
 
           if (items.length > 0) {
-            question.list_items = JSON.stringify(items);
-            console.log(`📋 Ordered List (Q${idx + 1}): ${items.length} items`);
+            const itemsJson = JSON.stringify(items);
+            question.list_items = itemsJson;
+
+            // If Answer is provided, use it as correct_order or reference
+            if (correctAnswer && correctAnswer.trim()) {
+              question.correct_answer = correctAnswer;
+            }
+
+            console.log(`✅ Ordered List (Q${idx + 1}): ${items.length} items`);
           }
-        }
-        if (correctAnswer) {
-          question.correct_answer = correctAnswer;
         }
       }
 
