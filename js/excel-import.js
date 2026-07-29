@@ -408,27 +408,30 @@ function processQuestions(rows, mapping) {
       } else if (questionType === 'mcq') {
         // MCQ: parse AllAnswers with proper format handling
         if (allAnswers) {
-          console.log(`📋 MCQ (Q${idx + 1}) - Raw AllAnswers:`, allAnswers.substring(0, 100));
+          console.log(`📋 MCQ (Q${idx + 1}) - Raw AllAnswers:`, JSON.stringify(allAnswers.substring(0, 100)));
+          console.log(`   Length: ${allAnswers.length}, Contains newline: ${allAnswers.includes('\n')}`);
 
           let rawOptions = [];
 
           // Try different split methods
           if (allAnswers.includes('\n')) {
-            // Split by newline
+            console.log(`   → Splitting by newline`);
             rawOptions = allAnswers.split('\n').map(o => o.trim()).filter(o => o);
           } else if (allAnswers.includes('\r\n')) {
-            // Split by CRLF
+            console.log(`   → Splitting by CRLF`);
             rawOptions = allAnswers.split('\r\n').map(o => o.trim()).filter(o => o);
           } else if (allAnswers.includes(';')) {
-            // Split by semicolon
+            console.log(`   → Splitting by semicolon`);
             rawOptions = allAnswers.split(';').map(o => o.trim()).filter(o => o);
           } else if (allAnswers.includes(',')) {
-            // Split by comma (but be careful with "A), B)" format)
+            console.log(`   → Splitting by comma`);
             rawOptions = allAnswers.split(/,(?![^)]*\))/).map(o => o.trim()).filter(o => o);
           } else {
-            // No clear delimiter - might be space separated with A) B) C) format
+            console.log(`   → Using as single item`);
             rawOptions = [allAnswers];
           }
+
+          console.log(`   Raw options after split: ${rawOptions.length} items`, rawOptions);
 
           // Extract option text and find correct index
           let options = [];
@@ -452,8 +455,14 @@ function processQuestions(rows, mapping) {
           });
 
           if (options.length > 0) {
-            question.options = JSON.stringify(options);
-            question.list_options = JSON.stringify(options);
+            console.log(`   Options array before stringify:`, options);
+            const optionsJson = JSON.stringify(options);
+            console.log(`   Options after stringify:`, optionsJson);
+
+            question.options = optionsJson;
+            question.list_options = optionsJson;
+
+            console.log(`   Stored in question.options:`, question.options);
 
             // Set correct_answer to the option text
             if (correctIndex >= 0) {
