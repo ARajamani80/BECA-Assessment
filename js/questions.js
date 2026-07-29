@@ -248,9 +248,9 @@ async function openQuestionModal(questionId = null) {
             <option value="mcq" ${questionType === 'mcq' ? 'selected' : ''}>MCQ - Multiple Choice Question</option>
             <option value="true_false" ${questionType === 'true_false' ? 'selected' : ''}>T/F - True/False</option>
             <option value="pick_list" ${questionType === 'pick_list' ? 'selected' : ''}>PL - Pick List (Dropdown)</option>
-            <option value="file_upload" ${questionType === 'file_upload' ? 'selected' : ''}>FT - File Upload with Dataset</option>
+            <option value="free_text" ${questionType === 'free_text' ? 'selected' : ''}>FT - Free Text</option>
             <option value="ordered_list" ${questionType === 'ordered_list' ? 'selected' : ''}>OL - Ordered List (Ranking)</option>
-            <option value="shortanswer" ${questionType === 'shortanswer' ? 'selected' : ''}>SA - Short Answer</option>
+            <option value="short_answer" ${questionType === 'short_answer' ? 'selected' : ''}>SA - Short Answer</option>
             <option value="essay" ${questionType === 'essay' ? 'selected' : ''}>EA - Essay</option>
           </select>
         </div>
@@ -336,6 +336,21 @@ async function openQuestionModal(questionId = null) {
           </button>
         </div>
 
+        <!-- Free Text -->
+        <div id="freeTextFieldsContainer" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0; opacity: 0; transition: opacity 0.3s;">
+          <h4 style="margin-top: 0; color: #1e293b;"><i class="fas fa-file-alt"></i> Expected Answer</h4>
+          <div class="form-group">
+            <label>Expected Answer</label>
+            <textarea id="ftExpectedAnswer" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 60px;"></textarea>
+          </div>
+
+          <h4 style="margin-top: 20px; color: #1e293b;"><i class="fas fa-file-upload"></i> 📁 Dataset Files (Optional)</h4>
+          <p style="font-size: 12px; color: #666; margin: 5px 0;">Upload files (.dwg, .rvt, .pdf, images, etc.) for reference</p>
+          <input type="file" id="ftDatasetFiles" multiple style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;">
+
+          <div id="ftDatasetDisplay" style="margin-top: 10px;"></div>
+        </div>
+
         <!-- Short Answer -->
         <div id="shortAnswerFieldsContainer" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0; opacity: 0; transition: opacity 0.3s;">
           <h4 style="margin-top: 0; color: #1e293b;"><i class="fas fa-pen-square"></i> Expected Answer <span style="color: #dc2626;">*</span></h4>
@@ -414,7 +429,32 @@ async function openQuestionModal(questionId = null) {
       loadPickListItems(question);
     } else if (questionType === 'ordered_list') {
       loadOrderedListItems(question);
-    } else if (questionType === 'shortanswer') {
+    } else if (questionType === 'free_text') {
+      if (question?.expected_answer) document.getElementById('ftExpectedAnswer').value = question.expected_answer;
+
+      // Load dataset files if they exist
+      if (question?.dataset_files) {
+        try {
+          const files = typeof question.dataset_files === 'string'
+            ? JSON.parse(question.dataset_files)
+            : question.dataset_files;
+
+          if (Array.isArray(files) && files.length > 0) {
+            let html = '<div style="margin-top: 10px;"><p style="font-size: 12px; color: #666; margin: 5px 0;">📎 Current Dataset Files:</p>';
+            files.forEach((url, idx) => {
+              const fileName = url.split('/').pop() || 'File ' + (idx + 1);
+              html += `<div style="margin: 5px 0; font-size: 12px;">
+                <a href="${url}" target="_blank" style="color: #3b82f6; text-decoration: none;">📄 ${fileName}</a>
+              </div>`;
+            });
+            html += '</div>';
+            document.getElementById('ftDatasetDisplay').innerHTML = html;
+          }
+        } catch (e) {
+          console.warn('Error parsing dataset_files:', e);
+        }
+      }
+    } else if (questionType === 'shortanswer' || questionType === 'short_answer') {
       if (question?.correct_answer) document.getElementById('saExpectedAnswer').value = question.correct_answer;
       if (question?.keywords) document.getElementById('saKeywords').value = question.keywords.join(', ');
       if (question?.case_sensitive) document.getElementById('saCaseSensitive').checked = true;
@@ -644,6 +684,7 @@ function updateQuestionTypeFields() {
       'trueFalseFieldsContainer',
       'pickListFieldsContainer',
       'orderedListFieldsContainer',
+      'freeTextFieldsContainer',
       'shortAnswerFieldsContainer',
       'essayFieldsContainer'
     ];
@@ -681,6 +722,10 @@ function updateQuestionTypeFields() {
         case 'ordered_list':
           targetId = 'orderedListFieldsContainer';
           break;
+        case 'free_text':
+          targetId = 'freeTextFieldsContainer';
+          break;
+        case 'short_answer':
         case 'shortanswer':
           targetId = 'shortAnswerFieldsContainer';
           break;
@@ -805,7 +850,14 @@ async function handleQuestionSave(e) {
       questionData.list_items = items;
       console.log('✅ Ordered list items collected:', items.length);
 
-    } else if (type === 'shortanswer') {
+    } else if (type === 'free_text') {
+      const expectedAnswer = document.getElementById('ftExpectedAnswer').value;
+      if (expectedAnswer) {
+        questionData.expected_answer = expectedAnswer;
+        console.log('✅ Free text expected answer collected');
+      }
+
+    } else if (type === 'short_answer' || type === 'shortanswer') {
       const expectedAnswer = document.getElementById('saExpectedAnswer').value;
       if (!expectedAnswer) {
         showMessage('Please provide the expected answer for Short Answer', 'error');
