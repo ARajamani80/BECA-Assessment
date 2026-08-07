@@ -422,12 +422,6 @@ async function openQuestionModal(questionId = null) {
             <label>Instructions (Optional)</label>
             <textarea id="fileInstructions" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 60px;" placeholder="Provide instructions for file upload..."></textarea>
           </div>
-          <div class="form-group">
-            <label>📁 Upload Dataset Files (Optional)</label>
-            <p style="font-size: 12px; color: #666; margin: 5px 0;">Upload reference files that trainees will need. Save the question first to enable file uploads.</p>
-            <input type="file" id="datasetFiles" multiple style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-            <p style="font-size: 11px; color: #999; margin-top: 5px;">Supported: PDF, DOC, XLS, IMG, .dwg, .rvt, .rfa and other formats</p>
-          </div>
         </div>
 
         <!-- Ordered List -->
@@ -449,8 +443,11 @@ async function openQuestionModal(questionId = null) {
           </div>
 
           <h4 style="margin-top: 20px; color: #1e293b;"><i class="fas fa-file-upload"></i> 📁 Dataset Files (Optional)</h4>
-          <p style="font-size: 12px; color: #666; margin: 5px 0;">Upload files (.dwg, .rvt, .pdf, images, etc.) for reference</p>
-          <input type="file" id="ftDatasetFiles" multiple style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;">
+          <p style="font-size: 12px; color: #666; margin: 5px 0;">Upload files (.dwg, .rvt, .pdf, .rfa, .rte, images, etc.) for reference</p>
+          <input type="file" id="ftDatasetFiles" multiple
+                 accept=".csv,.xlsx,.xls,.json,.pdf,.jpg,.jpeg,.png,.gif,.dwg,.dwt,.rvt,.rfa,.rte,.rft,.iam,.ipt,.ipj,.f3d,.f3z,.zip"
+                 style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;">
+          <p style="font-size: 11px; color: #999; margin: 5px 0;">Supports: AutoCAD (.dwg, .dwt), Revit (.rvt, .rfa, .rte, .rft), PDF, Images, Excel, and more</p>
 
           <div id="ftDatasetDisplay" style="margin-top: 10px;"></div>
         </div>
@@ -487,22 +484,6 @@ async function openQuestionModal(questionId = null) {
             <label>Rubric Criteria (Optional)</label>
             <textarea id="eaRubricCriteria" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; min-height: 80px;" placeholder="Define how this essay will be graded..."></textarea>
           </div>
-        </div>
-
-        <!-- Dataset Upload Section -->
-        <div class="form-group" style="background: #f0f7ff; padding: 15px; border-radius: 4px; border-left: 4px solid #3b82f6;">
-          <label style="font-weight: 600; color: #1e40af;"><i class="fas fa-database"></i> Upload Dataset (Optional)</label>
-          <p style="margin: 8px 0; font-size: 13px; color: #64748b;">Attach reference files for trainees. Supports: CSV, Excel, JSON, PDF, Images, or Autodesk files (DWG, RVT, etc.) - up to 100MB.</p>
-          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
-            <input type="file" id="datasetFile"
-                   accept=".csv,.xlsx,.xls,.json,.pdf,.jpg,.jpeg,.png,.gif,.dwg,.dwt,.rvt,.rfa,.rte,.rft,.iam,.ipt,.ipj,.f3d,.f3z,.zip"
-                   style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
-            <button type="button" class="btn btn-secondary btn-sm" onclick="viewDatasetInfo()">
-              <i class="fas fa-info-circle"></i> Info
-            </button>
-          </div>
-          <div id="datasetPreview" style="margin-top: 8px; font-size: 12px; color: #64748b;"></div>
-          <div id="fileWarning" style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: 3px; color: #856404; font-size: 12px; display: none;"></div>
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -984,13 +965,9 @@ async function handleQuestionSave(e) {
     const questionImageInput = document.getElementById('questionImageFile');
     const questionImageFile = questionImageInput ? questionImageInput.files[0] : null;
 
-    // Handle dataset file uploads (for free text questions)
-    // Check for free text dataset files first, otherwise check general dataset files
-    let datasetFilesInput = document.getElementById('ftDatasetFiles');
-    if (!datasetFilesInput || datasetFilesInput.style.display === 'none') {
-      datasetFilesInput = document.getElementById('datasetFiles');
-    }
-    const datasetFiles = datasetFilesInput ? Array.from(datasetFilesInput.files) : [];
+    // Handle dataset file uploads (for free text questions only)
+    const datasetFilesInput = document.getElementById('ftDatasetFiles');
+    const datasetFiles = (datasetFilesInput && datasetFilesInput.files.length > 0) ? Array.from(datasetFilesInput.files) : [];
     const uploadedFileUrls = [];
 
     if (questionId) {

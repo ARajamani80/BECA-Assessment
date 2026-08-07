@@ -1004,11 +1004,11 @@ function downloadQuestionTemplate() {
     ['EA', 'Essay Answer - Long-form response with rubric scoring'],
     [],
     ['FIELD DEFINITIONS:'],
-    ['Question ID', 'Unique identifier (UUID format) - AUTO-GENERATED if blank'],
+    ['Question ID', 'Unique sequential identifier (Q-00001, Q-00002, etc.) - AUTO-GENERATED if blank - FOR REFERENCE ONLY'],
     ['Title', 'Question title/name (VARCHAR, max 255 characters)'],
     ['Type', 'Question type code: MCQ, T/F, PL, FT, OL, SA, EA'],
     ['Points', 'Score value for correct answer (INTEGER, 1-100)'],
-    ['Category', 'Topic/subject category (VARCHAR, e.g., AutoCAD, Revit, General)'],
+    ['Category', 'Topic/subject category (VARCHAR, e.g., AutoCAD, Revit, Architecture, BIM)'],
     ['Difficulty', 'Easy, Medium, or Hard'],
     ['Question Text', 'Full question prompt (TEXT, detailed description)'],
     ['Question Description', 'Additional context or instructions'],
@@ -1017,21 +1017,27 @@ function downloadQuestionTemplate() {
     ['Time Limit (seconds)', 'Optional time limit for answering (INTEGER)'],
     [],
     ['HOW TO FILL EACH COLUMN:'],
-    ['1. Use appropriate sheet for your question type'],
-    ['2. Fill required fields (marked with *)'],
-    ['3. Leave optional fields blank if not needed'],
-    ['4. For MCQ: List options in Option 1-5 columns'],
-    ['5. For T/F: Enter True or False in Correct Answer'],
-    ['6. For PL: List dropdown options separated by semicolons'],
-    ['7. For OL: List items in Item 1-5, then order (e.g., 2,4,1,3)'],
-    ['8. For SA: Provide expected answer and keywords'],
-    ['9. For EA: Provide rubric criteria with points'],
-    ['10. Copy sample rows and modify as needed'],
+    ['1. ALWAYS leave Question ID blank - it will auto-generate as Q-00001, Q-00002, etc.'],
+    ['2. Use appropriate sheet for your question type'],
+    ['3. Fill required fields (marked with *)'],
+    ['4. Leave optional fields blank if not needed'],
+    ['5. For MCQ: List options in Option 1-5 columns, mark Correct Answer'],
+    ['6. For T/F: Enter True or False in Correct Answer'],
+    ['7. For PL: List dropdown options separated by semicolons (;)'],
+    ['8. For OL: List items in Item 1-5, provide correct sequence'],
+    ['9. For SA: Provide expected answer and keywords'],
+    ['10. For EA: Provide rubric criteria with points'],
+    ['11. Copy sample rows and modify as needed'],
     [],
-    ['EXAMPLE USAGE:'],
-    ['MCQ: Which CAD command opens the file dialog?', 'MCQ', '5', 'AutoCAD', 'Medium', 'Q-001'],
-    ['T/F: Revit is parametric', 'T/F', '3', 'Revit', 'Easy', 'True'],
-    ['SA: Autocad shortcut for zoom', 'SA', '2', 'AutoCAD', 'Easy', 'Z'],
+    ['EXAMPLE USAGE (Question ID Left Blank - AUTO-GENERATED):'],
+    ['[blank]', 'AutoCAD File Dialog Command', 'MCQ', '5', 'AutoCAD', 'Medium'],
+    ['[blank]', 'Revit BIM Basics', 'T/F', '3', 'Revit', 'Easy'],
+    ['[blank]', 'AutoCAD Zoom Shortcut', 'SA', '2', 'AutoCAD', 'Easy'],
+    [],
+    ['TO REFERENCE EXISTING QUESTIONS:'],
+    ['1. Click "Export" to download all existing questions with their Question IDs'],
+    ['2. Use the exported file to see which questions already exist (e.g., Q-00001, Q-00002)'],
+    ['3. Import new questions with blank Question ID column - they will get next sequential ID'],
     [],
     ['SUPPORTED FILE FORMATS:'],
     ['AutoCAD:', '.DWG, .DWT'],
@@ -1041,12 +1047,13 @@ function downloadQuestionTemplate() {
     ['General:', '.PDF, .CSV, .XLSX, .JSON, .JPG, .PNG, .ZIP'],
     [],
     ['TIPS:'],
-    ['• Leave Question ID blank for new questions (auto-generated)'],
-    ['• Use consistent category names for better organization'],
-    ['• Add dataset files for practical, hands-on questions'],
-    ['• Review sample rows in each sheet before creating your own'],
-    ['• Export existing questions to see the data format'],
-    ['• Contact support for format validation or troubleshooting']
+    ['✓ ALWAYS leave Question ID BLANK - system auto-generates sequential IDs'],
+    ['✓ Use consistent category names (e.g., "Revit Archi", "AutoCAD", "BIM") for easier filtering'],
+    ['✓ Add tags during import to group questions by topic'],
+    ['✓ Review sample rows in each sheet before creating your own'],
+    ['✓ Export existing questions first to check current Question IDs'],
+    ['✓ For file uploads (FT type), dataset files can be added after import'],
+    ['✓ Contact support for format validation or troubleshooting']
   ];
 
   const wsInstructions = XLSX.utils.aoa_to_sheet(instructionsData);
@@ -1062,14 +1069,14 @@ function downloadQuestionTemplate() {
 
   const mcqSamples = [
     [
-      'Q-MCQ-001', 'AutoCAD File Dialog Command', 'MCQ', 5, 'AutoCAD', 'Medium',
+      '', 'AutoCAD File Dialog Command', 'MCQ', 5, 'AutoCAD', 'Medium',
       'Which command opens the file dialog in AutoCAD?',
       '', 'OPEN', 'NEW', 'SAVE', 'EXIT', '',
       'OPEN', 'The OPEN command is the standard AutoCAD command for opening files. It displays the file selection dialog.',
       '', 30, 'Yes', 'Yes'
     ],
     [
-      'Q-MCQ-002', 'Revit Element Type Identification', 'MCQ', 5, 'Revit', 'Medium',
+      '', 'Revit Element Type Identification', 'MCQ', 5, 'Revit', 'Medium',
       'Which of the following is a structural element in Revit?',
       '', 'Wall', 'Column', 'Door', 'Window', 'Ceiling',
       'Column', 'Columns are primary structural elements that support loads. While walls can also be structural, columns are specifically designed for vertical load transfer.',
@@ -1094,13 +1101,13 @@ function downloadQuestionTemplate() {
 
   const tfSamples = [
     [
-      'Q-TF-001', 'Revit BIM Basics', 'T/F', 3, 'Revit', 'Easy',
+      '', 'Revit BIM Basics', 'T/F', 3, 'Revit', 'Easy',
       'Revit is a parametric modeling tool.',
       '', 'True', 'Revit is built on parametric and associative design principles, allowing intelligent relationships between building elements.',
       '', 20, 'Yes'
     ],
     [
-      'Q-TF-002', 'AutoCAD 3D Modeling', 'T/F', 3, 'AutoCAD', 'Medium',
+      '', 'AutoCAD 3D Modeling', 'T/F', 3, 'AutoCAD', 'Medium',
       'AutoCAD blocks can contain both 2D and 3D geometry.',
       '', 'True', 'AutoCAD blocks are containers that can hold multiple types of geometry including 2D entities (lines, circles) and 3D solids.',
       '', 25, 'Yes'
@@ -1124,14 +1131,14 @@ function downloadQuestionTemplate() {
 
   const plSamples = [
     [
-      'Q-PL-001', 'Revit Element Type Selection', 'PL', 4, 'Revit', 'Medium',
+      '', 'Revit Element Type Selection', 'PL', 4, 'Revit', 'Medium',
       'Which element type is primarily used for structural support?',
       '', 'Wall', 'Column', 'Door', 'Window', 'Beam',
       'Column', 'Columns are primary structural elements designed to support vertical loads and transfer them to the foundation.',
       '', 30
     ],
     [
-      'Q-PL-002', 'CAD Tool Selection', 'PL', 3, 'AutoCAD', 'Easy',
+      '', 'CAD Tool Selection', 'PL', 3, 'AutoCAD', 'Easy',
       'Which tool is used to measure distance in AutoCAD?',
       '', 'Distance', 'Measure', 'Length', 'Dimension', 'Scale',
       'Measure', 'The MEASURE command provides accurate distance measurement between points in AutoCAD drawings.',
@@ -1157,13 +1164,13 @@ function downloadQuestionTemplate() {
 
   const ftSamples = [
     [
-      'Q-FT-001', 'Upload CAD Site Plan', 'FT', 10, 'AutoCAD', 'Hard',
+      '', 'Upload CAD Site Plan', 'FT', 10, 'AutoCAD', 'Hard',
       'Upload your site plan drawing in AutoCAD format.',
       '', '.DWG, .PDF', 50, 'Detailed site plan with property boundaries, buildings, and landscaping',
       'sample-site-plan.dwg', 300, 'Include all major site features and dimensions'
     ],
     [
-      'Q-FT-002', 'Upload Revit Project Model', 'FT', 15, 'Revit', 'Hard',
+      '', 'Upload Revit Project Model', 'FT', 15, 'Revit', 'Hard',
       'Upload your building information model for analysis.',
       '', '.RVT', 100, 'Complete BIM model with all building systems documented',
       'sample-building.rvt', 600, 'Ensure all parameters and properties are filled in'
@@ -1188,14 +1195,14 @@ function downloadQuestionTemplate() {
 
   const olSamples = [
     [
-      'Q-OL-001', 'CAD Workflow Steps', 'OL', 6, 'AutoCAD', 'Medium',
+      '', 'CAD Workflow Steps', 'OL', 6, 'AutoCAD', 'Medium',
       'Order these steps in the correct sequence for creating a technical drawing:',
       '', 'Draw geometry', 'Apply constraints', 'Add dimensions', 'Export to PDF', '',
       '1,2,3,4', 'First draw the base geometry, then apply constraints, add dimensions for clarity, and finally export the completed drawing.',
       '', 60
     ],
     [
-      'Q-OL-002', 'BIM Project Setup Steps', 'OL', 8, 'Revit', 'Medium',
+      '', 'BIM Project Setup Steps', 'OL', 8, 'Revit', 'Medium',
       'Arrange these BIM project setup steps in correct order:',
       '', 'Create project template', 'Set coordinate system', 'Configure levels', 'Add building systems', 'Coordinate with consultants',
       '1,2,3,4,5', 'Start with template selection, establish coordinate systems, define floor levels, add mechanical/electrical systems, and finally coordinate between disciplines.',
@@ -1221,14 +1228,14 @@ function downloadQuestionTemplate() {
 
   const saSamples = [
     [
-      'Q-SA-001', 'AutoCAD Zoom Shortcut', 'SA', 2, 'AutoCAD', 'Easy',
+      '', 'AutoCAD Zoom Shortcut', 'SA', 2, 'AutoCAD', 'Easy',
       'What is the keyboard shortcut for the ZOOM command in AutoCAD?',
       '', 'Z', 'Z', 'zoom', 'shortcut', '', '',
       'The keyboard shortcut Z activates the ZOOM command in AutoCAD. You can also type ZOOM in the command line.',
       'No', '', 15
     ],
     [
-      'Q-SA-002', 'BIM Coordination Challenge', 'SA', 5, 'Revit', 'Medium',
+      '', 'BIM Coordination Challenge', 'SA', 5, 'Revit', 'Medium',
       'Name the Revit tool used to detect clashes between building systems.',
       '', 'Interference Check', 'Interference', 'Clash', 'Check', 'Detection', '',
       'The Interference Check tool in Revit identifies overlapping elements and conflicts between MEP and structural systems.',
@@ -1255,7 +1262,7 @@ function downloadQuestionTemplate() {
 
   const eaSamples = [
     [
-      'Q-EA-001', 'CAD Drawing Analysis', 'EA', 15, 'AutoCAD', 'Hard',
+      '', 'CAD Drawing Analysis', 'EA', 15, 'AutoCAD', 'Hard',
       'Analyze the provided CAD drawing and describe the design intent, building components, and technical requirements.',
       '', 100, 500,
       'Understanding and Technical Knowledge', 5, 'Clarity and Organization', 5, 'Detail and Completeness', 5,
@@ -1263,7 +1270,7 @@ function downloadQuestionTemplate() {
       'sample-drawing.dwg', 600
     ],
     [
-      'Q-EA-002', 'BIM Implementation Strategy', 'EA', 20, 'Revit', 'Hard',
+      '', 'BIM Implementation Strategy', 'EA', 20, 'Revit', 'Hard',
       'Develop and explain a BIM implementation strategy for a large-scale construction project including team roles, workflow, and deliverables.',
       '', 150, 750,
       'Strategic Planning and Feasibility', 7, 'BIM Expertise and Standards', 7, 'Implementation Detail and Timeline', 6,
