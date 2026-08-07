@@ -75,7 +75,7 @@ async function openExcelImportModal() {
 
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
           <button type="button" class="btn btn-secondary" onclick="closeModal('excelImportModal')">Cancel</button>
-          <button type="button" class="btn btn-success" id="importStartBtn" onclick="startImport()" disabled>
+          <button type="button" class="btn btn-success" id="importStartBtn" disabled>
             <i class="fas fa-arrow-right"></i> Process & Import
           </button>
         </div>
@@ -294,7 +294,7 @@ async function importQuestions(questions) {
           .eq('question_text', questionText)
           .limit(1);
 
-        console.log(`   DB result: ${checkError ? 'ERROR: ' + checkError.message : existing?.length || 0 + ' found'}`);
+        console.log(`   DB result: ${checkError ? 'ERROR: ' + checkError.message : (existing?.length || 0) + ' found'}`);
 
         if (checkError) {
           console.warn('⚠️ Duplicate check error:', checkError);
