@@ -15,13 +15,15 @@ let importState = {
 /**
  * Open Excel import modal
  */
-async function openExcelImportModal() {
+function openExcelImportModal() {
   try {
     console.log('📂 Opening Excel import modal...');
+    console.log('📂 Modal element:', document.getElementById('excelImportModal'));
 
     // Get or create file input
     let fileInput = document.getElementById('globalExcelFileInput');
     if (!fileInput) {
+      console.log('📂 Creating global Excel file input...');
       fileInput = document.createElement('input');
       fileInput.type = 'file';
       fileInput.id = 'globalExcelFileInput';
@@ -103,8 +105,22 @@ async function openExcelImportModal() {
       </div>
     `;
 
-    document.getElementById('excelImportModalContent').innerHTML = modalContent;
-    showModal('excelImportModal');
+    const modalContentDiv = document.getElementById('excelImportModalContent');
+    if (!modalContentDiv) {
+      console.error('❌ excelImportModalContent div not found!');
+      throw new Error('Modal content container not found');
+    }
+
+    console.log('📝 Setting modal content...');
+    modalContentDiv.innerHTML = modalContent;
+
+    console.log('🔓 Calling showModal...');
+    const modalShown = showModal('excelImportModal');
+    console.log('🔓 showModal returned:', modalShown);
+
+    if (!modalShown) {
+      throw new Error('Failed to show modal');
+    }
 
     // Attach event listeners after modal is rendered
     setTimeout(() => {
