@@ -80,7 +80,9 @@ async function renderQuestions() {
           <table class="table">
             <thead>
               <tr>
-                <th style="width: 120px;">Question ID</th>
+                <th style="width: 120px; cursor: pointer; user-select: none; white-space: nowrap;" onclick="sortQuestionsByColumn('number')">
+                  Question ID <span id="sortIndicatorNumber" style="font-size: 12px; color: #3b82f6; margin-left: 4px;">↑↓</span>
+                </th>
                 <th>Question Text</th>
                 <th style="width: 100px;">Type Code</th>
                 <th style="width: 80px;">Points</th>
@@ -106,6 +108,18 @@ async function renderQuestions() {
       const sortSelect = document.getElementById('questionSortFilter');
       if (sortSelect) {
         sortSelect.value = questionsSortBy;
+      }
+
+      // Update sort indicator
+      const indicator = document.getElementById('sortIndicatorNumber');
+      if (indicator) {
+        if (questionsSortBy === 'number_asc') {
+          indicator.textContent = '↑';
+          indicator.style.color = '#3b82f6';
+        } else {
+          indicator.textContent = '↓';
+          indicator.style.color = '#dc2626';
+        }
       }
     }, 100);
 
@@ -155,6 +169,45 @@ async function loadAllQuestions() {
     questionsData = [];
     filteredQuestionsData = [];
   }
+}
+
+/**
+ * Sort questions by clicking column header
+ */
+function sortQuestionsByColumn(column) {
+  let newSort = 'number_asc';
+
+  if (column === 'number') {
+    // Toggle between ascending and descending
+    if (questionsSortBy === 'number_asc') {
+      newSort = 'number_desc';
+    } else {
+      newSort = 'number_asc';
+    }
+  }
+
+  questionsSortBy = newSort;
+
+  // Update sort dropdown to match
+  const sortSelect = document.getElementById('questionSortFilter');
+  if (sortSelect) {
+    sortSelect.value = newSort;
+  }
+
+  // Update sort indicator
+  const indicator = document.getElementById('sortIndicatorNumber');
+  if (indicator) {
+    if (newSort === 'number_asc') {
+      indicator.textContent = '↑';
+      indicator.style.color = '#3b82f6';
+    } else {
+      indicator.textContent = '↓';
+      indicator.style.color = '#dc2626';
+    }
+  }
+
+  // Apply sort
+  sortAndDisplayQuestions();
 }
 
 /**
