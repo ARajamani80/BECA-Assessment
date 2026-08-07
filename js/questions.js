@@ -188,10 +188,11 @@ function displayQuestionsTable() {
       const tagsText = q.tags ? (typeof q.tags === 'string' ? q.tags : JSON.stringify(q.tags)) : '';
       const tagsArray = tagsText ? tagsText.split(',').map(t => t.trim()).filter(t => t) : [];
       const tagsHtml = tagsArray.map(tag => `<span class="badge" style="background: #e0e7ff; color: #3730a3; margin: 2px;">${tag}</span>`).join(' ');
+      const questionCode = q.question_number ? `Q-${String(q.question_number).padStart(5, '0')}` : `Q-${q.id.substring(0, 8)}`;
 
       html += `
         <tr>
-          <td><code style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${q.id.substring(0, 8)}...</code></td>
+          <td><code style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">${questionCode}</code></td>
           <td>${truncateText(q.question_text, 50)}</td>
           <td><span class="badge" title="${typeLabel}">${typeCode}</span></td>
           <td>${q.points || 0}</td>
@@ -258,9 +259,14 @@ async function openQuestionModal(questionId = null) {
 
     const questionType = question?.question_type || 'mcq';
 
+    const questionCode = question?.question_number ? `Q-${String(question.question_number).padStart(5, '0')}` : 'New Question';
+
     document.getElementById('questionModalContent').innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0;">${titleText}</h2>
+        <div>
+          <h2 style="margin: 0;">${titleText}</h2>
+          ${question ? `<div style="font-size: 12px; color: #666; margin-top: 5px;">ID: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 3px;">${questionCode}</code></div>` : ''}
+        </div>
         <button onclick="closeModal('questionModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
       </div>
 
