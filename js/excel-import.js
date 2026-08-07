@@ -370,11 +370,13 @@ async function importQuestions(questions) {
       showMessage(`❌ Failed to import any questions. Check the browser console for details.`, 'error');
     }
 
-    // If there are free text questions, show dataset upload workflow
+    // If there are free text questions, show bulk dataset upload workflow
     if (freeTextQuestions.length > 0) {
       importState.freeTextQuestions = freeTextQuestions;
+      datasetUploadState.questions = freeTextQuestions; // Set for bulk upload
       setTimeout(() => {
-        showDatasetUploadWorkflow(freeTextQuestions);
+        console.log(`📁 ${freeTextQuestions.length} Free Text questions found - showing bulk dataset upload`);
+        showBulkDatasetUploadModal(freeTextQuestions);
       }, 500);
     }
 

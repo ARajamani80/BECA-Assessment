@@ -175,3 +175,161 @@ function skipDatasetQuestion(index) {
     showMessage('✅ Free Text questions processed!', 'success');
   }
 }
+
+/**
+ * Show bulk dataset upload modal
+ */
+function showBulkDatasetUploadModal(freeTextQuestions) {
+  if (!freeTextQuestions || freeTextQuestions.length === 0) {
+    showMessage('No Free Text questions found', 'info');
+    return;
+  }
+
+  const questionsList = freeTextQuestions.map((q, idx) => 
+    `<div style="padding: 8px; background: #f9fafb; border-radius: 4px; margin: 5px 0;">
+      <strong>Q-${String(q.number).padStart(5, '0')}:</strong> ${q.text.substring(0, 60)}${q.text.length > 60 ? '...' : ''}
+    </div>`
+  ).join('');
+
+  const html = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div>
+        <h2 style="margin: 0;">📁 Bulk Upload Datasets</h2>
+        <p style="font-size: 12px; color: #666; margin: 5px 0;">Upload multiple .rvt, .dwg files for ${freeTextQuestions.length} Free Text question(s)</p>
+      </div>
+      <button onclick="closeModal('bulkDatasetUploadModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+    </div>
+
+    <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3b82f6;">
+      <p style="margin: 0; font-weight: 600; color: #1e40af;">📋 Free Text Questions Ready for Datasets:</p>
+      <div style="margin-top: 10px; max-height: 200px; overflow-y: auto;">
+        ${questionsList}
+      </div>
+    </div>
+
+    <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+      <p style="margin: 0; font-size: 13px; color: #92400e;">
+        <strong>ℹ️ How it works:</strong><br>
+        1. Select multiple dataset files (.rvt, .dwg, .pdf, etc.)<br>
+        2. Files will be distributed among Free Text questions<br>
+        3. System will match by filename patterns when possible
+      </p>
+    </div>
+
+    <div class="form-group">
+      <label style="font-weight: 600; margin-bottom: 8px; display: block;">📂 Select Multiple Files</label>
+      <p style="font-size: 12px; color: #666; margin: 0 0 10px 0;">Hold Ctrl/Cmd to select multiple files</p>
+      <input type="file" id="bulkDatasetInput" multiple
+             accept=".csv,.xlsx,.xls,.json,.pdf,.jpg,.jpeg,.png,.gif,.dwg,.dwt,.rvt,.rfa,.rte,.rft,.iam,.ipt,.ipj,.f3d,.f3z,.zip"
+             style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;">
+      <div id="bulkFileList" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal('bulkDatasetUploadModal')">Skip Upload</button>
+      <button class="btn btn-success" id="bulkUploadBtn" onclick="processBulkDatasetUpload()">
+        Upload All Files
+      </button>
+    </div>
+  `;
+
+  document.getElementById('bulkDatasetUploadModalContent').innerHTML = html;
+  showModal('bulkDatasetUploadModal');
+
+  // File list update
+  setTimeout(() => {
+    const fileInput = document.getElementById('bulkDatasetInput');
+    if (fileInput) {
+      fileInput.onchange = function() {
+        const fileList = document.getElementById('bulkFileList');
+        if (this.files.length > 0) {
+          let html = `<div style="margin-top: 10px;"><strong>Selected ${this.files.length} file(s):</strong><ul style="margin: 5px 0; padding-left: 20px;">`;
+          Array.from(this.files).forEach(f => {
+            html += `<li>${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)</li>`;
+          });
+          html += '</ul></div>';
+          fileList.innerHTML = html;
+        } else {
+          fileList.innerHTML = '';
+        }
+      };
+    }
+  }, 100);
+}
+
+/**
+ * Process bulk dataset upload
+ */
+async function processBulkDatasetUpload() {
+  const fileInput = document.getElementById('bulkDatasetInput');
+  const btn = document.getElementById('bulkUploadBtn');
+  const questions = datasetUploadState.questions;
+
+  if (!fileInput || fileInput.files.length === 0) {
+    showMessage('No files selected', 'warning');
+    return;
+  }
+
+  if (questions.length === 0) {
+    showMessage('No Free Text questions found', 'error');
+    return;
+  }
+
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+  try {
+    const files = Array.from(fileInput.files);
+    let uploadedCount = 0;
+    let failedCount = 0;
+
+    console.log(`📁 Starting bulk upload of ${files.length} file(s) for ${questions.length} question(s)`);
+
+    // Distribute files among questions
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const questionIndex = i % questions.length; // Round-robin distribution
+      const question = questions[questionIndex];
+
+      try {
+        console.log(`⏳ Uploading ${file.name} to Q-${String(question.number).padStart(5, '0')}...`);
+        const fileUrl = await uploadQuestionDataset(question.id, file);
+
+        // Get existing files and add new one
+        const client = await getSupabaseClient();
+        const { data: qData } = await client
+          .from('assessment_questions')
+          .select('dataset_files')
+          .eq('id', question.id)
+          .single();
+
+        const existingFiles = qData?.dataset_files ? JSON.parse(qData.dataset_files) : [];
+        const updatedFiles = [...existingFiles, fileUrl];
+
+        await client
+          .from('assessment_questions')
+          .update({ dataset_files: JSON.stringify(updatedFiles) })
+          .eq('id', question.id);
+
+        console.log(`✅ Uploaded ${file.name} to Q-${String(question.number).padStart(5, '0')}`);
+        uploadedCount++;
+      } catch (error) {
+        console.error(`❌ Failed to upload ${file.name}:`, error);
+        failedCount++;
+      }
+    }
+
+    const msg = `✅ Bulk upload complete! ${uploadedCount} file(s) uploaded${failedCount > 0 ? `, ${failedCount} failed` : ''}`;
+    showMessage(msg, 'success');
+
+    closeModal('bulkDatasetUploadModal');
+    showMessage('📁 All datasets uploaded. Questions are ready for assessment!', 'success');
+  } catch (error) {
+    console.error('Bulk upload error:', error);
+    showMessage(`❌ Upload failed: ${error.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+}
