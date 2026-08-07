@@ -263,6 +263,7 @@ async function importQuestions(questions) {
     let duplicates = 0;
     const total = questions.length;
     const freeTextQuestions = []; // Track free text questions for dataset upload
+    const importedTexts = new Set(); // Track questions imported in THIS batch
 
     for (let i = 0; i < total; i++) {
       const percent = Math.round(((i + 1) / total) * 100);
@@ -273,30 +274,30 @@ async function importQuestions(questions) {
       try {
         const client = await getSupabaseClient();
         const questionText = (questions[i].question_text || '').trim();
-
-        // Check for duplicate question (normalize text for comparison)
         const normalizedText = questionText.toLowerCase().trim();
+
         console.log(`🔍 Checking for duplicates of: "${questionText.substring(0, 50)}..."`);
 
+        // Check 1: Already imported in THIS batch?
+        if (importedTexts.has(normalizedText)) {
+          console.warn(`⏭️ Skipping duplicate in batch - question ${i + 1}: "${questionText.substring(0, 50)}..."`);
+          duplicates++;
+          continue;
+        }
+
+        // Check 2: Already in database?
         const { data: existing, error: checkError } = await client
           .from('assessment_questions')
-          .select('id, question_text')
-          .limit(1000); // Get all to check locally
+          .select('id')
+          .ilike('question_text', questionText) // Case-insensitive exact match
+          .limit(1);
 
         if (checkError) {
           console.warn('⚠️ Duplicate check error:', checkError);
         } else if (existing && existing.length > 0) {
-          // Check for exact or normalized match
-          const isDuplicate = existing.some(q => {
-            const dbText = (q.question_text || '').toLowerCase().trim();
-            return dbText === normalizedText;
-          });
-
-          if (isDuplicate) {
-            console.warn(`⏭️ Skipping duplicate question ${i + 1}: "${questionText.substring(0, 50)}..."`);
-            duplicates++;
-            continue; // Skip this question
-          }
+          console.warn(`⏭️ Skipping duplicate in database - question ${i + 1}: "${questionText.substring(0, 50)}..."`);
+          duplicates++;
+          continue;
         }
 
         // Add import tags to the question
@@ -321,6 +322,10 @@ async function importQuestions(questions) {
         if (error) throw error;
         imported++;
 
+        // Track this question as imported in this batch
+        importedTexts.add(normalizedText);
+        console.log(`✅ Q${i + 1} imported (${importedTexts.size} in batch)`);
+
         // Track free text questions
         if (questionWithTags.question_type === 'free_text' && data && data.length > 0) {
           freeTextQuestions.push({
@@ -329,8 +334,6 @@ async function importQuestions(questions) {
             text: data[0].question_text
           });
         }
-
-        console.log(`✅ Q${i + 1} imported successfully`);
       } catch (error) {
         failed++;
 
