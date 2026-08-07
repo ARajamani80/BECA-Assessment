@@ -272,22 +272,31 @@ async function importQuestions(questions) {
 
       try {
         const client = await getSupabaseClient();
-        const questionText = questions[i].question_text || '';
+        const questionText = (questions[i].question_text || '').trim();
 
-        // Check for duplicate question (same question_text)
+        // Check for duplicate question (normalize text for comparison)
+        const normalizedText = questionText.toLowerCase().trim();
         console.log(`🔍 Checking for duplicates of: "${questionText.substring(0, 50)}..."`);
+
         const { data: existing, error: checkError } = await client
           .from('assessment_questions')
-          .select('id')
-          .eq('question_text', questionText)
-          .limit(1);
+          .select('id, question_text')
+          .limit(1000); // Get all to check locally
 
         if (checkError) {
           console.warn('⚠️ Duplicate check error:', checkError);
         } else if (existing && existing.length > 0) {
-          console.warn(`⏭️ Skipping duplicate question ${i + 1}: "${questionText.substring(0, 50)}..."`);
-          duplicates++;
-          continue; // Skip this question
+          // Check for exact or normalized match
+          const isDuplicate = existing.some(q => {
+            const dbText = (q.question_text || '').toLowerCase().trim();
+            return dbText === normalizedText;
+          });
+
+          if (isDuplicate) {
+            console.warn(`⏭️ Skipping duplicate question ${i + 1}: "${questionText.substring(0, 50)}..."`);
+            duplicates++;
+            continue; // Skip this question
+          }
         }
 
         // Add import tags to the question
