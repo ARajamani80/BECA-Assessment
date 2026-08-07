@@ -10,7 +10,7 @@
 let questionsData = [];
 let filteredQuestionsDataData = [];
 let questionsCurrentPage = 1;
-const itemsPerPage = 10;
+let itemsPerPage = 50; // Changed default to 50
 let questionsSortBy = 'number_asc'; // 'number_asc', 'number_desc', 'text_asc', 'text_desc', 'date_newest', 'date_oldest'
 
 /**
@@ -169,6 +169,33 @@ async function loadAllQuestions() {
     questionsData = [];
     filteredQuestionsData = [];
   }
+}
+
+/**
+ * Go to specific page
+ */
+function goToPage(pageNumber) {
+  questionsCurrentPage = pageNumber;
+  displayQuestionsTable();
+  // Scroll to top of table
+  document.querySelector('table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/**
+ * Change items per page
+ */
+function changeItemsPerPage() {
+  const select = document.getElementById('itemsPerPageSelect');
+  const value = select.value;
+
+  if (value === 'all') {
+    itemsPerPage = filteredQuestionsData.length || 1000;
+  } else {
+    itemsPerPage = parseInt(value);
+  }
+
+  questionsCurrentPage = 1;
+  displayQuestionsTable();
 }
 
 /**
@@ -341,7 +368,47 @@ function displayQuestionsTable() {
     paginationHtml += `</div>`;
   }
 
-  document.getElementById('questionsPagination').innerHTML = paginationHtml;
+  // Add rows per page selector
+  const rowsSelector = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 4px;">
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <label style="font-size: 13px; font-weight: 600;">Rows per page:</label>
+        <select id="itemsPerPageSelect" onchange="changeItemsPerPage()" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+          <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10</option>
+          <option value="25" ${itemsPerPage === 25 ? 'selected' : ''}>25</option>
+          <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50</option>
+          <option value="100" ${itemsPerPage === 100 ? 'selected' : ''}>100</option>
+          <option value="all" ${itemsPerPage >= filteredQuestionsData.length ? 'selected' : ''}>All</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;">
+        <button class="btn btn-secondary btn-sm" onclick="goToPage(1)" ${questionsCurrentPage === 1 ? 'disabled' : ''} title="First page">
+          <i class="fas fa-step-backward"></i> First
+        </button>
+        ${questionsCurrentPage > 1 ? `<button class="btn btn-secondary btn-sm" onclick="questionsCurrentPage--; displayQuestionsTable()"><i class="fas fa-chevron-left"></i> Prev</button>` : ''}
+
+        <span style="display: flex; gap: 5px; flex-wrap: wrap; justify-content: center;">
+          ${Array.from({length: totalPages}, (_, i) => i + 1).map(page => `
+            <button class="btn ${page === questionsCurrentPage ? 'btn-primary' : 'btn-secondary'} btn-sm"
+                    onclick="goToPage(${page})"
+                    style="min-width: 32px; padding: 6px 8px;">${page}</button>
+          `).join('')}
+        </span>
+
+        ${questionsCurrentPage < totalPages ? `<button class="btn btn-secondary btn-sm" onclick="questionsCurrentPage++; displayQuestionsTable()">Next <i class="fas fa-chevron-right"></i></button>` : ''}
+        <button class="btn btn-secondary btn-sm" onclick="goToPage(${totalPages})" ${questionsCurrentPage === totalPages ? 'disabled' : ''} title="Last page">
+          Last <i class="fas fa-step-forward"></i>
+        </button>
+
+        <span style="font-size: 12px; color: #666; margin-left: 10px;">
+          Page <strong>${questionsCurrentPage}</strong> of <strong>${totalPages}</strong> (${filteredQuestionsData.length} total)
+        </span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('questionsPagination').innerHTML = paginationHtml + rowsSelector;
 }
 
 /**

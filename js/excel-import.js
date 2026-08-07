@@ -260,6 +260,7 @@ async function importQuestions(questions) {
   try {
     let imported = 0;
     let failed = 0;
+    let duplicates = 0;
     const total = questions.length;
     const freeTextQuestions = []; // Track free text questions for dataset upload
 
@@ -270,6 +271,25 @@ async function importQuestions(questions) {
       document.getElementById('progressText').textContent = `Importing ${i + 1}/${total}...`;
 
       try {
+        const client = await getSupabaseClient();
+        const questionText = questions[i].question_text || '';
+
+        // Check for duplicate question (same question_text)
+        console.log(`🔍 Checking for duplicates of: "${questionText.substring(0, 50)}..."`);
+        const { data: existing, error: checkError } = await client
+          .from('assessment_questions')
+          .select('id')
+          .eq('question_text', questionText)
+          .limit(1);
+
+        if (checkError) {
+          console.warn('⚠️ Duplicate check error:', checkError);
+        } else if (existing && existing.length > 0) {
+          console.warn(`⏭️ Skipping duplicate question ${i + 1}: "${questionText.substring(0, 50)}..."`);
+          duplicates++;
+          continue; // Skip this question
+        }
+
         // Add import tags to the question
         const questionWithTags = { ...questions[i] };
         if (importState.importTags.length > 0) {
@@ -284,7 +304,6 @@ async function importQuestions(questions) {
         }
 
         // Insert question without assessment_id (standalone in Question Bank)
-        const client = await getSupabaseClient();
         const { data, error } = await client
           .from('assessment_questions')
           .insert([questionWithTags])
@@ -326,19 +345,27 @@ async function importQuestions(questions) {
 
     const summary = `
       <div><strong style="color: #059669;">✅ ${imported} questions imported successfully</strong></div>
+      ${duplicates > 0 ? `<div style="color: #f59e0b; margin-top: 10px;">🔄 ${duplicates} duplicate question(s) skipped</div>` : ''}
       ${failed > 0 ? `<div style="color: #dc2626; margin-top: 10px;">❌ ${failed} questions failed</div>` : ''}
       ${importState.validationErrors.length > 0 ? `<div style="color: #d97706; margin-top: 5px;">⚠️ ${importState.validationErrors.length} questions skipped (validation errors)</div>` : ''}
       ${freeTextQuestions.length > 0 ? `<div style="color: #2563eb; margin-top: 10px;">📁 ${freeTextQuestions.length} Free Text question(s) ready for dataset upload</div>` : ''}
       <div style="margin-top: 15px; padding: 10px; background: #f3f4f6; border-radius: 4px; font-size: 13px;">
-        <div>Total processed: ${total}</div>
-        <div>Success rate: ${Math.round((imported / total) * 100)}%</div>
+        <div>Total in file: ${total}</div>
+        <div>New imported: ${imported}</div>
+        <div>Duplicates skipped: ${duplicates}</div>
+        <div>Import rate: ${imported > 0 ? Math.round((imported / (total - duplicates)) * 100) : 0}%</div>
       </div>
     `;
     document.getElementById('resultSummary').innerHTML = summary;
 
-    console.log(`✅ IMPORT COMPLETE: ${imported}/${total} questions imported, ${failed} failed`);
+    console.log(`✅ IMPORT COMPLETE: ${imported}/${total} questions imported, ${duplicates} duplicates skipped, ${failed} failed`);
     if (imported > 0) {
-      showMessage(`✅ Imported ${imported}/${total} questions!`, 'success');
+      const msg = duplicates > 0
+        ? `✅ Imported ${imported} questions! Skipped ${duplicates} duplicate(s).`
+        : `✅ Imported ${imported}/${total} questions!`;
+      showMessage(msg, 'success');
+    } else if (duplicates > 0) {
+      showMessage(`⏭️ No new questions imported - all ${duplicates} were duplicates.`, 'info');
     } else {
       showMessage(`❌ Failed to import any questions. Check the browser console for details.`, 'error');
     }
