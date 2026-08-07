@@ -11,6 +11,7 @@ let questionsData = [];
 let filteredQuestionsDataData = [];
 let questionsCurrentPage = 1;
 const itemsPerPage = 10;
+let questionsSortBy = 'number_asc'; // 'number_asc', 'number_desc', 'text_asc', 'text_desc', 'date_newest', 'date_oldest'
 
 /**
  * Render Question Bank page
@@ -47,8 +48,8 @@ async function renderQuestions() {
           </div>
         </div>
 
-        <!-- Search & Filter -->
-        <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+        <!-- Search & Filter & Sort -->
+        <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
           <input type="text" id="questionSearch" placeholder="Search questions..."
                  onkeyup="filterQuestions()" style="flex: 1; min-width: 200px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
           <select id="questionTypeFilter" onchange="filterQuestions()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
@@ -63,6 +64,14 @@ async function renderQuestions() {
           </select>
           <select id="questionTagFilter" onchange="filterQuestions()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
             <option value="">All Tags</option>
+          </select>
+          <select id="questionSortFilter" onchange="sortAndDisplayQuestions()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="number_asc">📊 Question ID (Asc)</option>
+            <option value="number_desc">📊 Question ID (Desc)</option>
+            <option value="text_asc">📝 Question Text (A-Z)</option>
+            <option value="text_desc">📝 Question Text (Z-A)</option>
+            <option value="date_newest">📅 Newest First</option>
+            <option value="date_oldest">📅 Oldest First</option>
           </select>
         </div>
 
@@ -92,7 +101,15 @@ async function renderQuestions() {
       </div>
     `;
 
-    displayQuestionsTable();
+    // Apply default sort (Question ID Ascending)
+    setTimeout(() => {
+      const sortSelect = document.getElementById('questionSortFilter');
+      if (sortSelect) {
+        sortSelect.value = questionsSortBy;
+      }
+    }, 100);
+
+    filterQuestions(); // This will apply the sort
     populateTagFilter();
   } catch (error) {
     showMessage('Error loading questions: ' + error.message, 'error');
@@ -165,6 +182,42 @@ function filterQuestions() {
     return matchesSearch && matchesType && matchesTag;
   });
 
+  questionsCurrentPage = 1;
+  sortAndDisplayQuestions();
+}
+
+/**
+ * Sort and display questions
+ */
+function sortAndDisplayQuestions() {
+  const sortValue = document.getElementById('questionSortFilter').value;
+  questionsSortBy = sortValue;
+
+  // Sort based on selected option
+  const sortedData = [...filteredQuestionsData];
+
+  switch(sortValue) {
+    case 'number_asc':
+      sortedData.sort((a, b) => (a.question_number || 0) - (b.question_number || 0));
+      break;
+    case 'number_desc':
+      sortedData.sort((a, b) => (b.question_number || 0) - (a.question_number || 0));
+      break;
+    case 'text_asc':
+      sortedData.sort((a, b) => (a.question_text || '').localeCompare(b.question_text || ''));
+      break;
+    case 'text_desc':
+      sortedData.sort((a, b) => (b.question_text || '').localeCompare(a.question_text || ''));
+      break;
+    case 'date_newest':
+      sortedData.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      break;
+    case 'date_oldest':
+      sortedData.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+      break;
+  }
+
+  filteredQuestionsData = sortedData;
   questionsCurrentPage = 1;
   displayQuestionsTable();
 }
@@ -1446,7 +1499,7 @@ async function refreshQuestionBank() {
   try {
     await loadAllQuestions();
     questionsCurrentPage = 1;
-    displayQuestionsTable();
+    filterQuestions(); // This will also apply current sort
     populateTagFilter();
     showMessage('Data refreshed successfully', 'success');
   } catch (error) {
