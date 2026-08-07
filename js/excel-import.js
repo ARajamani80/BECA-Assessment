@@ -276,29 +276,36 @@ async function importQuestions(questions) {
         const questionText = (questions[i].question_text || '').trim();
         const normalizedText = questionText.toLowerCase().trim();
 
-        console.log(`🔍 Checking for duplicates of: "${questionText.substring(0, 50)}..."`);
+        console.log(`\n📍 Processing Q${i + 1}/${total}: "${questionText.substring(0, 40)}..."`);
+        console.log(`   Batch check: ${importedTexts.size} already imported in batch`);
 
         // Check 1: Already imported in THIS batch?
         if (importedTexts.has(normalizedText)) {
-          console.warn(`⏭️ Skipping duplicate in batch - question ${i + 1}: "${questionText.substring(0, 50)}..."`);
+          console.warn(`   ⏭️ DUPLICATE IN BATCH - Skipping`);
           duplicates++;
           continue;
         }
 
         // Check 2: Already in database?
+        console.log(`   DB check: Querying database...`);
         const { data: existing, error: checkError } = await client
           .from('assessment_questions')
-          .select('id')
-          .ilike('question_text', questionText) // Case-insensitive exact match
+          .select('id, question_text')
+          .eq('question_text', questionText)
           .limit(1);
+
+        console.log(`   DB result: ${checkError ? 'ERROR: ' + checkError.message : existing?.length || 0 + ' found'}`);
 
         if (checkError) {
           console.warn('⚠️ Duplicate check error:', checkError);
         } else if (existing && existing.length > 0) {
-          console.warn(`⏭️ Skipping duplicate in database - question ${i + 1}: "${questionText.substring(0, 50)}..."`);
+          console.warn(`   ⏭️ DUPLICATE IN DATABASE - Skipping`);
+          console.log(`      Existing: "${existing[0].question_text.substring(0, 40)}..."`);
           duplicates++;
           continue;
         }
+
+        console.log(`   ✅ No duplicates found - proceeding to insert`);
 
         // Add import tags to the question
         const questionWithTags = { ...questions[i] };
@@ -320,11 +327,11 @@ async function importQuestions(questions) {
           .select();
 
         if (error) throw error;
-        imported++;
 
-        // Track this question as imported in this batch
+        imported++;
         importedTexts.add(normalizedText);
-        console.log(`✅ Q${i + 1} imported (${importedTexts.size} in batch)`);
+        console.log(`   ✅ INSERTED successfully - Batch count: ${imported}`);
+        console.log(`      ID: ${data[0]?.id || 'N/A'} | Number: Q-${String(data[0]?.question_number || '?').padStart(5, '0')}`);
 
         // Track free text questions
         if (questionWithTags.question_type === 'free_text' && data && data.length > 0) {
