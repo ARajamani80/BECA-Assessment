@@ -1434,65 +1434,7 @@ function downloadQuestionTemplate() {
   }
 }
 
-/**
- * Open Excel import modal
- */
-function openExcelImportModal() {
-  document.getElementById('excelImportModalContent').innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2 style="margin: 0;">Import Questions from Excel</h2>
-      <button onclick="closeModal('excelImportModal')" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
-    </div>
-
-    <div style="background: #f0f4ff; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-      <p style="margin: 0 0 10px 0;"><strong>Excel Format Requirements:</strong></p>
-      <ul style="margin: 0; padding-left: 20px;">
-        <li>Column A: Question Text (required)</li>
-        <li>Column B: Question Type (mcq, shortanswer, essay, fileupload)</li>
-        <li>Column C: Points (required)</li>
-        <li>Column D: Description (optional)</li>
-        <li>Column E: Options (for MCQ, use | to separate. Mark correct answer with *)</li>
-      </ul>
-    </div>
-
-    <form id="excelImportForm" onsubmit="handleExcelImport(event)">
-      <div class="form-group">
-        <label>Select Excel File *</label>
-        <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" required style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100%; box-sizing: border-box;">
-      </div>
-
-      <div style="display: flex; gap: 10px; margin-top: 20px;">
-        <button type="submit" class="btn btn-success" style="flex: 1;">
-          <i class="fas fa-upload"></i> Import
-        </button>
-        <button type="button" class="btn btn-secondary" onclick="closeModal('excelImportModal')" style="flex: 1;">
-          <i class="fas fa-times"></i> Cancel
-        </button>
-      </div>
-    </form>
-  `;
-
-  showModal('excelImportModal');
-}
-
-/**
- * Handle Excel import (framework)
- * Note: Full Excel parsing requires a library like SheetJS
- */
-async function handleExcelImport(e) {
-  e.preventDefault();
-
-  try {
-    const file = document.getElementById('excelFile').files[0];
-
-    // TODO: Implement full Excel parsing using SheetJS library
-    // This is a framework for the import handler
-
-    showMessage('Excel import framework is ready. Add SheetJS library for full implementation.', 'info');
-  } catch (error) {
-    showMessage('Error: ' + error.message, 'error');
-  }
-}
+// Excel import functionality is in excel-import.js
 
 // ============================================================================
 // Utility Functions
