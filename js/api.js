@@ -1424,7 +1424,7 @@ function exportQuestionsToExcel(questionsData) {
   // Create MCQ sheet
   if (groupedByType['mcq']) {
     const mcqData = groupedByType['mcq'].map(q => ({
-      'Question ID': q.id || '',
+      'Question ID': q.question_number ? `Q-${String(q.question_number).padStart(5, '0')}` : q.id || '',
       'Title': q.title || '',
       'Type': 'MCQ',
       'Points': q.points || 0,
@@ -1451,7 +1451,7 @@ function exportQuestionsToExcel(questionsData) {
   // Create T/F sheet
   if (groupedByType['true_false']) {
     const tfData = groupedByType['true_false'].map(q => ({
-      'Question ID': q.id || '',
+      'Question ID': q.question_number ? `Q-${String(q.question_number).padStart(5, '0')}` : q.id || '',
       'Title': q.title || '',
       'Type': 'T/F',
       'Points': q.points || 0,
@@ -1472,7 +1472,7 @@ function exportQuestionsToExcel(questionsData) {
   // Create PL sheet
   if (groupedByType['pick_list']) {
     const plData = groupedByType['pick_list'].map(q => ({
-      'Question ID': q.id || '',
+      'Question ID': q.question_number ? `Q-${String(q.question_number).padStart(5, '0')}` : q.id || '',
       'Title': q.title || '',
       'Type': 'PL',
       'Points': q.points || 0,
@@ -1493,7 +1493,7 @@ function exportQuestionsToExcel(questionsData) {
   // Create FT sheet
   if (groupedByType['file_upload']) {
     const ftData = groupedByType['file_upload'].map(q => ({
-      'Question ID': q.id || '',
+      'Question ID': q.question_number ? `Q-${String(q.question_number).padStart(5, '0')}` : q.id || '',
       'Title': q.title || '',
       'Type': 'FT',
       'Points': q.points || 0,
@@ -1515,7 +1515,7 @@ function exportQuestionsToExcel(questionsData) {
   // Create OL sheet
   if (groupedByType['ordered_list']) {
     const olData = groupedByType['ordered_list'].map(q => ({
-      'Question ID': q.id || '',
+      'Question ID': q.question_number ? `Q-${String(q.question_number).padStart(5, '0')}` : q.id || '',
       'Title': q.title || '',
       'Type': 'OL',
       'Points': q.points || 0,
@@ -1536,7 +1536,7 @@ function exportQuestionsToExcel(questionsData) {
   // Create SA sheet
   if (groupedByType['shortanswer']) {
     const saData = groupedByType['shortanswer'].map(q => ({
-      'Question ID': q.id || '',
+      'Question ID': q.question_number ? `Q-${String(q.question_number).padStart(5, '0')}` : q.id || '',
       'Title': q.title || '',
       'Type': 'SA',
       'Points': q.points || 0,
@@ -1558,7 +1558,7 @@ function exportQuestionsToExcel(questionsData) {
   // Create EA sheet
   if (groupedByType['essay']) {
     const eaData = groupedByType['essay'].map(q => ({
-      'Question ID': q.id || '',
+      'Question ID': q.question_number ? `Q-${String(q.question_number).padStart(5, '0')}` : q.id || '',
       'Title': q.title || '',
       'Type': 'EA',
       'Points': q.points || 0,
