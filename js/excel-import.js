@@ -8,7 +8,8 @@ let importState = {
   rawData: [],
   processedQuestions: [],
   validationErrors: [],
-  currentStep: 'upload'
+  currentStep: 'upload',
+  importTags: []
 };
 
 /**
@@ -61,6 +62,17 @@ async function openExcelImportModal() {
           </div>
         </div>
 
+        <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+          <h3 style="margin-top: 0;">🏷️ (Optional) Assign Tags</h3>
+          <p style="color: #666; font-size: 13px; margin: 10px 0;">
+            Tags help organize and filter questions. Example: "Revit Archi", "AutoCAD", "BIM", etc.
+          </p>
+          <div>
+            <input type="text" id="importTagsInput" placeholder="Enter tags separated by commas (e.g., Revit Archi, BIM, Architecture)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; margin-bottom: 8px;">
+            <div id="tagsPreview" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;"></div>
+          </div>
+        </div>
+
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
           <button type="button" class="btn btn-secondary" onclick="closeModal('excelImportModal')">Cancel</button>
           <button type="button" class="btn btn-success" id="importStartBtn" onclick="startImport()" disabled>
@@ -108,6 +120,25 @@ async function openExcelImportModal() {
           document.getElementById('importStartBtn').disabled = false;
         }
       };
+
+      // Tag input handler
+      const tagsInput = document.getElementById('importTagsInput');
+      if (tagsInput) {
+        tagsInput.addEventListener('input', function(e) {
+          const tagsText = e.target.value;
+          importState.importTags = tagsText ? tagsText.split(',').map(t => t.trim()).filter(t => t) : [];
+
+          // Update preview
+          const preview = document.getElementById('tagsPreview');
+          if (importState.importTags.length > 0) {
+            preview.innerHTML = importState.importTags.map(tag =>
+              `<span class="badge" style="background: #ffc107; color: #000; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${tag}</span>`
+            ).join('');
+          } else {
+            preview.innerHTML = '<span style="color: #999; font-size: 12px;">No tags entered</span>';
+          }
+        });
+      }
 
       // Attach button click handlers with addEventListener
       const importBtn = document.getElementById('importStartBtn');
@@ -238,11 +269,24 @@ async function importQuestions(questions) {
       document.getElementById('progressText').textContent = `Importing ${i + 1}/${total}...`;
 
       try {
+        // Add import tags to the question
+        const questionWithTags = { ...questions[i] };
+        if (importState.importTags.length > 0) {
+          // Append import tags to existing tags if any
+          const existingTags = questionWithTags.tags ?
+            (typeof questionWithTags.tags === 'string' ?
+              questionWithTags.tags.split(',').map(t => t.trim()) :
+              questionWithTags.tags) : [];
+          const allTags = [...new Set([...existingTags, ...importState.importTags])];
+          questionWithTags.tags = allTags.join(', ');
+          console.log(`🏷️ Tags added to Q${i + 1}:`, questionWithTags.tags);
+        }
+
         // Insert question without assessment_id (standalone in Question Bank)
         const client = await getSupabaseClient();
         const { error } = await client
           .from('assessment_questions')
-          .insert([questions[i]])
+          .insert([questionWithTags])
           .select();
 
         if (error) throw error;

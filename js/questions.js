@@ -56,10 +56,13 @@ async function renderQuestions() {
             <option value="mcq">MCQ - Multiple Choice</option>
             <option value="true_false">T/F - True/False</option>
             <option value="pick_list">PL - Pick List</option>
-            <option value="file_upload">FT - File Upload</option>
+            <option value="free_text">FT - Free Text</option>
             <option value="ordered_list">OL - Ordered List</option>
             <option value="shortanswer">SA - Short Answer</option>
             <option value="essay">EA - Essay</option>
+          </select>
+          <select id="questionTagFilter" onchange="filterQuestions()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="">All Tags</option>
           </select>
         </div>
 
@@ -68,9 +71,11 @@ async function renderQuestions() {
           <table class="table">
             <thead>
               <tr>
+                <th style="width: 120px;">Question ID</th>
                 <th>Question Text</th>
                 <th style="width: 100px;">Type Code</th>
                 <th style="width: 80px;">Points</th>
+                <th style="width: 150px;">Tags</th>
                 <th style="width: 120px;">Created</th>
                 <th style="width: 100px;">Actions</th>
               </tr>
@@ -88,10 +93,37 @@ async function renderQuestions() {
     `;
 
     displayQuestionsTable();
+    populateTagFilter();
   } catch (error) {
     showMessage('Error loading questions: ' + error.message, 'error');
     document.getElementById('page').innerHTML = '<div class="card"><p style="color: red;">Error: ' + error.message + '</p></div>';
   }
+}
+
+/**
+ * Populate tag filter dropdown with available tags
+ */
+function populateTagFilter() {
+  const tagSet = new Set();
+
+  questionsData.forEach(q => {
+    if (q.tags) {
+      const tagsText = typeof q.tags === 'string' ? q.tags : JSON.stringify(q.tags);
+      const tagsArray = tagsText.split(',').map(t => t.trim()).filter(t => t);
+      tagsArray.forEach(tag => tagSet.add(tag));
+    }
+  });
+
+  const tagSelect = document.getElementById('questionTagFilter');
+  const currentValue = tagSelect.value;
+
+  let html = '<option value="">All Tags</option>';
+  Array.from(tagSet).sort().forEach(tag => {
+    html += `<option value="${tag}">${tag}</option>`;
+  });
+
+  tagSelect.innerHTML = html;
+  tagSelect.value = currentValue;
 }
 
 /**
@@ -114,6 +146,7 @@ async function loadAllQuestions() {
 function filterQuestions() {
   const searchTerm = document.getElementById('questionSearch').value.toLowerCase();
   const typeFilter = document.getElementById('questionTypeFilter').value;
+  const tagFilter = document.getElementById('questionTagFilter').value;
 
   filteredQuestionsData = questionsData.filter(q => {
     const matchesSearch = !searchTerm ||
@@ -122,7 +155,14 @@ function filterQuestions() {
 
     const matchesType = !typeFilter || q.question_type === typeFilter;
 
-    return matchesSearch && matchesType;
+    let matchesTag = true;
+    if (tagFilter) {
+      const tagsText = q.tags ? (typeof q.tags === 'string' ? q.tags : JSON.stringify(q.tags)) : '';
+      const tagsArray = tagsText ? tagsText.split(',').map(t => t.trim()) : [];
+      matchesTag = tagsArray.includes(tagFilter);
+    }
+
+    return matchesSearch && matchesType && matchesTag;
   });
 
   questionsCurrentPage = 1;
@@ -139,18 +179,23 @@ function displayQuestionsTable() {
 
   let html = '';
   if (pageQuestions.length === 0) {
-    html = '<tr><td colspan="5" style="text-align: center; color: #999;">No questions found</td></tr>';
+    html = '<tr><td colspan="7" style="text-align: center; color: #999;">No questions found</td></tr>';
   } else {
     pageQuestions.forEach(q => {
       const typeCode = getQuestionTypeCode(q.question_type);
       const typeLabel = getQuestionTypeLabel(q.question_type);
       const createdDate = q.created_at ? formatDate(q.created_at) : 'N/A';
+      const tagsText = q.tags ? (typeof q.tags === 'string' ? q.tags : JSON.stringify(q.tags)) : '';
+      const tagsArray = tagsText ? tagsText.split(',').map(t => t.trim()).filter(t => t) : [];
+      const tagsHtml = tagsArray.map(tag => `<span class="badge" style="background: #e0e7ff; color: #3730a3; margin: 2px;">${tag}</span>`).join(' ');
 
       html += `
         <tr>
-          <td>${truncateText(q.question_text, 60)}</td>
+          <td><code style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${q.id.substring(0, 8)}...</code></td>
+          <td>${truncateText(q.question_text, 50)}</td>
           <td><span class="badge" title="${typeLabel}">${typeCode}</span></td>
           <td>${q.points || 0}</td>
+          <td>${tagsHtml || '<span style="color: #999;">-</span>'}</td>
           <td>${createdDate}</td>
           <td>
             <div style="display: flex; gap: 6px;">
@@ -847,7 +892,7 @@ async function handleQuestionSave(e) {
         return;
       }
 
-      questionData.list_items = items;
+      questionData.list_items = JSON.stringify(items);
       console.log('✅ Ordered list items collected:', items.length);
 
     } else if (type === 'free_text') {
@@ -880,8 +925,12 @@ async function handleQuestionSave(e) {
     const questionImageInput = document.getElementById('questionImageFile');
     const questionImageFile = questionImageInput ? questionImageInput.files[0] : null;
 
-    // Handle dataset file uploads (multiple files supported)
-    const datasetFilesInput = document.getElementById('datasetFiles');
+    // Handle dataset file uploads (for free text questions)
+    // Check for free text dataset files first, otherwise check general dataset files
+    let datasetFilesInput = document.getElementById('ftDatasetFiles');
+    if (!datasetFilesInput || datasetFilesInput.style.display === 'none') {
+      datasetFilesInput = document.getElementById('datasetFiles');
+    }
     const datasetFiles = datasetFilesInput ? Array.from(datasetFilesInput.files) : [];
     const uploadedFileUrls = [];
 
@@ -1392,6 +1441,7 @@ async function refreshQuestionBank() {
     await loadAllQuestions();
     questionsCurrentPage = 1;
     displayQuestionsTable();
+    populateTagFilter();
     showMessage('Data refreshed successfully', 'success');
   } catch (error) {
     showMessage('Error refreshing data: ' + error.message, 'error');
